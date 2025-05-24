@@ -128,6 +128,22 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
 
   const onConnect = useCallback(
     (params: Connection) => {
+      // Check if trying to connect 300ft cable directly to a well
+      const sourceNode = nodes.find(node => node.id === params.source);
+      const targetNode = nodes.find(node => node.id === params.target);
+      
+      if (selectedCableType === '300ft') {
+        // 300ft cables can only connect to Y adapters or from main box to Y adapter
+        if (sourceNode?.type === 'mainBox' && targetNode?.type === 'well') {
+          toast.error('300ft cables cannot connect directly to wells! Please use a Y adapter.');
+          return;
+        }
+        if (targetNode?.type === 'well' && sourceNode?.type !== 'yAdapter') {
+          toast.error('300ft cables must go through a Y adapter to reach wells!');
+          return;
+        }
+      }
+
       const edge: Edge = {
         ...params,
         id: `edge-${Date.now()}`,
@@ -145,7 +161,7 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
       setEdges((eds) => addEdge(edge, eds));
       toast.success(`${selectedCableType} cable connected!`);
     },
-    [selectedCableType, setEdges]
+    [selectedCableType, setEdges, nodes]
   );
 
   const addYAdapter = () => {
@@ -320,6 +336,15 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
                         <SelectItem value="#f59e0b">Orange</SelectItem>
                         <SelectItem value="#8b5cf6">Purple</SelectItem>
                         <SelectItem value="#06b6d4">Cyan</SelectItem>
+                        <SelectItem value="#eab308">Yellow</SelectItem>
+                        <SelectItem value="#ffffff">White</SelectItem>
+                        <SelectItem value="#000000">Black</SelectItem>
+                        <SelectItem value="#6b7280">Grey</SelectItem>
+                        <SelectItem value="#84cc16">Lime</SelectItem>
+                        <SelectItem value="#ec4899">Pink</SelectItem>
+                        <SelectItem value="#f97316">Dark Orange</SelectItem>
+                        <SelectItem value="#14b8a6">Teal</SelectItem>
+                        <SelectItem value="#a855f7">Violet</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

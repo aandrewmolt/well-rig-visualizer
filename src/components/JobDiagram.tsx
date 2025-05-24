@@ -20,12 +20,13 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 import html2canvas from 'html2canvas';
-import { Cable, Route, Download, Square, Monitor, Satellite } from 'lucide-react';
+import { Cable, Route, Download, Square, Monitor, Satellite, Gauge } from 'lucide-react';
 import MainBoxNode from './nodes/MainBoxNode';
 import WellNode from './nodes/WellNode';
 import YAdapterNode from './nodes/YAdapterNode';
 import CompanyComputerNode from './nodes/CompanyComputerNode';
 import SatelliteNode from './nodes/SatelliteNode';
+import WellsideGaugeNode from './nodes/WellsideGaugeNode';
 import CableEdge from './edges/CableEdge';
 
 const nodeTypes = {
@@ -34,6 +35,7 @@ const nodeTypes = {
   yAdapter: YAdapterNode,
   companyComputer: CompanyComputerNode,
   satellite: SatelliteNode,
+  wellsideGauge: WellsideGaugeNode,
 };
 
 const edgeTypes = {
@@ -44,6 +46,7 @@ interface Job {
   id: string;
   name: string;
   wellCount: number;
+  hasWellsideGauge: boolean;
   createdAt: Date;
 }
 
@@ -60,6 +63,51 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
   const [mainBoxName, setMainBoxName] = useState('SS001');
   const [companyComputerName, setCompanyComputerName] = useState('Company Computer');
   const [satelliteName, setSatelliteName] = useState('Starlink');
+  const [wellsideGaugeName, setWellsideGaugeName] = useState('Wellside Gauge');
+
+  const updateMainBoxName = (newName: string) => {
+    setMainBoxName(newName);
+    setNodes((nds) => 
+      nds.map((node) => 
+        node.id === 'main-box' 
+          ? { ...node, data: { ...node.data, label: newName } }
+          : node
+      )
+    );
+  };
+
+  const updateCompanyComputerName = (newName: string) => {
+    setCompanyComputerName(newName);
+    setNodes((nds) => 
+      nds.map((node) => 
+        node.id === 'company-computer' 
+          ? { ...node, data: { ...node.data, label: newName } }
+          : node
+      )
+    );
+  };
+
+  const updateSatelliteName = (newName: string) => {
+    setSatelliteName(newName);
+    setNodes((nds) => 
+      nds.map((node) => 
+        node.id === 'satellite' 
+          ? { ...node, data: { ...node.data, label: newName } }
+          : node
+      )
+    );
+  };
+
+  const updateWellsideGaugeName = (newName: string) => {
+    setWellsideGaugeName(newName);
+    setNodes((nds) => 
+      nds.map((node) => 
+        node.id === 'wellside-gauge' 
+          ? { ...node, data: { ...node.data, label: newName } }
+          : node
+      )
+    );
+  };
 
   const initializeJob = useCallback(() => {
     const initialNodes: Node[] = [];
@@ -94,6 +142,20 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
     };
     initialNodes.push(satelliteNode);
 
+    // Create wellside gauge if enabled
+    if (job.hasWellsideGauge) {
+      const wellsideGaugeNode: Node = {
+        id: 'wellside-gauge',
+        type: 'wellsideGauge',
+        position: { x: 400, y: 350 },
+        data: { 
+          label: wellsideGaugeName,
+          color: '#f59e0b'
+        },
+      };
+      initialNodes.push(wellsideGaugeNode);
+    }
+
     // Create well nodes in a grid layout
     const wellsPerRow = Math.ceil(job.wellCount / 2);
     for (let i = 0; i < job.wellCount; i++) {
@@ -117,8 +179,8 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
 
     setNodes(initialNodes);
     setEdges([]);
-    setNodeIdCounter(job.wellCount + 3);
-  }, [job, setNodes, setEdges, mainBoxName, companyComputerName, satelliteName]);
+    setNodeIdCounter(job.wellCount + (job.hasWellsideGauge ? 4 : 3));
+  }, [job, mainBoxName, companyComputerName, satelliteName, wellsideGaugeName, setNodes, setEdges]);
 
   // Initialize the diagram when component mounts or names change
   React.useEffect(() => {
@@ -127,19 +189,26 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
 
   const onConnect = useCallback(
     (params: Connection) => {
-      // Check if trying to connect 300ft cable directly to a well
       const sourceNode = nodes.find(node => node.id === params.source);
       const targetNode = nodes.find(node => node.id === params.target);
       
       if (selectedCableType === '300ft') {
-        // 300ft cables can only connect to Y adapters or from main box to Y adapter
-        if (sourceNode?.type === 'mainBox' && targetNode?.type === 'well') {
-          toast.error('300ft cables cannot connect directly to wells! Please use a Y adapter.');
+        // 300ft cables can only connect from main box to Y adapter
+        if (sourceNode?.type === 'mainBox' && targetNode?.type !== 'yAdapter') {
+          toast.error('300ft cables can only connect from Main Box to Y Adapters!');
           return;
         }
-        if (targetNode?.type === 'well' && sourceNode?.type !== 'yAdapter') {
-          toast.error('300ft cables must go through a Y adapter to reach wells!');
+        if (sourceNode?.type !== 'mainBox' && sourceNode?.type !== 'yAdapter') {
+          toast.error('300ft cables must originate from Main Box or Y Adapter!');
           return;
+        }
+      }
+
+      // Y Adapters can connect directly to wells without cable type restrictions
+      if (sourceNode?.type === 'yAdapter') {
+        // Allow direct connection from Y adapter to wells or wellside gauge
+        if (targetNode?.type === 'well' || targetNode?.type === 'wellsideGauge') {
+          // No cable type validation needed for Y adapter direct connections
         }
       }
 
@@ -196,6 +265,16 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
     );
   };
 
+  const updateWellsideGaugeColor = (newColor: string) => {
+    setNodes((nds) => 
+      nds.map((node) => 
+        node.id === 'wellside-gauge' 
+          ? { ...node, data: { ...node.data, color: newColor } }
+          : node
+      )
+    );
+  };
+
   const clearDiagram = () => {
     initializeJob();
     toast.success('Diagram cleared!');
@@ -223,6 +302,7 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
   };
 
   const wellNodes = nodes.filter(node => node.type === 'well');
+  const wellsideGaugeNode = nodes.find(node => node.type === 'wellsideGauge');
 
   return (
     <div className="max-w-7xl mx-auto space-y-2">
@@ -275,7 +355,7 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
                 <Input
                   id="main-box-name"
                   value={mainBoxName}
-                  onChange={(e) => setMainBoxName(e.target.value)}
+                  onChange={(e) => updateMainBoxName(e.target.value)}
                   placeholder="SS001"
                   className="h-8"
                 />
@@ -286,7 +366,7 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
                 <Input
                   id="computer-name"
                   value={companyComputerName}
-                  onChange={(e) => setCompanyComputerName(e.target.value)}
+                  onChange={(e) => updateCompanyComputerName(e.target.value)}
                   placeholder="Company Computer"
                   className="h-8"
                 />
@@ -297,23 +377,79 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
                 <Input
                   id="satellite-name"
                   value={satelliteName}
-                  onChange={(e) => setSatelliteName(e.target.value)}
+                  onChange={(e) => updateSatelliteName(e.target.value)}
                   placeholder="Starlink"
                   className="h-8"
                 />
               </div>
+
+              {job.hasWellsideGauge && (
+                <div>
+                  <Label htmlFor="wellside-gauge-name" className="text-sm">Wellside Gauge Name</Label>
+                  <Input
+                    id="wellside-gauge-name"
+                    value={wellsideGaugeName}
+                    onChange={(e) => updateWellsideGaugeName(e.target.value)}
+                    placeholder="Wellside Gauge"
+                    className="h-8"
+                  />
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
 
-        {/* Well Configuration */}
-        {wellNodes.length > 0 && (
+        {/* Well and Gauge Configuration */}
+        {(wellNodes.length > 0 || wellsideGaugeNode) && (
           <Card className="bg-white shadow-lg">
             <CardHeader className="pb-2">
-              <CardTitle className="text-lg">Well Configuration</CardTitle>
+              <CardTitle className="text-lg">Well & Gauge Configuration</CardTitle>
             </CardHeader>
             <CardContent className="pt-0">
               <div className="grid grid-cols-1 gap-2 max-h-80 overflow-y-auto">
+                {wellsideGaugeNode && (
+                  <div className="flex items-center gap-2 p-2 border rounded bg-orange-50">
+                    <div className="flex-1">
+                      <Label htmlFor="wellside-gauge-name-config" className="text-xs flex items-center gap-1">
+                        <Gauge className="h-3 w-3" />
+                        Gauge Name
+                      </Label>
+                      <Input
+                        id="wellside-gauge-name-config"
+                        value={wellsideGaugeNode.data.label}
+                        onChange={(e) => updateWellsideGaugeName(e.target.value)}
+                        className="h-7 text-sm"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="wellside-gauge-color" className="text-xs">Color</Label>
+                      <Select
+                        value={wellsideGaugeNode.data.color}
+                        onValueChange={(color) => updateWellsideGaugeColor(color)}
+                      >
+                        <SelectTrigger id="wellside-gauge-color" className="w-20 h-7">
+                          <div 
+                            className="w-3 h-3 rounded" 
+                            style={{ backgroundColor: wellsideGaugeNode.data.color }}
+                          />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="#f59e0b">Orange</SelectItem>
+                          <SelectItem value="#3b82f6">Blue</SelectItem>
+                          <SelectItem value="#ef4444">Red</SelectItem>
+                          <SelectItem value="#10b981">Green</SelectItem>
+                          <SelectItem value="#8b5cf6">Purple</SelectItem>
+                          <SelectItem value="#06b6d4">Cyan</SelectItem>
+                          <SelectItem value="#eab308">Yellow</SelectItem>
+                          <SelectItem value="#ffffff">White</SelectItem>
+                          <SelectItem value="#000000">Black</SelectItem>
+                          <SelectItem value="#6b7280">Grey</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                )}
+                
                 {wellNodes.map((wellNode) => (
                   <div key={wellNode.id} className="flex items-center gap-2 p-2 border rounded">
                     <div className="flex-1">
@@ -367,7 +503,7 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
       {/* Diagram Section - Larger Height */}
       <Card className="bg-white shadow-lg">
         <CardContent className="p-1">
-          <div className="h-[850px] border rounded-lg" ref={reactFlowWrapper}>
+          <div className="h-[900px] border rounded-lg" ref={reactFlowWrapper}>
             <ReactFlow
               nodes={nodes}
               edges={edges}
@@ -405,9 +541,10 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
           </CardTitle>
         </CardHeader>
         <CardContent className="text-xs text-blue-700 space-y-1 pt-0">
-          <p><strong>300ft Reels:</strong> Connect from Main Box → Y Adapter → Well + 100ft Cable → Second Well</p>
-          <p><strong>200ft Cables:</strong> Connect directly Main Box → Well (rare: add Y Adapter + 100ft for 2 wells)</p>
-          <p><strong>100ft Cables:</strong> Always connect through Y Adapter to reach additional wells</p>
+          <p><strong>300ft Reels:</strong> Connect from Main Box → Y Adapter → Wells (direct connection from Y adapter)</p>
+          <p><strong>200ft Cables:</strong> Connect directly Main Box → Well (or add Y Adapter for multiple wells)</p>
+          <p><strong>100ft Cables:</strong> Can connect through Y Adapter or directly to wells/gauges</p>
+          <p><strong>Y Adapters:</strong> Can connect directly to wells and wellside gauges without cable restrictions</p>
           <p><strong>COM Ports:</strong> P1(COM1,2) | P2(COM3,4) | P3(COM5,6) | P4(COM7,8)</p>
           <p><strong>Delete Connections:</strong> Select any cable connection and press Delete key</p>
         </CardContent>

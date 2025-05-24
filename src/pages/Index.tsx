@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Checkbox } from '@/components/ui/checkbox';
 import JobDiagram from '@/components/JobDiagram';
 import { toast } from 'sonner';
 import { Plus, FileText } from 'lucide-react';
@@ -13,6 +14,7 @@ interface Job {
   id: string;
   name: string;
   wellCount: number;
+  hasWellsideGauge: boolean;
   createdAt: Date;
 }
 
@@ -21,6 +23,7 @@ const Index = () => {
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [newJobName, setNewJobName] = useState('');
   const [newJobWells, setNewJobWells] = useState(1);
+  const [hasWellsideGauge, setHasWellsideGauge] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const createJob = () => {
@@ -38,12 +41,14 @@ const Index = () => {
       id: Date.now().toString(),
       name: newJobName.trim(),
       wellCount: newJobWells,
+      hasWellsideGauge,
       createdAt: new Date()
     };
 
     setJobs(prev => [...prev, newJob]);
     setNewJobName('');
     setNewJobWells(1);
+    setHasWellsideGauge(false);
     setIsDialogOpen(false);
     setSelectedJob(newJob);
     toast.success(`Job "${newJob.name}" created successfully!`);
@@ -56,7 +61,7 @@ const Index = () => {
           <div className="flex items-center justify-between mb-6">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">{selectedJob.name}</h1>
-              <p className="text-gray-600">Wells: {selectedJob.wellCount}</p>
+              <p className="text-gray-600">Wells: {selectedJob.wellCount} {selectedJob.hasWellsideGauge && '| Wellside Gauge: Yes'}</p>
             </div>
             <Button 
               onClick={() => setSelectedJob(null)}
@@ -115,6 +120,14 @@ const Index = () => {
                     className="mt-1"
                   />
                 </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="wellsideGauge"
+                    checked={hasWellsideGauge}
+                    onCheckedChange={(checked) => setHasWellsideGauge(checked as boolean)}
+                  />
+                  <Label htmlFor="wellsideGauge">Include Wellside Gauge</Label>
+                </div>
                 <Button onClick={createJob} className="w-full">
                   Create Job
                 </Button>
@@ -143,6 +156,7 @@ const Index = () => {
                 <CardContent>
                   <div className="space-y-2 text-sm text-gray-600">
                     <p>Wells: {job.wellCount}</p>
+                    {job.hasWellsideGauge && <p>Wellside Gauge: Yes</p>}
                     <p>Created: {job.createdAt.toLocaleDateString()}</p>
                   </div>
                 </CardContent>

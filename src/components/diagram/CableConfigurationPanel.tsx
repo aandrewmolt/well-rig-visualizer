@@ -5,21 +5,27 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Route, Square, Download } from 'lucide-react';
+import { Route, Square, Download, Monitor } from 'lucide-react';
+import { Node } from '@xyflow/react';
+
+interface NodeData {
+  label: string;
+}
 
 interface CableConfigurationPanelProps {
   selectedCableType: '100ft' | '200ft' | '300ft';
   setSelectedCableType: (type: '100ft' | '200ft' | '300ft') => void;
   mainBoxName: string;
   updateMainBoxName: (name: string) => void;
-  companyComputerName: string;
-  updateCompanyComputerName: (name: string) => void;
+  companyComputerNodes: Node[];
+  updateCompanyComputerName: (id: string, name: string) => void;
   satelliteName: string;
   updateSatelliteName: (name: string) => void;
   wellsideGaugeName: string;
   updateWellsideGaugeName: (name: string) => void;
   hasWellsideGauge: boolean;
   addYAdapter: () => void;
+  addCompanyComputer: () => void;
   clearDiagram: () => void;
   saveDiagram: () => void;
 }
@@ -29,7 +35,7 @@ const CableConfigurationPanel: React.FC<CableConfigurationPanelProps> = ({
   setSelectedCableType,
   mainBoxName,
   updateMainBoxName,
-  companyComputerName,
+  companyComputerNodes,
   updateCompanyComputerName,
   satelliteName,
   updateSatelliteName,
@@ -37,6 +43,7 @@ const CableConfigurationPanel: React.FC<CableConfigurationPanelProps> = ({
   updateWellsideGaugeName,
   hasWellsideGauge,
   addYAdapter,
+  addCompanyComputer,
   clearDiagram,
   saveDiagram,
 }) => {
@@ -71,10 +78,17 @@ const CableConfigurationPanel: React.FC<CableConfigurationPanelProps> = ({
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+          <Button onClick={addCompanyComputer} variant="outline" size="sm" className="flex items-center gap-2 h-8">
+            <Monitor className="h-3 w-3" />
+            Add Computer
+          </Button>
+          
           <Button onClick={clearDiagram} variant="outline" size="sm" className="h-8">
             Clear Diagram
           </Button>
-          
+        </div>
+
+        <div className="flex justify-center">
           <Button onClick={saveDiagram} size="sm" className="bg-green-600 hover:bg-green-700 flex items-center gap-2 h-8">
             <Download className="h-3 w-3" />
             Save Diagram
@@ -92,17 +106,21 @@ const CableConfigurationPanel: React.FC<CableConfigurationPanelProps> = ({
               className="h-8"
             />
           </div>
-          
-          <div>
-            <Label htmlFor="computer-name" className="text-sm">Company Computer</Label>
-            <Input
-              id="computer-name"
-              value={companyComputerName}
-              onChange={(e) => updateCompanyComputerName(e.target.value)}
-              placeholder="Company Computer"
-              className="h-8"
-            />
-          </div>
+
+          {companyComputerNodes.map((computerNode, index) => (
+            <div key={computerNode.id}>
+              <Label htmlFor={`computer-name-${computerNode.id}`} className="text-sm">
+                Company Computer {companyComputerNodes.length > 1 ? index + 1 : ''}
+              </Label>
+              <Input
+                id={`computer-name-${computerNode.id}`}
+                value={(computerNode.data as NodeData).label || ''}
+                onChange={(e) => updateCompanyComputerName(computerNode.id, e.target.value)}
+                placeholder="Company Computer"
+                className="h-8"
+              />
+            </div>
+          ))}
           
           <div>
             <Label htmlFor="satellite-name" className="text-sm">Satellite Name</Label>

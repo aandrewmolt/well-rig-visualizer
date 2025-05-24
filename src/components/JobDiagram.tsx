@@ -35,9 +35,9 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
   const [selectedCableType, setSelectedCableType] = useState<'100ft' | '200ft' | '300ft'>('200ft');
   const [nodeIdCounter, setNodeIdCounter] = useState(0);
   const [mainBoxName, setMainBoxName] = useState('SS001');
-  const [companyComputerName, setCompanyComputerName] = useState('Company Computer');
   const [satelliteName, setSatelliteName] = useState('Starlink');
   const [wellsideGaugeName, setWellsideGaugeName] = useState('Wellside Gauge');
+  const [isInitialized, setIsInitialized] = useState(false);
 
   const updateMainBoxName = (newName: string) => {
     setMainBoxName(newName);
@@ -50,11 +50,10 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
     );
   };
 
-  const updateCompanyComputerName = (newName: string) => {
-    setCompanyComputerName(newName);
+  const updateCompanyComputerName = (computerId: string, newName: string) => {
     setNodes((nds) => 
       nds.map((node) => 
-        node.id === 'company-computer' 
+        node.id === computerId 
           ? { ...node, data: { ...node.data, label: newName } }
           : node
       )
@@ -84,6 +83,8 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
   };
 
   const initializeJob = useCallback(() => {
+    if (isInitialized) return;
+    
     const initialNodes: Node[] = [];
     
     // Create main box node
@@ -96,12 +97,12 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
     };
     initialNodes.push(mainBoxNode);
 
-    // Create company computer node
+    // Create initial company computer node
     const companyComputerNode: Node = {
-      id: 'company-computer',
+      id: 'company-computer-1',
       type: 'companyComputer',
       position: { x: 50, y: 300 },
-      data: { label: companyComputerName },
+      data: { label: 'Company Computer' },
       draggable: true,
     };
     initialNodes.push(companyComputerNode);
@@ -154,9 +155,10 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
     setNodes(initialNodes);
     setEdges([]);
     setNodeIdCounter(job.wellCount + (job.hasWellsideGauge ? 4 : 3));
-  }, [job, mainBoxName, companyComputerName, satelliteName, wellsideGaugeName, setNodes, setEdges]);
+    setIsInitialized(true);
+  }, [job, mainBoxName, satelliteName, wellsideGaugeName, setNodes, setEdges, isInitialized]);
 
-  // Initialize the diagram when component mounts or names change
+  // Initialize the diagram only once when component mounts
   React.useEffect(() => {
     initializeJob();
   }, [initializeJob]);
@@ -219,6 +221,21 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
     toast.success('Y Adapter added!');
   };
 
+  const addCompanyComputer = () => {
+    const existingComputers = nodes.filter(node => node.type === 'companyComputer');
+    const newComputer: Node = {
+      id: `company-computer-${nodeIdCounter}`,
+      type: 'companyComputer',
+      position: { x: 50 + (existingComputers.length * 30), y: 300 + (existingComputers.length * 100) },
+      data: { label: `Company Computer ${existingComputers.length + 1}` },
+      draggable: true,
+    };
+    
+    setNodes((nds) => [...nds, newComputer]);
+    setNodeIdCounter(prev => prev + 1);
+    toast.success('Company Computer added!');
+  };
+
   const updateWellName = (wellId: string, newName: string) => {
     setNodes((nds) => 
       nds.map((node) => 
@@ -250,6 +267,7 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
   };
 
   const clearDiagram = () => {
+    setIsInitialized(false);
     initializeJob();
     toast.success('Diagram cleared!');
   };
@@ -277,6 +295,7 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
 
   const wellNodes = nodes.filter(node => node.type === 'well');
   const wellsideGaugeNode = nodes.find(node => node.type === 'wellsideGauge');
+  const companyComputerNodes = nodes.filter(node => node.type === 'companyComputer');
 
   return (
     <div className="max-w-7xl mx-auto space-y-2">
@@ -287,7 +306,7 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
           setSelectedCableType={setSelectedCableType}
           mainBoxName={mainBoxName}
           updateMainBoxName={updateMainBoxName}
-          companyComputerName={companyComputerName}
+          companyComputerNodes={companyComputerNodes}
           updateCompanyComputerName={updateCompanyComputerName}
           satelliteName={satelliteName}
           updateSatelliteName={updateSatelliteName}
@@ -295,6 +314,7 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
           updateWellsideGaugeName={updateWellsideGaugeName}
           hasWellsideGauge={job.hasWellsideGauge}
           addYAdapter={addYAdapter}
+          addCompanyComputer={addCompanyComputer}
           clearDiagram={clearDiagram}
           saveDiagram={saveDiagram}
         />

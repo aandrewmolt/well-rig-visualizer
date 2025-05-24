@@ -7,6 +7,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Gauge } from 'lucide-react';
 import { Node } from '@xyflow/react';
 
+interface NodeData {
+  label: string;
+  color?: string;
+  wellNumber?: number;
+}
+
 interface WellConfigurationPanelProps {
   wellNodes: Node[];
   wellsideGaugeNode?: Node;
@@ -44,7 +50,7 @@ const WellConfigurationPanel: React.FC<WellConfigurationPanelProps> = ({
                 </Label>
                 <Input
                   id="wellside-gauge-name-config"
-                  value={wellsideGaugeNode.data.label}
+                  value={(wellsideGaugeNode.data as NodeData).label || ''}
                   onChange={(e) => updateWellsideGaugeName(e.target.value)}
                   className="h-7 text-sm"
                 />
@@ -52,13 +58,13 @@ const WellConfigurationPanel: React.FC<WellConfigurationPanelProps> = ({
               <div>
                 <Label htmlFor="wellside-gauge-color" className="text-xs">Color</Label>
                 <Select
-                  value={wellsideGaugeNode.data.color}
+                  value={(wellsideGaugeNode.data as NodeData).color || '#f59e0b'}
                   onValueChange={(color) => updateWellsideGaugeColor(color)}
                 >
                   <SelectTrigger id="wellside-gauge-color" className="w-20 h-7">
                     <div 
                       className="w-3 h-3 rounded" 
-                      style={{ backgroundColor: wellsideGaugeNode.data.color }}
+                      style={{ backgroundColor: (wellsideGaugeNode.data as NodeData).color || '#f59e0b' }}
                     />
                   </SelectTrigger>
                   <SelectContent>
@@ -84,7 +90,7 @@ const WellConfigurationPanel: React.FC<WellConfigurationPanelProps> = ({
                 <Label htmlFor={`well-name-${wellNode.id}`} className="text-xs">Well Name</Label>
                 <Input
                   id={`well-name-${wellNode.id}`}
-                  value={wellNode.data.label}
+                  value={(wellNode.data as NodeData).label || ''}
                   onChange={(e) => updateWellName(wellNode.id, e.target.value)}
                   className="h-7 text-sm"
                 />
@@ -92,13 +98,13 @@ const WellConfigurationPanel: React.FC<WellConfigurationPanelProps> = ({
               <div>
                 <Label htmlFor={`well-color-${wellNode.id}`} className="text-xs">Color</Label>
                 <Select
-                  value={wellNode.data.color}
+                  value={(wellNode.data as NodeData).color || '#3b82f6'}
                   onValueChange={(color) => updateWellColor(wellNode.id, color)}
                 >
                   <SelectTrigger id={`well-color-${wellNode.id}`} className="w-20 h-7">
                     <div 
                       className="w-3 h-3 rounded" 
-                      style={{ backgroundColor: wellNode.data.color }}
+                      style={{ backgroundColor: (wellNode.data as NodeData).color || '#3b82f6' }}
                     />
                   </SelectTrigger>
                   <SelectContent>

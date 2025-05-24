@@ -226,20 +226,20 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
   const wellNodes = nodes.filter(node => node.type === 'well');
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <Card className="bg-white shadow-lg">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Route className="h-5 w-5" />
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Route className="h-4 w-4" />
             Cable Configuration Tools
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end mb-4">
+        <CardContent className="pt-0">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-end mb-3">
             <div>
-              <Label htmlFor="cable-type">Cable Type</Label>
+              <Label htmlFor="cable-type" className="text-sm">Cable Type</Label>
               <Select value={selectedCableType} onValueChange={(value: any) => setSelectedCableType(value)}>
-                <SelectTrigger id="cable-type">
+                <SelectTrigger id="cable-type" className="h-8">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -250,49 +250,52 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
               </Select>
             </div>
             
-            <Button onClick={addYAdapter} variant="outline" className="flex items-center gap-2">
-              <Square className="h-4 w-4" />
+            <Button onClick={addYAdapter} variant="outline" size="sm" className="flex items-center gap-2 h-8">
+              <Square className="h-3 w-3" />
               Add Y Adapter
             </Button>
             
-            <Button onClick={clearDiagram} variant="outline">
+            <Button onClick={clearDiagram} variant="outline" size="sm" className="h-8">
               Clear Diagram
             </Button>
             
-            <Button onClick={saveDiagram} className="bg-green-600 hover:bg-green-700 flex items-center gap-2">
-              <Download className="h-4 w-4" />
+            <Button onClick={saveDiagram} size="sm" className="bg-green-600 hover:bg-green-700 flex items-center gap-2 h-8">
+              <Download className="h-3 w-3" />
               Save Diagram
             </Button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <div>
-              <Label htmlFor="main-box-name">Main Box Name</Label>
+              <Label htmlFor="main-box-name" className="text-sm">Main Box Name</Label>
               <Input
                 id="main-box-name"
                 value={mainBoxName}
                 onChange={(e) => setMainBoxName(e.target.value)}
                 placeholder="SS001"
+                className="h-8"
               />
             </div>
             
             <div>
-              <Label htmlFor="computer-name">Company Computer</Label>
+              <Label htmlFor="computer-name" className="text-sm">Company Computer</Label>
               <Input
                 id="computer-name"
                 value={companyComputerName}
                 onChange={(e) => setCompanyComputerName(e.target.value)}
                 placeholder="Company Computer"
+                className="h-8"
               />
             </div>
             
             <div>
-              <Label htmlFor="satellite-name">Satellite Name</Label>
+              <Label htmlFor="satellite-name" className="text-sm">Satellite Name</Label>
               <Input
                 id="satellite-name"
                 value={satelliteName}
                 onChange={(e) => setSatelliteName(e.target.value)}
                 placeholder="Starlink"
+                className="h-8"
               />
             </div>
           </div>
@@ -301,31 +304,31 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
 
       {wellNodes.length > 0 && (
         <Card className="bg-white shadow-lg">
-          <CardHeader>
-            <CardTitle>Well Configuration</CardTitle>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg">Well Configuration</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <CardContent className="pt-0">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {wellNodes.map((wellNode) => (
                 <div key={wellNode.id} className="flex items-center gap-2 p-2 border rounded">
                   <div className="flex-1">
-                    <Label htmlFor={`well-name-${wellNode.id}`}>Well Name</Label>
+                    <Label htmlFor={`well-name-${wellNode.id}`} className="text-xs">Well Name</Label>
                     <Input
                       id={`well-name-${wellNode.id}`}
                       value={wellNode.data.label}
                       onChange={(e) => updateWellName(wellNode.id, e.target.value)}
-                      className="mt-1"
+                      className="h-7 text-sm"
                     />
                   </div>
                   <div>
-                    <Label htmlFor={`well-color-${wellNode.id}`}>Color</Label>
+                    <Label htmlFor={`well-color-${wellNode.id}`} className="text-xs">Color</Label>
                     <Select
                       value={wellNode.data.color}
                       onValueChange={(color) => updateWellColor(wellNode.id, color)}
                     >
-                      <SelectTrigger id={`well-color-${wellNode.id}`} className="w-24 mt-1">
+                      <SelectTrigger id={`well-color-${wellNode.id}`} className="w-20 h-7">
                         <div 
-                          className="w-4 h-4 rounded" 
+                          className="w-3 h-3 rounded" 
                           style={{ backgroundColor: wellNode.data.color }}
                         />
                       </SelectTrigger>
@@ -357,7 +360,7 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
 
       <Card className="bg-white shadow-lg">
         <CardContent className="p-2">
-          <div className="h-[600px] border rounded-lg" ref={reactFlowWrapper}>
+          <div className="h-[700px] border rounded-lg" ref={reactFlowWrapper}>
             <ReactFlow
               nodes={nodes}
               edges={edges}
@@ -387,13 +390,13 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
       </Card>
 
       <Card className="bg-blue-50 border-blue-200">
-        <CardHeader>
-          <CardTitle className="text-blue-800 flex items-center gap-2">
-            <Cable className="h-5 w-5" />
+        <CardHeader className="pb-2">
+          <CardTitle className="text-blue-800 flex items-center gap-2 text-base">
+            <Cable className="h-4 w-4" />
             Cable Connection Guide
           </CardTitle>
         </CardHeader>
-        <CardContent className="text-sm text-blue-700 space-y-2">
+        <CardContent className="text-xs text-blue-700 space-y-1 pt-0">
           <p><strong>300ft Reels:</strong> Connect from Main Box → Y Adapter → Well + 100ft Cable → Second Well</p>
           <p><strong>200ft Cables:</strong> Connect directly Main Box → Well (rare: add Y Adapter + 100ft for 2 wells)</p>
           <p><strong>100ft Cables:</strong> Always connect through Y Adapter to reach additional wells</p>

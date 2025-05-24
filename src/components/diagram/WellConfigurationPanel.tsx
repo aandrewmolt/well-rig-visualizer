@@ -8,7 +8,7 @@ import { Gauge } from 'lucide-react';
 import { Node } from '@xyflow/react';
 
 interface NodeData {
-  label: string;
+  label?: string;
   color?: string;
   wellNumber?: number;
 }
@@ -84,50 +84,53 @@ const WellConfigurationPanel: React.FC<WellConfigurationPanelProps> = ({
             </div>
           )}
           
-          {wellNodes.map((wellNode) => (
-            <div key={wellNode.id} className="flex items-center gap-2 p-2 border rounded">
-              <div className="flex-1">
-                <Label htmlFor={`well-name-${wellNode.id}`} className="text-xs">Well Name</Label>
-                <Input
-                  id={`well-name-${wellNode.id}`}
-                  value={(wellNode.data as NodeData).label || ''}
-                  onChange={(e) => updateWellName(wellNode.id, e.target.value)}
-                  className="h-7 text-sm"
-                />
+          {wellNodes.map((wellNode) => {
+            const nodeData = wellNode.data as NodeData;
+            return (
+              <div key={wellNode.id} className="flex items-center gap-2 p-2 border rounded">
+                <div className="flex-1">
+                  <Label htmlFor={`well-name-${wellNode.id}`} className="text-xs">Well Name</Label>
+                  <Input
+                    id={`well-name-${wellNode.id}`}
+                    value={nodeData.label || ''}
+                    onChange={(e) => updateWellName(wellNode.id, e.target.value)}
+                    className="h-7 text-sm"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor={`well-color-${wellNode.id}`} className="text-xs">Color</Label>
+                  <Select
+                    value={nodeData.color || '#3b82f6'}
+                    onValueChange={(color) => updateWellColor(wellNode.id, color)}
+                  >
+                    <SelectTrigger id={`well-color-${wellNode.id}`} className="w-20 h-7">
+                      <div 
+                        className="w-3 h-3 rounded" 
+                        style={{ backgroundColor: nodeData.color || '#3b82f6' }}
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="#3b82f6">Blue</SelectItem>
+                      <SelectItem value="#ef4444">Red</SelectItem>
+                      <SelectItem value="#10b981">Green</SelectItem>
+                      <SelectItem value="#f59e0b">Orange</SelectItem>
+                      <SelectItem value="#8b5cf6">Purple</SelectItem>
+                      <SelectItem value="#06b6d4">Cyan</SelectItem>
+                      <SelectItem value="#eab308">Yellow</SelectItem>
+                      <SelectItem value="#ffffff">White</SelectItem>
+                      <SelectItem value="#000000">Black</SelectItem>
+                      <SelectItem value="#6b7280">Grey</SelectItem>
+                      <SelectItem value="#84cc16">Lime</SelectItem>
+                      <SelectItem value="#ec4899">Pink</SelectItem>
+                      <SelectItem value="#f97316">Dark Orange</SelectItem>
+                      <SelectItem value="#14b8a6">Teal</SelectItem>
+                      <SelectItem value="#a855f7">Violet</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-              <div>
-                <Label htmlFor={`well-color-${wellNode.id}`} className="text-xs">Color</Label>
-                <Select
-                  value={(wellNode.data as NodeData).color || '#3b82f6'}
-                  onValueChange={(color) => updateWellColor(wellNode.id, color)}
-                >
-                  <SelectTrigger id={`well-color-${wellNode.id}`} className="w-20 h-7">
-                    <div 
-                      className="w-3 h-3 rounded" 
-                      style={{ backgroundColor: (wellNode.data as NodeData).color || '#3b82f6' }}
-                    />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="#3b82f6">Blue</SelectItem>
-                    <SelectItem value="#ef4444">Red</SelectItem>
-                    <SelectItem value="#10b981">Green</SelectItem>
-                    <SelectItem value="#f59e0b">Orange</SelectItem>
-                    <SelectItem value="#8b5cf6">Purple</SelectItem>
-                    <SelectItem value="#06b6d4">Cyan</SelectItem>
-                    <SelectItem value="#eab308">Yellow</SelectItem>
-                    <SelectItem value="#ffffff">White</SelectItem>
-                    <SelectItem value="#000000">Black</SelectItem>
-                    <SelectItem value="#6b7280">Grey</SelectItem>
-                    <SelectItem value="#84cc16">Lime</SelectItem>
-                    <SelectItem value="#ec4899">Pink</SelectItem>
-                    <SelectItem value="#f97316">Dark Orange</SelectItem>
-                    <SelectItem value="#14b8a6">Teal</SelectItem>
-                    <SelectItem value="#a855f7">Violet</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </CardContent>
     </Card>

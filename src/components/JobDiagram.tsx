@@ -16,6 +16,12 @@ import WellConfigurationPanel from './diagram/WellConfigurationPanel';
 import DiagramCanvas from './diagram/DiagramCanvas';
 import ConnectionGuide from './diagram/ConnectionGuide';
 
+interface NodeData {
+  label?: string;
+  color?: string;
+  wellNumber?: number;
+}
+
 interface Job {
   id: string;
   name: string;
@@ -160,8 +166,10 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
 
   // Initialize the diagram only once when component mounts
   React.useEffect(() => {
-    initializeJob();
-  }, [initializeJob]);
+    if (!isInitialized) {
+      initializeJob();
+    }
+  }, [initializeJob, isInitialized]);
 
   const onConnect = useCallback(
     (params: Connection) => {
@@ -268,7 +276,9 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
 
   const clearDiagram = () => {
     setIsInitialized(false);
-    initializeJob();
+    setTimeout(() => {
+      initializeJob();
+    }, 0);
     toast.success('Diagram cleared!');
   };
 

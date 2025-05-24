@@ -9,7 +9,9 @@ import { Route, Square, Download, Monitor } from 'lucide-react';
 import { Node } from '@xyflow/react';
 
 interface NodeData {
-  label: string;
+  label?: string;
+  color?: string;
+  wellNumber?: number;
 }
 
 interface CableConfigurationPanelProps {
@@ -107,20 +109,23 @@ const CableConfigurationPanel: React.FC<CableConfigurationPanelProps> = ({
             />
           </div>
 
-          {companyComputerNodes.map((computerNode, index) => (
-            <div key={computerNode.id}>
-              <Label htmlFor={`computer-name-${computerNode.id}`} className="text-sm">
-                Company Computer {companyComputerNodes.length > 1 ? index + 1 : ''}
-              </Label>
-              <Input
-                id={`computer-name-${computerNode.id}`}
-                value={(computerNode.data as NodeData).label || ''}
-                onChange={(e) => updateCompanyComputerName(computerNode.id, e.target.value)}
-                placeholder="Company Computer"
-                className="h-8"
-              />
-            </div>
-          ))}
+          {companyComputerNodes.map((computerNode, index) => {
+            const nodeData = computerNode.data as NodeData;
+            return (
+              <div key={computerNode.id}>
+                <Label htmlFor={`computer-name-${computerNode.id}`} className="text-sm">
+                  Company Computer {companyComputerNodes.length > 1 ? index + 1 : ''}
+                </Label>
+                <Input
+                  id={`computer-name-${computerNode.id}`}
+                  value={nodeData.label || ''}
+                  onChange={(e) => updateCompanyComputerName(computerNode.id, e.target.value)}
+                  placeholder="Company Computer"
+                  className="h-8"
+                />
+              </div>
+            );
+          })}
           
           <div>
             <Label htmlFor="satellite-name" className="text-sm">Satellite Name</Label>

@@ -4,14 +4,23 @@ import { Handle, Position } from '@xyflow/react';
 import { Circle } from 'lucide-react';
 
 const WellNode = ({ data }: { data: any }) => {
+  const backgroundColor = data.color || '#3b82f6';
+  const borderColor = data.color === '#3b82f6' ? '#2563eb' : data.color;
+  
   return (
-    <div className="bg-blue-600 text-white rounded-lg p-4 border-2 border-blue-400 min-w-[120px] text-center relative">
+    <div 
+      className="text-white rounded-lg p-4 border-2 min-w-[120px] text-center relative"
+      style={{ 
+        backgroundColor,
+        borderColor,
+      }}
+    >
       <Handle
         type="target"
         position={Position.Left}
         style={{
           left: -8,
-          backgroundColor: '#1e40af',
+          backgroundColor: borderColor,
           border: '2px solid white',
           width: 12,
           height: 12,
@@ -22,7 +31,7 @@ const WellNode = ({ data }: { data: any }) => {
         <Circle className="h-6 w-6" />
         <div>
           <h3 className="font-bold">{data.label}</h3>
-          <p className="text-xs text-blue-100">Well #{data.wellNumber}</p>
+          <p className="text-xs opacity-80">Well #{data.wellNumber}</p>
         </div>
       </div>
     </div>

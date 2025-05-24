@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { BaseEdge, getBezierPath, EdgeLabelRenderer } from '@xyflow/react';
+import { BaseEdge, getBezierPath, EdgeLabelRenderer, useReactFlow } from '@xyflow/react';
 
 const CableEdge = ({
   id,
@@ -13,7 +13,10 @@ const CableEdge = ({
   style = {},
   data,
   markerEnd,
+  selected,
 }: any) => {
+  const { setEdges } = useReactFlow();
+  
   const [edgePath, labelX, labelY] = getBezierPath({
     sourceX,
     sourceY,
@@ -32,6 +35,10 @@ const CableEdge = ({
     }
   };
 
+  const handleDelete = () => {
+    setEdges((edges) => edges.filter((edge) => edge.id !== id));
+  };
+
   return (
     <>
       <BaseEdge 
@@ -40,7 +47,7 @@ const CableEdge = ({
         style={{
           ...style,
           stroke: getCableColor(data?.cableType),
-          strokeWidth: 4,
+          strokeWidth: selected ? 6 : 4,
         }} 
       />
       <EdgeLabelRenderer>
@@ -55,10 +62,22 @@ const CableEdge = ({
             fontWeight: 'bold',
             border: `2px solid ${getCableColor(data?.cableType)}`,
             color: getCableColor(data?.cableType),
+            pointerEvents: 'all',
           }}
           className="nodrag nopan"
         >
-          {data?.label || 'Cable'}
+          <div className="flex items-center gap-2">
+            {data?.label || 'Cable'}
+            {selected && (
+              <button
+                onClick={handleDelete}
+                className="text-red-500 hover:text-red-700 font-bold text-sm"
+                title="Delete connection"
+              >
+                ×
+              </button>
+            )}
+          </div>
         </div>
       </EdgeLabelRenderer>
     </>

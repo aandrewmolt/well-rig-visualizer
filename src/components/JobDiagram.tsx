@@ -15,21 +15,26 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 import html2canvas from 'html2canvas';
-import { Cable, Route, Download, Square } from 'lucide-react';
+import { Cable, Route, Download, Square, Monitor, Satellite } from 'lucide-react';
 import MainBoxNode from './nodes/MainBoxNode';
 import WellNode from './nodes/WellNode';
 import YAdapterNode from './nodes/YAdapterNode';
+import CompanyComputerNode from './nodes/CompanyComputerNode';
+import SatelliteNode from './nodes/SatelliteNode';
 import CableEdge from './edges/CableEdge';
 
 const nodeTypes = {
   mainBox: MainBoxNode,
   well: WellNode,
   yAdapter: YAdapterNode,
+  companyComputer: CompanyComputerNode,
+  satellite: SatelliteNode,
 };
 
 const edgeTypes = {
@@ -53,6 +58,9 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [selectedCableType, setSelectedCableType] = useState<'100ft' | '200ft' | '300ft'>('200ft');
   const [nodeIdCounter, setNodeIdCounter] = useState(0);
+  const [mainBoxName, setMainBoxName] = useState('SS001');
+  const [companyComputerName, setCompanyComputerName] = useState('Company Computer');
+  const [satelliteName, setSatelliteName] = useState('Starlink');
 
   const initializeJob = useCallback(() => {
     const initialNodes: Node[] = [];
@@ -62,10 +70,30 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
       id: 'main-box',
       type: 'mainBox',
       position: { x: 50, y: 100 },
-      data: { label: 'Main Box' },
+      data: { label: mainBoxName },
       draggable: false,
     };
     initialNodes.push(mainBoxNode);
+
+    // Create company computer node
+    const companyComputerNode: Node = {
+      id: 'company-computer',
+      type: 'companyComputer',
+      position: { x: 50, y: 300 },
+      data: { label: companyComputerName },
+      draggable: true,
+    };
+    initialNodes.push(companyComputerNode);
+
+    // Create satellite node
+    const satelliteNode: Node = {
+      id: 'satellite',
+      type: 'satellite',
+      position: { x: 50, y: 500 },
+      data: { label: satelliteName },
+      draggable: true,
+    };
+    initialNodes.push(satelliteNode);
 
     // Create well nodes in a grid layout
     const wellsPerRow = Math.ceil(job.wellCount / 2);
@@ -81,7 +109,8 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
         },
         data: { 
           label: `Well ${i + 1}`,
-          wellNumber: i + 1
+          wellNumber: i + 1,
+          color: '#3b82f6'
         },
       };
       initialNodes.push(wellNode);
@@ -89,10 +118,10 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
 
     setNodes(initialNodes);
     setEdges([]);
-    setNodeIdCounter(job.wellCount + 1);
-  }, [job, setNodes, setEdges]);
+    setNodeIdCounter(job.wellCount + 3);
+  }, [job, setNodes, setEdges, mainBoxName, companyComputerName, satelliteName]);
 
-  // Initialize the diagram when component mounts
+  // Initialize the diagram when component mounts or names change
   React.useEffect(() => {
     initializeJob();
   }, [initializeJob]);
@@ -101,6 +130,7 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
     (params: Connection) => {
       const edge: Edge = {
         ...params,
+        id: `edge-${Date.now()}`,
         type: 'cable',
         data: { 
           cableType: selectedCableType,
@@ -131,6 +161,26 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
     toast.success('Y Adapter added!');
   };
 
+  const updateWellName = (wellId: string, newName: string) => {
+    setNodes((nds) => 
+      nds.map((node) => 
+        node.id === wellId 
+          ? { ...node, data: { ...node.data, label: newName } }
+          : node
+      )
+    );
+  };
+
+  const updateWellColor = (wellId: string, newColor: string) => {
+    setNodes((nds) => 
+      nds.map((node) => 
+        node.id === wellId 
+          ? { ...node, data: { ...node.data, color: newColor } }
+          : node
+      )
+    );
+  };
+
   const clearDiagram = () => {
     initializeJob();
     toast.success('Diagram cleared!');
@@ -157,6 +207,8 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
     }
   };
 
+  const wellNodes = nodes.filter(node => node.type === 'well');
+
   return (
     <div className="space-y-6">
       <Card className="bg-white shadow-lg">
@@ -167,7 +219,7 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end mb-4">
             <div>
               <Label htmlFor="cable-type">Cable Type</Label>
               <Select value={selectedCableType} onValueChange={(value: any) => setSelectedCableType(value)}>
@@ -196,8 +248,87 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
               Save Diagram
             </Button>
           </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <Label htmlFor="main-box-name">Main Box Name</Label>
+              <Input
+                id="main-box-name"
+                value={mainBoxName}
+                onChange={(e) => setMainBoxName(e.target.value)}
+                placeholder="SS001"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="computer-name">Company Computer</Label>
+              <Input
+                id="computer-name"
+                value={companyComputerName}
+                onChange={(e) => setCompanyComputerName(e.target.value)}
+                placeholder="Company Computer"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="satellite-name">Satellite Name</Label>
+              <Input
+                id="satellite-name"
+                value={satelliteName}
+                onChange={(e) => setSatelliteName(e.target.value)}
+                placeholder="Starlink"
+              />
+            </div>
+          </div>
         </CardContent>
       </Card>
+
+      {wellNodes.length > 0 && (
+        <Card className="bg-white shadow-lg">
+          <CardHeader>
+            <CardTitle>Well Configuration</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {wellNodes.map((wellNode) => (
+                <div key={wellNode.id} className="flex items-center gap-2 p-2 border rounded">
+                  <div className="flex-1">
+                    <Label htmlFor={`well-name-${wellNode.id}`}>Well Name</Label>
+                    <Input
+                      id={`well-name-${wellNode.id}`}
+                      value={wellNode.data.label}
+                      onChange={(e) => updateWellName(wellNode.id, e.target.value)}
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor={`well-color-${wellNode.id}`}>Color</Label>
+                    <Select
+                      value={wellNode.data.color}
+                      onValueChange={(color) => updateWellColor(wellNode.id, color)}
+                    >
+                      <SelectTrigger id={`well-color-${wellNode.id}`} className="w-24 mt-1">
+                        <div 
+                          className="w-4 h-4 rounded" 
+                          style={{ backgroundColor: wellNode.data.color }}
+                        />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="#3b82f6">Blue</SelectItem>
+                        <SelectItem value="#ef4444">Red</SelectItem>
+                        <SelectItem value="#10b981">Green</SelectItem>
+                        <SelectItem value="#f59e0b">Orange</SelectItem>
+                        <SelectItem value="#8b5cf6">Purple</SelectItem>
+                        <SelectItem value="#06b6d4">Cyan</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card className="bg-white shadow-lg">
         <CardContent className="p-2">
@@ -242,6 +373,7 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
           <p><strong>200ft Cables:</strong> Connect directly Main Box → Well (rare: add Y Adapter + 100ft for 2 wells)</p>
           <p><strong>100ft Cables:</strong> Always connect through Y Adapter to reach additional wells</p>
           <p><strong>COM Ports:</strong> P1(COM1,2) | P2(COM3,4) | P3(COM5,6) | P4(COM7,8)</p>
+          <p><strong>Delete Connections:</strong> Select any cable connection and press Delete key</p>
         </CardContent>
       </Card>
     </div>

@@ -1,0 +1,119 @@
+
+import { Node, Edge } from '@xyflow/react';
+import { useInventoryData } from '@/hooks/useInventoryData';
+import { toast } from 'sonner';
+
+interface EdgeData {
+  connectionType?: 'cable' | 'direct';
+  cableTypeId?: string;
+  label?: string;
+}
+
+export interface DetailedEquipmentUsage {
+  cables: {
+    [typeId: string]: {
+      typeName: string;
+      quantity: number;
+      category: string;
+      length: string;
+      version?: string;
+    };
+  };
+  gauges: number;
+  adapters: number;
+  computers: number;
+  satellite: number;
+  directConnections: number;
+  totalConnections: number;
+}
+
+export const useEquipmentUsageAnalyzer = (nodes: Node[], edges: Edge[]) => {
+  const { data } = useInventoryData();
+
+  const analyzeEquipmentUsage = (): DetailedEquipmentUsage => {
+    const usage: DetailedEquipmentUsage = {
+      cables: {},
+      gauges: 0,
+      adapters: 0,
+      computers: 0,
+      satellite: 0,
+      directConnections: 0,
+      totalConnections: 0,
+    };
+
+    // Analyze each edge for cable usage
+    edges.forEach(edge => {
+      usage.totalConnections++;
+
+      const edgeData = edge.data as EdgeData;
+
+      if (edgeData?.connectionType === 'direct') {
+        usage.directConnections++;
+      } else if (edgeData?.connectionType === 'cable' && typeof edgeData.cableTypeId === 'string') {
+        const cableTypeId = edgeData.cableTypeId;
+        const equipmentType = data.equipmentTypes.find(type => type.id === cableTypeId);
+        
+        if (equipmentType) {
+          if (!usage.cables[cableTypeId]) {
+            // Enhanced cable characteristic detection
+            const name = equipmentType.name.toLowerCase();
+            let length = '200ft'; // default
+            let category = 'cable';
+            let version = undefined;
+            
+            if (name.includes('100ft')) length = '100ft';
+            else if (name.includes('200ft')) length = '200ft';
+            else if (name.includes('300ft')) {
+              length = '300ft';
+              // Determine version for 300ft cables
+              if (name.includes('old') || name.includes('legacy')) {
+                version = 'old (Y adapter only)';
+              } else if (name.includes('new') || name.includes('direct')) {
+                version = 'new (direct to wells)';
+              }
+            }
+            
+            if (name.includes('reel')) category = 'reel';
+
+            usage.cables[cableTypeId] = {
+              typeName: equipmentType.name,
+              quantity: 0,
+              category,
+              length,
+              version,
+            };
+          }
+          usage.cables[cableTypeId].quantity++;
+        } else {
+          console.warn(`Cable type ${cableTypeId} not found in equipment types`);
+          toast.error(`Unknown cable type detected: ${cableTypeId}`);
+        }
+      }
+    });
+
+    // Analyze nodes for equipment usage
+    nodes.forEach(node => {
+      switch (node.type) {
+        case 'well':
+        case 'wellsideGauge':
+          usage.gauges++;
+          break;
+        case 'yAdapter':
+          usage.adapters++;
+          break;
+        case 'companyComputer':
+          usage.computers++;
+          break;
+        case 'satellite':
+          usage.satellite++;
+          break;
+      }
+    });
+
+    return usage;
+  };
+
+  return {
+    analyzeEquipmentUsage,
+  };
+};

@@ -1,4 +1,3 @@
-
 import { useCallback } from 'react';
 import { Node } from '@xyflow/react';
 
@@ -26,13 +25,13 @@ export const useDiagramInitialization = (
     
     const initialNodes: Node[] = [];
     
-    // Create main box node (ShearStream Box)
+    // Create main box node (ShearStream Box) - now draggable
     const mainBoxNode: Node = {
       id: 'main-box',
       type: 'mainBox',
       position: { x: 50, y: 100 },
       data: { label: mainBoxName },
-      draggable: false,
+      draggable: true, // Make first SS box draggable too
     };
     initialNodes.push(mainBoxNode);
 

@@ -39,18 +39,22 @@ export const useDiagramActions = (
       const existingBoxes = nds.filter(node => node.type === 'mainBox');
       const newBoxNumber = existingBoxes.length + 1;
       
+      // Grid layout: 2 columns, horizontal spacing of 300px, vertical spacing of 250px
+      const column = (existingBoxes.length) % 2;
+      const row = Math.floor(existingBoxes.length / 2);
+      
       const newBox: Node = {
         id: `main-box-${newBoxNumber}`,
         type: 'mainBox',
         position: { 
-          x: 50, 
-          y: 100 + (existingBoxes.length * 200) // Stack boxes vertically
+          x: 50 + (column * 300), // Horizontal spacing: first box at 50, second at 350, etc.
+          y: 100 + (row * 250) // Vertical spacing: stack rows with 250px spacing
         },
         data: { 
-          label: `ShearStream Box ${newBoxNumber}`,
+          label: `ShearStream Box ${newBoxNumber}`, // Placeholder label until equipment is assigned
           boxNumber: newBoxNumber
         },
-        draggable: false,
+        draggable: true, // Make boxes draggable
       };
       
       setNodeIdCounter(nodeIdCounter + 1);

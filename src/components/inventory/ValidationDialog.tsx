@@ -6,8 +6,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { AlertTriangle, CheckCircle, XCircle, Info, Wrench } from 'lucide-react';
+import { AlertTriangle, CheckCircle, XCircle, Info, Wrench, Shield } from 'lucide-react';
 import { useEquipmentValidation } from '@/hooks/useEquipmentValidation';
+import { useDataConsistencyFixer } from '@/hooks/inventory/useDataConsistencyFixer';
 
 interface ValidationDialogProps {
   isOpen: boolean;
@@ -21,6 +22,7 @@ const ValidationDialog: React.FC<ValidationDialogProps> = ({
   onAutoFix
 }) => {
   const { runFullValidation, lastValidation, isValidating, autoFixIssues } = useEquipmentValidation();
+  const { fixDataConsistency, validateDataConsistency } = useDataConsistencyFixer();
 
   const handleRunValidation = async () => {
     await runFullValidation();
@@ -34,6 +36,14 @@ const ValidationDialog: React.FC<ValidationDialogProps> = ({
       await autoFixIssues(autoFixableIssues);
       onAutoFix?.(autoFixableIssues);
     }
+  };
+
+  const handleFixDataConsistency = async () => {
+    await fixDataConsistency();
+    // Re-run validation after fixing
+    setTimeout(() => {
+      runFullValidation();
+    }, 500);
   };
 
   const getSeverityIcon = (severity: string) => {
@@ -74,7 +84,7 @@ const ValidationDialog: React.FC<ValidationDialogProps> = ({
 
         <div className="space-y-4">
           {/* Validation Controls */}
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <Button 
               onClick={handleRunValidation}
               disabled={isValidating}
@@ -82,6 +92,15 @@ const ValidationDialog: React.FC<ValidationDialogProps> = ({
             >
               <CheckCircle className="h-4 w-4" />
               {isValidating ? 'Validating...' : 'Run Validation'}
+            </Button>
+            
+            <Button 
+              onClick={handleFixDataConsistency}
+              disabled={isValidating}
+              className="flex items-center gap-2 bg-green-600 hover:bg-green-700"
+            >
+              <Shield className="h-4 w-4" />
+              Fix Data Consistency
             </Button>
             
             {lastValidation?.summary.autoFixableIssues > 0 && (

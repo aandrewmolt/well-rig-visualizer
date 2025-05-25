@@ -41,7 +41,7 @@ export const useInventoryData = () => {
     const initializeData = () => {
       const storedData = loadFromLocalStorage();
       if (storedData) {
-        // Only run cleanup once during initialization
+        // Enhanced cleanup and validation on initialization
         const cleanedItems = cleanupDuplicateDeployments(storedData.equipmentItems);
         const enhancedItems = ensureMinimumInventory(cleanedItems);
         
@@ -50,12 +50,13 @@ export const useInventoryData = () => {
           const updatedData = { ...storedData, equipmentItems: enhancedItems };
           setData(updatedData);
           saveToLocalStorage(updatedData);
+          console.log('Applied data consistency fixes during initialization');
         } else {
           setData(storedData);
         }
         setSyncStatus('synced');
       } else {
-        // Initialize with default inventory
+        // Initialize with default inventory (now properly separated)
         const initialData = {
           equipmentTypes: DEFAULT_EQUIPMENT_TYPES,
           storageLocations: DEFAULT_STORAGE_LOCATIONS,
@@ -76,7 +77,7 @@ export const useInventoryData = () => {
     const defaultData = resetToDefaultInventory();
     setData(defaultData);
     saveToLocalStorage(defaultData);
-    toast.success('Inventory reset to default with 25 pieces of each equipment at Midland Office');
+    toast.success('Inventory reset to default with proper individual/bulk tracking separation');
   };
 
   const handleSyncData = async () => {

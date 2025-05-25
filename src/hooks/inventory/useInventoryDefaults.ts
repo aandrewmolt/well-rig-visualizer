@@ -1,3 +1,4 @@
+
 import { useMemo } from 'react';
 import { EquipmentType, StorageLocation, EquipmentItem } from '@/types/inventory';
 
@@ -29,14 +30,17 @@ export const useInventoryDefaults = () => {
   const DEFAULT_STORAGE_LOCATIONS = useMemo(() => STORAGE_LOCATIONS, []);
 
   const createDefaultInventory = useMemo(() => (): EquipmentItem[] => {
-    return DEFAULT_EQUIPMENT_TYPES.map(type => ({
-      id: `item-${type.id}`,
-      typeId: type.id,
-      locationId: '1', // Midland Office
-      quantity: 25, // Increased default quantity for better availability
-      status: 'available' as const,
-      lastUpdated: new Date(),
-    }));
+    // Only create bulk quantities for equipment types that DON'T require individual tracking
+    return DEFAULT_EQUIPMENT_TYPES
+      .filter(type => !type.requiresIndividualTracking)
+      .map(type => ({
+        id: `item-${type.id}`,
+        typeId: type.id,
+        locationId: '1', // Midland Office
+        quantity: 25,
+        status: 'available' as const,
+        lastUpdated: new Date(),
+      }));
   }, [DEFAULT_EQUIPMENT_TYPES]);
 
   const resetToDefaultInventory = useMemo(() => () => {

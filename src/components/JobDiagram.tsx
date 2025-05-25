@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useCallback } from 'react';
 import {
   useNodesState,
@@ -11,12 +10,13 @@ import JobEquipmentPanel from './diagram/JobEquipmentPanel';
 import DiagramCanvas from './diagram/DiagramCanvas';
 import ConnectionGuide from './diagram/ConnectionGuide';
 import { useJobPersistence } from '@/hooks/useJobPersistence';
-import { useEquipmentTracking } from '@/hooks/useEquipmentTracking';
+import { useEnhancedEquipmentTracking } from '@/hooks/useEnhancedEquipmentTracking';
 import { useDiagramState } from '@/hooks/useDiagramState';
 import { useDiagramInitialization } from '@/hooks/useDiagramInitialization';
 import { useDiagramConnections } from '@/hooks/useDiagramConnections';
 import { useDiagramActions } from '@/hooks/useDiagramActions';
 import { useDebouncedSave } from '@/hooks/useDebouncedSave';
+import { useJobStorage } from '@/hooks/useJobStorage';
 
 interface Job {
   id: string;
@@ -34,6 +34,7 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const { updateJob } = useJobStorage();
 
   const {
     selectedCableType,
@@ -60,13 +61,12 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
   const { jobData, saveJobData } = useJobPersistence(job.id);
   
   const { 
-    usage, 
-    extrasOnLocation,
+    calculateEquipmentUsage,
     autoAllocateEquipment,
-    addExtraEquipment,
-    removeExtraEquipment,
-    transferEquipment 
-  } = useEquipmentTracking(job.id, nodes, edges);
+    returnEquipmentToLocation,
+    isAutoSyncEnabled,
+    setIsAutoSyncEnabled,
+  } = useEnhancedEquipmentTracking(job.id, nodes, edges);
 
   const { initializeJob } = useDiagramInitialization(
     job,
@@ -105,7 +105,6 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
   const calculateNodeIdCounter = (nodeList: any[]) => {
     let maxId = 0;
     nodeList.forEach(node => {
-      // Extract numeric parts from node IDs
       const matches = node.id.match(/\d+/g);
       if (matches) {
         const numbers = matches.map(Number);
@@ -133,14 +132,7 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
   // Save function with comprehensive data
   const performSave = useCallback(() => {
     if (isInitialized && (nodes.length > 0 || edges.length > 0)) {
-      console.log('Saving comprehensive job data:', {
-        nodes: nodes.length,
-        edges: edges.length,
-        mainBoxName,
-        satelliteName,
-        wellsideGaugeName,
-        companyComputerNames
-      });
+      console.log('Saving comprehensive job data with equipment tracking');
       
       saveJobData({
         name: job.name,
@@ -153,6 +145,12 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
         wellsideGaugeName,
         companyComputerNames,
       });
+
+      // Update job status to indicate equipment allocation
+      updateJob(job.id, { 
+        equipmentAllocated: true,
+        lastUpdated: new Date() 
+      });
     }
   }, [
     nodes, 
@@ -163,7 +161,8 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
     companyComputerNames, 
     isInitialized, 
     saveJobData, 
-    job
+    job,
+    updateJob
   ]);
 
   // Debounced save to prevent excessive saves
@@ -223,6 +222,7 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
   const wellNodes = nodes.filter(node => node.type === 'well');
   const wellsideGaugeNode = nodes.find(node => node.type === 'wellsideGauge');
   const companyComputerNodes = nodes.filter(node => node.type === 'companyComputer');
+  const equipmentUsage = calculateEquipmentUsage();
 
   return (
     <div className="max-w-7xl mx-auto space-y-2">
@@ -258,11 +258,13 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
         <JobEquipmentPanel
           jobId={job.id}
           jobName={job.name}
-          equipmentUsage={usage}
-          extrasOnLocation={extrasOnLocation}
+          equipmentUsage={equipmentUsage}
+          extrasOnLocation={[]}
           onAutoAllocate={autoAllocateEquipment}
-          onAddExtra={addExtraEquipment}
-          onRemoveExtra={removeExtraEquipment}
+          onAddExtra={() => {}}
+          onRemoveExtra={() => {}}
+          isAutoSyncEnabled={isAutoSyncEnabled}
+          onToggleAutoSync={setIsAutoSyncEnabled}
         />
       </div>
 

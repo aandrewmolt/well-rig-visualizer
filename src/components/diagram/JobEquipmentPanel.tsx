@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Package, MapPin, Activity, AlertCircle, RefreshCw } from 'lucide-react';
+import { Package, MapPin, Activity, AlertCircle, RefreshCw, Settings } from 'lucide-react';
 import { useInventoryData } from '@/hooks/useInventoryData';
 import ExtrasOnLocationPanel from './ExtrasOnLocationPanel';
 import { toast } from 'sonner';
@@ -31,6 +30,8 @@ interface JobEquipmentPanelProps {
   onAutoAllocate?: (locationId: string) => void;
   onAddExtra?: (equipmentTypeId: string, quantity: number, reason: string, notes?: string) => void;
   onRemoveExtra?: (extraId: string) => void;
+  isAutoSyncEnabled?: boolean;
+  onToggleAutoSync?: (enabled: boolean) => void;
 }
 
 const JobEquipmentPanel: React.FC<JobEquipmentPanelProps> = ({ 
@@ -40,11 +41,12 @@ const JobEquipmentPanel: React.FC<JobEquipmentPanelProps> = ({
   extrasOnLocation = [],
   onAutoAllocate,
   onAddExtra,
-  onRemoveExtra
+  onRemoveExtra,
+  isAutoSyncEnabled = true,
+  onToggleAutoSync
 }) => {
   const { data } = useInventoryData();
   const [selectedLocation, setSelectedLocation] = useState<string>(data.storageLocations[0]?.id || '');
-  const [autoAllocationEnabled, setAutoAllocationEnabled] = useState(true);
 
   const getEquipmentTypeName = (typeId: string) => {
     return data.equipmentTypes.find(type => type.id === typeId)?.name || 'Unknown';
@@ -74,7 +76,6 @@ const JobEquipmentPanel: React.FC<JobEquipmentPanelProps> = ({
       '300ft': '4',
     };
 
-    // Check cables
     Object.entries(equipmentUsage.cables).forEach(([cableType, needed]) => {
       const typeId = typeMapping[cableType];
       if (typeId) {
@@ -85,7 +86,6 @@ const JobEquipmentPanel: React.FC<JobEquipmentPanelProps> = ({
       }
     });
 
-    // Check other equipment
     if (equipmentUsage.gauges > 0) {
       const available = getAvailableQuantity('7', selectedLocation);
       if (available < equipmentUsage.gauges) {
@@ -117,12 +117,11 @@ const JobEquipmentPanel: React.FC<JobEquipmentPanelProps> = ({
     return { hasIssues: issues.length > 0, issues };
   };
 
-  // Auto-allocate when location changes and auto-allocation is enabled
   useEffect(() => {
-    if (autoAllocationEnabled && selectedLocation && onAutoAllocate) {
+    if (isAutoSyncEnabled && selectedLocation && onAutoAllocate) {
       onAutoAllocate(selectedLocation);
     }
-  }, [selectedLocation, autoAllocationEnabled, onAutoAllocate]);
+  }, [selectedLocation, isAutoSyncEnabled, onAutoAllocate]);
 
   const deployedEquipment = getDeployedEquipment();
   const availability = checkEquipmentAvailability();
@@ -137,23 +136,31 @@ const JobEquipmentPanel: React.FC<JobEquipmentPanelProps> = ({
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Auto-Allocation Toggle */}
+          {/* Enhanced Auto-Sync Controls */}
           <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
             <div className="flex items-center gap-2">
-              <Activity className="h-4 w-4 text-blue-600" />
-              <span className="text-sm font-medium">Auto-Allocation</span>
-              <Badge variant={autoAllocationEnabled ? 'default' : 'secondary'}>
-                {autoAllocationEnabled ? 'ON' : 'OFF'}
+              <Settings className="h-4 w-4 text-blue-600" />
+              <span className="text-sm font-medium">Real-time Equipment Sync</span>
+              <Badge variant={isAutoSyncEnabled ? 'default' : 'secondary'}>
+                {isAutoSyncEnabled ? 'ENABLED' : 'DISABLED'}
               </Badge>
             </div>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setAutoAllocationEnabled(!autoAllocationEnabled)}
-            >
-              {autoAllocationEnabled ? 'Disable' : 'Enable'}
-            </Button>
+            {onToggleAutoSync && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => onToggleAutoSync(!isAutoSyncEnabled)}
+              >
+                {isAutoSyncEnabled ? 'Disable' : 'Enable'}
+              </Button>
+            )}
           </div>
+
+          {isAutoSyncEnabled && (
+            <div className="text-xs text-blue-600 bg-blue-50 p-2 rounded">
+              🔄 Equipment automatically syncs when diagram changes
+            </div>
+          )}
 
           {/* Storage Location Selection */}
           <div>
@@ -168,6 +175,7 @@ const JobEquipmentPanel: React.FC<JobEquipmentPanelProps> = ({
                     <div className="flex items-center gap-2">
                       <MapPin className="h-4 w-4" />
                       {location.name}
+                      {location.isDefault && <Badge variant="outline" className="text-xs">Default</Badge>}
                     </div>
                   </SelectItem>
                 ))}
@@ -175,17 +183,28 @@ const JobEquipmentPanel: React.FC<JobEquipmentPanelProps> = ({
             </Select>
           </div>
 
-          {/* Equipment Availability Check */}
-          {availability.hasIssues && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+          {/* Equipment Availability Status */}
+          {availability.hasIssues ? (
+            <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg">
               <div className="flex items-center gap-2 mb-2">
-                <AlertCircle className="h-4 w-4 text-red-600" />
-                <span className="text-sm font-medium text-red-800">Equipment Shortage</span>
+                <AlertCircle className="h-4 w-4 text-orange-600" />
+                <span className="text-sm font-medium text-orange-800">
+                  Equipment Auto-Created
+                </span>
+              </div>
+              <div className="text-xs text-orange-700 mb-2">
+                Missing equipment was automatically created to fulfill job requirements:
               </div>
               <div className="space-y-1">
                 {availability.issues.map((issue, index) => (
-                  <div key={index} className="text-xs text-red-700">{issue}</div>
+                  <div key={index} className="text-xs text-orange-700">• {issue}</div>
                 ))}
+              </div>
+            </div>
+          ) : equipmentUsage && (
+            <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+              <div className="flex items-center gap-2 text-sm font-medium text-green-800">
+                ✅ All equipment available at selected location
               </div>
             </div>
           )}
@@ -195,7 +214,7 @@ const JobEquipmentPanel: React.FC<JobEquipmentPanelProps> = ({
             <div>
               <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
                 <Activity className="h-4 w-4" />
-                Required from Diagram
+                Equipment Required from Diagram
               </h4>
               <div className="space-y-2 p-3 bg-blue-50 rounded-lg">
                 {Object.entries(equipmentUsage.cables).map(([type, count]) => (
@@ -228,14 +247,14 @@ const JobEquipmentPanel: React.FC<JobEquipmentPanelProps> = ({
                     <Badge variant="secondary">{equipmentUsage.satellite}</Badge>
                   </div>
                 )}
-                {!autoAllocationEnabled && onAutoAllocate && selectedLocation && (
+                {!isAutoSyncEnabled && onAutoAllocate && selectedLocation && (
                   <Button
                     onClick={() => onAutoAllocate(selectedLocation)}
                     size="sm"
                     className="w-full mt-2"
                   >
                     <RefreshCw className="mr-2 h-3 w-3" />
-                    Manually Allocate Equipment
+                    Manually Sync Equipment
                   </Button>
                 )}
               </div>
@@ -244,7 +263,7 @@ const JobEquipmentPanel: React.FC<JobEquipmentPanelProps> = ({
 
           <Separator />
 
-          {/* Currently Deployed Equipment */}
+          {/* Currently Deployed Equipment with Enhanced Details */}
           <div>
             <h4 className="text-sm font-medium mb-2">Equipment Deployed to Job</h4>
             {deployedEquipment.length === 0 ? (
@@ -258,15 +277,19 @@ const JobEquipmentPanel: React.FC<JobEquipmentPanelProps> = ({
                         <span className="font-medium">{getEquipmentTypeName(item.typeId)}</span>
                         <Badge variant="outline">{item.quantity}x</Badge>
                         <Badge className="text-xs bg-green-100 text-green-800 border-green-300">
-                          Deployed
+                          Active
                         </Badge>
                       </div>
-                      <div className="text-xs text-gray-500">
-                        From: {getLocationName(item.locationId)}
+                      <div className="text-xs text-gray-500 space-y-1">
+                        <div>Source: {getLocationName(item.locationId)}</div>
+                        <div>Deployed: {new Date(item.lastUpdated).toLocaleDateString()}</div>
                       </div>
                     </div>
                   </div>
                 ))}
+                <div className="text-xs text-gray-500 mt-2 p-2 bg-gray-50 rounded">
+                  💡 Equipment is automatically returned when job is deleted
+                </div>
               </div>
             )}
           </div>

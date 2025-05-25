@@ -7,26 +7,26 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import JobDiagram from '@/components/JobDiagram';
+import JobDeletionDialog from '@/components/jobs/JobDeletionDialog';
 import { toast } from 'sonner';
-import { Plus, FileText, ArrowLeft } from 'lucide-react';
+import { Plus, FileText, ArrowLeft, Trash2, Calendar } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-
-interface Job {
-  id: string;
-  name: string;
-  wellCount: number;
-  hasWellsideGauge: boolean;
-  createdAt: Date;
-}
+import { useJobStorage, StoredJob } from '@/hooks/useJobStorage';
+import { useInventoryData } from '@/hooks/useInventoryData';
+import { useEnhancedEquipmentTracking } from '@/hooks/useEnhancedEquipmentTracking';
+import { Badge } from '@/components/ui/badge';
 
 const CableJobs = () => {
   const navigate = useNavigate();
-  const [jobs, setJobs] = useState<Job[]>([]);
-  const [selectedJob, setSelectedJob] = useState<Job | null>(null);
+  const { jobs, addJob, deleteJob } = useJobStorage();
+  const { data } = useInventoryData();
+  const [selectedJob, setSelectedJob] = useState<StoredJob | null>(null);
   const [newJobName, setNewJobName] = useState('');
   const [newJobWells, setNewJobWells] = useState(1);
   const [hasWellsideGauge, setHasWellsideGauge] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [jobToDelete, setJobToDelete] = useState<StoredJob | null>(null);
+  const [isDeletionDialogOpen, setIsDeletionDialogOpen] = useState(false);
 
   const createJob = () => {
     if (!newJobName.trim()) {
@@ -39,21 +39,66 @@ const CableJobs = () => {
       return;
     }
 
-    const newJob: Job = {
+    const newJob = addJob({
       id: Date.now().toString(),
       name: newJobName.trim(),
       wellCount: newJobWells,
       hasWellsideGauge,
-      createdAt: new Date()
-    };
+    });
 
-    setJobs(prev => [...prev, newJob]);
     setNewJobName('');
     setNewJobWells(1);
     setHasWellsideGauge(false);
     setIsDialogOpen(false);
     setSelectedJob(newJob);
     toast.success(`Job "${newJob.name}" created successfully!`);
+  };
+
+  const handleDeleteJob = (job: StoredJob) => {
+    setJobToDelete(job);
+    setIsDeletionDialogOpen(true);
+  };
+
+  const confirmDeleteJob = (returnLocationId: string) => {
+    if (!jobToDelete) return;
+
+    // Return equipment using enhanced tracking
+    const { returnEquipmentToLocation } = useEnhancedEquipmentTracking(
+      jobToDelete.id, 
+      [], 
+      []
+    );
+    
+    returnEquipmentToLocation(returnLocationId);
+    
+    // Delete job data from localStorage
+    try {
+      localStorage.removeItem(`job-${jobToDelete.id}`);
+    } catch (error) {
+      console.error('Failed to remove job data:', error);
+    }
+    
+    // Remove from jobs list
+    deleteJob(jobToDelete.id);
+    
+    toast.success(`Job "${jobToDelete.name}" deleted and equipment returned`);
+    setJobToDelete(null);
+    setIsDeletionDialogOpen(false);
+    
+    if (selectedJob?.id === jobToDelete.id) {
+      setSelectedJob(null);
+    }
+  };
+
+  const getDeployedEquipmentForJob = (jobId: string) => {
+    return data.equipmentItems
+      .filter(item => item.status === 'deployed' && item.jobId === jobId)
+      .map(item => ({
+        id: item.id,
+        typeId: item.typeId,
+        quantity: item.quantity,
+        typeName: data.equipmentTypes.find(type => type.id === item.typeId)?.name || 'Unknown',
+      }));
   };
 
   if (selectedJob) {
@@ -63,15 +108,31 @@ const CableJobs = () => {
           <div className="flex items-center justify-between mb-6">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">{selectedJob.name}</h1>
-              <p className="text-gray-600">Wells: {selectedJob.wellCount} {selectedJob.hasWellsideGauge && '| Wellside Gauge: Yes'}</p>
+              <p className="text-gray-600">
+                Wells: {selectedJob.wellCount} 
+                {selectedJob.hasWellsideGauge && ' | Wellside Gauge: Yes'}
+                <Badge variant="outline" className="ml-2">
+                  {selectedJob.status}
+                </Badge>
+              </p>
             </div>
-            <Button 
-              onClick={() => setSelectedJob(null)}
-              variant="outline"
-              className="bg-white"
-            >
-              Back to Jobs
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button 
+                onClick={() => handleDeleteJob(selectedJob)}
+                variant="outline"
+                className="bg-red-50 text-red-600 hover:bg-red-100"
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete Job
+              </Button>
+              <Button 
+                onClick={() => setSelectedJob(null)}
+                variant="outline"
+                className="bg-white"
+              >
+                Back to Jobs
+              </Button>
+            </div>
           </div>
           <JobDiagram job={selectedJob} />
         </div>
@@ -157,25 +218,70 @@ const CableJobs = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {jobs.map(job => (
-              <Card 
-                key={job.id} 
-                className="cursor-pointer hover:shadow-lg transition-shadow bg-white"
-                onClick={() => setSelectedJob(job)}
-              >
-                <CardHeader>
-                  <CardTitle className="text-lg">{job.name}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2 text-sm text-gray-600">
-                    <p>Wells: {job.wellCount}</p>
-                    {job.hasWellsideGauge && <p>Wellside Gauge: Yes</p>}
-                    <p>Created: {job.createdAt.toLocaleDateString()}</p>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+            {jobs.map(job => {
+              const deployedEquipment = getDeployedEquipmentForJob(job.id);
+              const hasEquipment = deployedEquipment.length > 0;
+              
+              return (
+                <Card 
+                  key={job.id} 
+                  className="cursor-pointer hover:shadow-lg transition-shadow bg-white"
+                  onClick={() => setSelectedJob(job)}
+                >
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-lg">{job.name}</CardTitle>
+                      <Button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteJob(job);
+                        }}
+                        variant="ghost"
+                        size="sm"
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2 text-sm text-gray-600">
+                      <p>Wells: {job.wellCount}</p>
+                      {job.hasWellsideGauge && <p>Wellside Gauge: Yes</p>}
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-3 w-3" />
+                        <span>Created: {job.createdAt.toLocaleDateString()}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant={job.status === 'active' ? 'default' : 'secondary'}>
+                          {job.status}
+                        </Badge>
+                        {hasEquipment && (
+                          <Badge variant="outline" className="text-green-600">
+                            Equipment Deployed
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
+        )}
+
+        {/* Job Deletion Dialog */}
+        {jobToDelete && (
+          <JobDeletionDialog
+            isOpen={isDeletionDialogOpen}
+            onClose={() => {
+              setIsDeletionDialogOpen(false);
+              setJobToDelete(null);
+            }}
+            onConfirm={confirmDeleteJob}
+            jobName={jobToDelete.name}
+            deployedEquipment={getDeployedEquipmentForJob(jobToDelete.id)}
+          />
         )}
       </div>
     </div>

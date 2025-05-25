@@ -62,8 +62,9 @@ const ConnectionEditorDialog: React.FC<ConnectionEditorDialogProps> = ({
     return [{ id: '', label: 'Input' }];
   };
 
-  const getNodeLabel = (node: Node) => {
-    return node?.data?.label || node?.id || 'Unknown';
+  const getNodeLabel = (node: Node | undefined): string => {
+    if (!node) return 'Unknown';
+    return node.data?.label || node.id || 'Unknown';
   };
 
   const handleSave = () => {
@@ -157,7 +158,7 @@ const ConnectionEditorDialog: React.FC<ConnectionEditorDialogProps> = ({
           )}
 
           <div className="text-sm text-gray-600">
-            <p>Current: {getNodeLabel(nodes.find(n => n.id === currentEdge.source)!)} → {getNodeLabel(nodes.find(n => n.id === currentEdge.target)!)}</p>
+            <p>Current: {getNodeLabel(nodes.find(n => n.id === currentEdge.source))} → {getNodeLabel(nodes.find(n => n.id === currentEdge.target))}</p>
             <p>Cable Type: {currentEdge.data?.cableType || 'Unknown'}</p>
           </div>
         </div>

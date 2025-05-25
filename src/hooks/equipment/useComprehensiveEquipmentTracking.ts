@@ -3,6 +3,12 @@ import { Node, Edge } from '@xyflow/react';
 import { useInventoryData } from '@/hooks/useInventoryData';
 import { toast } from 'sonner';
 
+interface EdgeData {
+  connectionType?: 'cable' | 'direct';
+  cableTypeId?: string;
+  label?: string;
+}
+
 interface DetailedEquipmentUsage {
   cables: {
     [typeId: string]: {
@@ -38,10 +44,12 @@ export const useComprehensiveEquipmentTracking = (nodes: Node[], edges: Edge[]) 
     edges.forEach(edge => {
       usage.totalConnections++;
 
-      if (edge.data?.connectionType === 'direct') {
+      const edgeData = edge.data as EdgeData;
+
+      if (edgeData?.connectionType === 'direct') {
         usage.directConnections++;
-      } else if (edge.data?.connectionType === 'cable' && edge.data?.cableTypeId) {
-        const cableTypeId = edge.data.cableTypeId;
+      } else if (edgeData?.connectionType === 'cable' && typeof edgeData.cableTypeId === 'string') {
+        const cableTypeId = edgeData.cableTypeId;
         const equipmentType = data.equipmentTypes.find(type => type.id === cableTypeId);
         
         if (equipmentType) {

@@ -2,7 +2,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Edit2, Trash2, Package, Settings } from 'lucide-react';
+import { Edit2, Trash2, Package } from 'lucide-react';
 import { EquipmentType, EquipmentItem, IndividualEquipment, StorageLocation } from '@/types/inventory';
 import EquipmentQuantityEditor from './EquipmentQuantityEditor';
 import IndividualEquipmentManager from './IndividualEquipmentManager';
@@ -62,15 +62,6 @@ const EquipmentTypeCard: React.FC<EquipmentTypeCardProps> = ({
           >
             <Edit2 className="h-3 w-3" />
           </Button>
-          {type.requiresIndividualTracking && (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => onToggleDetails(selectedTypeForDetails?.id === type.id ? null : type)}
-            >
-              <Settings className="h-3 w-3" />
-            </Button>
-          )}
           <Button
             size="sm"
             variant="outline"
@@ -134,7 +125,7 @@ const EquipmentTypeCard: React.FC<EquipmentTypeCardProps> = ({
         </div>
       )}
 
-      {selectedTypeForDetails?.id === type.id && type.requiresIndividualTracking && (
+      {type.requiresIndividualTracking && (
         <div className="mt-4 border-t pt-4">
           <IndividualEquipmentManager 
             equipmentType={type}

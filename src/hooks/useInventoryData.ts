@@ -70,7 +70,7 @@ export const useInventoryData = () => {
     };
 
     initializeData();
-  }, [isInitialized, cleanupDuplicateDeployments, ensureMinimumInventory, loadFromLocalStorage, saveToLocalStorage, createDefaultInventory, DEFAULT_EQUIPMENT_TYPES, DEFAULT_STORAGE_LOCATIONS]);
+  }, []); // Empty dependency array - only run once on mount
 
   const handleResetToDefaultInventory = () => {
     const defaultData = resetToDefaultInventory();

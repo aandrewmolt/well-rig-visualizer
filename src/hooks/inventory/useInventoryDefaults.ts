@@ -1,7 +1,8 @@
 
+import { useMemo } from 'react';
 import { EquipmentType, StorageLocation, EquipmentItem } from '@/types/inventory';
 
-export const DEFAULT_EQUIPMENT_TYPES: EquipmentType[] = [
+const EQUIPMENT_TYPES: EquipmentType[] = [
   { id: '1', name: '100ft Cable', category: 'cables', requiresIndividualTracking: false },
   { id: '2', name: '200ft Cable', category: 'cables', requiresIndividualTracking: false },
   { id: '3', name: '200ft Reel', category: 'cables', requiresIndividualTracking: false },
@@ -15,7 +16,7 @@ export const DEFAULT_EQUIPMENT_TYPES: EquipmentType[] = [
   { id: '11', name: 'Customer Computer', category: 'communication', requiresIndividualTracking: true, defaultIdPrefix: 'CC-' },
 ];
 
-export const DEFAULT_STORAGE_LOCATIONS: StorageLocation[] = [
+const STORAGE_LOCATIONS: StorageLocation[] = [
   { id: '1', name: 'Midland Office', isDefault: true },
   { id: '2', name: 'San Antonio Storage Unit', isDefault: false },
   { id: '3', name: 'Houston Office', isDefault: false },
@@ -23,7 +24,11 @@ export const DEFAULT_STORAGE_LOCATIONS: StorageLocation[] = [
 ];
 
 export const useInventoryDefaults = () => {
-  const createDefaultInventory = (): EquipmentItem[] => {
+  // Memoize the constants to prevent unnecessary re-renders
+  const DEFAULT_EQUIPMENT_TYPES = useMemo(() => EQUIPMENT_TYPES, []);
+  const DEFAULT_STORAGE_LOCATIONS = useMemo(() => STORAGE_LOCATIONS, []);
+
+  const createDefaultInventory = useMemo(() => (): EquipmentItem[] => {
     return DEFAULT_EQUIPMENT_TYPES.map(type => ({
       id: `item-${type.id}`,
       typeId: type.id,
@@ -32,9 +37,9 @@ export const useInventoryDefaults = () => {
       status: 'available' as const,
       lastUpdated: new Date(),
     }));
-  };
+  }, [DEFAULT_EQUIPMENT_TYPES]);
 
-  const resetToDefaultInventory = () => {
+  const resetToDefaultInventory = useMemo(() => () => {
     return {
       equipmentTypes: DEFAULT_EQUIPMENT_TYPES,
       storageLocations: DEFAULT_STORAGE_LOCATIONS,
@@ -42,7 +47,7 @@ export const useInventoryDefaults = () => {
       individualEquipment: [],
       lastSync: new Date(),
     };
-  };
+  }, [DEFAULT_EQUIPMENT_TYPES, DEFAULT_STORAGE_LOCATIONS, createDefaultInventory]);
 
   return {
     DEFAULT_EQUIPMENT_TYPES,

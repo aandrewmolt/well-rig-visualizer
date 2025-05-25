@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Node, Edge } from '@xyflow/react';
 import { useInventoryData, EquipmentType, EquipmentItem } from './useInventoryData';
@@ -120,7 +121,7 @@ export const useEnhancedEquipmentTracking = (jobId: string, nodes: Node[], edges
           entityType: 'type',
           entityId: type.id,
           details: { after: type },
-          metadata: { source: 'manual-sync' },
+          metadata: { source: 'manual' },
         });
       });
       
@@ -204,7 +205,7 @@ export const useEnhancedEquipmentTracking = (jobId: string, nodes: Node[], edges
           fromLocation: locationId,
           jobId,
         },
-        metadata: { source: 'manual-sync' },
+        metadata: { source: 'manual' },
       });
     });
 
@@ -304,7 +305,7 @@ export const useEnhancedEquipmentTracking = (jobId: string, nodes: Node[], edges
               reason: 'Manual creation for job allocation',
               toLocation: locationId,
             },
-            metadata: { source: 'manual-sync' },
+            metadata: { source: 'manual' },
           });
           
           toast.info(`Created ${needed} additional ${typeName} for job allocation`);
@@ -362,7 +363,7 @@ export const useEnhancedEquipmentTracking = (jobId: string, nodes: Node[], edges
           toLocation: deployedItem.locationId,
           jobId,
         },
-        metadata: { source: 'manual-sync' },
+        metadata: { source: 'manual' },
       });
     });
 

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 
@@ -84,12 +83,12 @@ export const useInventoryData = () => {
           saveToLocalStorage(data);
         }
       } else {
-        // Initialize with default equipment items
+        // Initialize with 20 pieces of each equipment type at Midland Office
         const defaultItems: EquipmentItem[] = DEFAULT_EQUIPMENT_TYPES.map(type => ({
           id: `item-${type.id}`,
           typeId: type.id,
-          locationId: '1', // Default to Midland Office
-          quantity: Math.floor(Math.random() * 10) + 1, // Random quantity 1-10
+          locationId: '1', // Midland Office
+          quantity: 20, // 20 pieces of each equipment type
           status: 'available' as const,
           lastUpdated: new Date(),
         }));

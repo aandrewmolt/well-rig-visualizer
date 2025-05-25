@@ -1,12 +1,12 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Package, MapPin, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Package, MapPin, AlertTriangle, CheckCircle, RotateCcw } from 'lucide-react';
 import { useInventoryData } from '@/hooks/useInventoryData';
 
 const InventoryDashboard = () => {
-  const { data } = useInventoryData();
+  const { data, resetToDefaultInventory } = useInventoryData();
 
   const totalEquipment = data.equipmentItems.reduce((sum, item) => sum + item.quantity, 0);
   const availableEquipment = data.equipmentItems
@@ -29,6 +29,19 @@ const InventoryDashboard = () => {
 
   return (
     <div className="space-y-6">
+      {/* Header with Reset Button */}
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold">Inventory Overview</h2>
+        <Button 
+          onClick={resetToDefaultInventory}
+          variant="outline"
+          className="flex items-center gap-2"
+        >
+          <RotateCcw className="h-4 w-4" />
+          Reset to Default Inventory
+        </Button>
+      </div>
+
       {/* Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card>

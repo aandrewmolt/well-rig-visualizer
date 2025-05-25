@@ -66,6 +66,17 @@ export const useInventoryData = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [syncStatus, setSyncStatus] = useState<'synced' | 'syncing' | 'offline'>('offline');
 
+  const createDefaultInventory = (): EquipmentItem[] => {
+    return DEFAULT_EQUIPMENT_TYPES.map(type => ({
+      id: `item-${type.id}`,
+      typeId: type.id,
+      locationId: '1', // Midland Office
+      quantity: 20, // 20 pieces of each equipment type
+      status: 'available' as const,
+      lastUpdated: new Date(),
+    }));
+  };
+
   // Initialize default data on first load
   useEffect(() => {
     const initializeData = () => {
@@ -73,29 +84,37 @@ export const useInventoryData = () => {
       if (stored) {
         try {
           const parsedData = JSON.parse(stored);
-          setData({
+          const loadedData = {
             ...parsedData,
             lastSync: new Date(parsedData.lastSync),
-          });
+          };
+          
+          // Check if Midland Office (id: '1') has any equipment
+          const midlandItems = loadedData.equipmentItems.filter((item: EquipmentItem) => item.locationId === '1');
+          
+          if (midlandItems.length === 0) {
+            // If Midland Office has no equipment, add default inventory
+            const defaultItems = createDefaultInventory();
+            loadedData.equipmentItems = [...loadedData.equipmentItems, ...defaultItems];
+            saveToLocalStorage(loadedData);
+          }
+          
+          setData(loadedData);
           setSyncStatus('synced');
         } catch (error) {
           console.error('Failed to parse stored data:', error);
-          saveToLocalStorage(data);
+          const initialData = {
+            ...data,
+            equipmentItems: createDefaultInventory(),
+          };
+          setData(initialData);
+          saveToLocalStorage(initialData);
         }
       } else {
         // Initialize with 20 pieces of each equipment type at Midland Office
-        const defaultItems: EquipmentItem[] = DEFAULT_EQUIPMENT_TYPES.map(type => ({
-          id: `item-${type.id}`,
-          typeId: type.id,
-          locationId: '1', // Midland Office
-          quantity: 20, // 20 pieces of each equipment type
-          status: 'available' as const,
-          lastUpdated: new Date(),
-        }));
-        
         const initialData = {
           ...data,
-          equipmentItems: defaultItems,
+          equipmentItems: createDefaultInventory(),
         };
         setData(initialData);
         saveToLocalStorage(initialData);
@@ -112,6 +131,19 @@ export const useInventoryData = () => {
       console.error('Failed to save to localStorage:', error);
       toast.error('Failed to save data locally');
     }
+  };
+
+  const resetToDefaultInventory = () => {
+    const defaultData = {
+      equipmentTypes: DEFAULT_EQUIPMENT_TYPES,
+      storageLocations: DEFAULT_STORAGE_LOCATIONS,
+      equipmentItems: createDefaultInventory(),
+      lastSync: new Date(),
+    };
+    
+    setData(defaultData);
+    saveToLocalStorage(defaultData);
+    toast.success('Inventory reset to default with 20 pieces of each equipment at Midland Office');
   };
 
   const syncData = async () => {
@@ -165,5 +197,6 @@ export const useInventoryData = () => {
     updateEquipmentTypes,
     updateStorageLocations,
     updateEquipmentItems,
+    resetToDefaultInventory,
   };
 };

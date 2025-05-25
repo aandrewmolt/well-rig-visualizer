@@ -1,4 +1,3 @@
-
 import React, { useCallback, useState, useRef } from 'react';
 import {
   addEdge,
@@ -13,6 +12,7 @@ import { toast } from 'sonner';
 import html2canvas from 'html2canvas';
 import CableConfigurationPanel from './diagram/CableConfigurationPanel';
 import WellConfigurationPanel from './diagram/WellConfigurationPanel';
+import JobEquipmentPanel from './diagram/JobEquipmentPanel';
 import DiagramCanvas from './diagram/DiagramCanvas';
 import ConnectionGuide from './diagram/ConnectionGuide';
 
@@ -309,8 +309,8 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
 
   return (
     <div className="max-w-7xl mx-auto space-y-2">
-      {/* Configuration Sections - Side by Side on Desktop */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      {/* Configuration Sections - Now with Equipment Panel */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <CableConfigurationPanel
           selectedCableType={selectedCableType}
           setSelectedCableType={setSelectedCableType}
@@ -336,6 +336,11 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
           updateWellColor={updateWellColor}
           updateWellsideGaugeName={updateWellsideGaugeName}
           updateWellsideGaugeColor={updateWellsideGaugeColor}
+        />
+
+        <JobEquipmentPanel
+          jobId={job.id}
+          jobName={job.name}
         />
       </div>
 

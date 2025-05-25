@@ -4,6 +4,11 @@ import { Node, Edge } from '@xyflow/react';
 import { useInventoryData } from './useInventoryData';
 import { toast } from 'sonner';
 
+interface EdgeData {
+  cableType?: '100ft' | '200ft' | '300ft';
+  label?: string;
+}
+
 interface EquipmentUsage {
   cables: { [key: string]: number };
   gauges: number;
@@ -31,9 +36,10 @@ export const useEquipmentTracking = (jobId: string, nodes: Node[], edges: Edge[]
       satellite: 0,
     };
 
-    // Count cables from edges
+    // Count cables from edges with proper type checking
     edges.forEach(edge => {
-      const cableType = edge.data?.cableType || '200ft';
+      const edgeData = edge.data as EdgeData;
+      const cableType = edgeData?.cableType || '200ft';
       newUsage.cables[cableType] = (newUsage.cables[cableType] || 0) + 1;
     });
 

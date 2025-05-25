@@ -34,6 +34,13 @@ const JobValidationHelper: React.FC<JobValidationHelperProps> = ({
     const successes: string[] = [];
     const suggestions: string[] = [];
 
+    // Define type mapping for cable types to equipment type IDs
+    const typeMapping: { [key: string]: string } = {
+      '100ft': '1',
+      '200ft': '2',
+      '300ft': '4',
+    };
+
     // Check deployed equipment consistency
     const deployedItems = data.equipmentItems.filter(
       item => item.status === 'deployed' && item.jobId === jobId
@@ -52,12 +59,6 @@ const JobValidationHelper: React.FC<JobValidationHelperProps> = ({
       }, {} as { [key: string]: number });
 
       // Compare with current requirements
-      const typeMapping: { [key: string]: string } = {
-        '100ft': '1',
-        '200ft': '2',
-        '300ft': '4',
-      };
-
       let totalRequired = 0;
       let totalDeployed = 0;
 

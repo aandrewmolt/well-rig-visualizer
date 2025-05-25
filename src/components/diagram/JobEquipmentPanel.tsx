@@ -2,25 +2,19 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Package } from 'lucide-react';
+import { Package, AlertTriangle, CheckCircle } from 'lucide-react';
 import { useInventoryData } from '@/hooks/useInventoryData';
+import { useRobustEquipmentTracking } from '@/hooks/useRobustEquipmentTracking';
 import ExtrasOnLocationPanel from './ExtrasOnLocationPanel';
 import AutoSyncControls from './equipment/AutoSyncControls';
 import EquipmentLocationSelector from './equipment/EquipmentLocationSelector';
-import EquipmentAvailabilityStatus from './equipment/EquipmentAvailabilityStatus';
-import EquipmentUsageSummary from './equipment/EquipmentUsageSummary';
-import DeployedEquipmentList from './equipment/DeployedEquipmentList';
+import { Node, Edge } from '@xyflow/react';
 
 interface JobEquipmentPanelProps {
   jobId: string;
   jobName: string;
-  equipmentUsage?: {
-    cables: { [key: string]: number };
-    gauges: number;
-    adapters: number;
-    computers: number;
-    satellite: number;
-  };
+  nodes: Node[];
+  edges: Edge[];
   extrasOnLocation?: Array<{
     id: string;
     equipmentTypeId: string;
@@ -29,91 +23,50 @@ interface JobEquipmentPanelProps {
     addedDate: Date;
     notes?: string;
   }>;
-  onAutoAllocate?: (locationId: string) => void;
   onAddExtra?: (equipmentTypeId: string, quantity: number, reason: string, notes?: string) => void;
   onRemoveExtra?: (extraId: string) => void;
-  isAutoSyncEnabled?: boolean;
-  onToggleAutoSync?: (enabled: boolean) => void;
 }
 
 const JobEquipmentPanel: React.FC<JobEquipmentPanelProps> = ({ 
   jobId, 
   jobName, 
-  equipmentUsage,
+  nodes,
+  edges,
   extrasOnLocation = [],
-  onAutoAllocate,
   onAddExtra,
   onRemoveExtra,
-  isAutoSyncEnabled = true,
-  onToggleAutoSync
 }) => {
   const { data } = useInventoryData();
   const [selectedLocation, setSelectedLocation] = useState<string>(data.storageLocations[0]?.id || '');
+  
+  const {
+    performComprehensiveAllocation,
+    returnAllJobEquipment,
+    validateInventoryConsistency,
+    analyzeEquipmentUsage,
+    generateEquipmentReport,
+    isAutoSyncEnabled,
+    setIsAutoSyncEnabled,
+  } = useRobustEquipmentTracking(jobId, nodes, edges);
 
-  const getAvailableQuantity = (typeId: string, locationId: string) => {
-    return data.equipmentItems
-      .filter(item => item.typeId === typeId && item.locationId === locationId && item.status === 'available')
-      .reduce((sum, item) => sum + item.quantity, 0);
-  };
+  const usage = analyzeEquipmentUsage();
+  const report = generateEquipmentReport(usage);
 
-  const checkEquipmentAvailability = () => {
-    if (!equipmentUsage || !selectedLocation) return { hasIssues: false, issues: [] };
-    
-    const issues: string[] = [];
-    const typeMapping: { [key: string]: string } = {
-      '100ft': '1',
-      '200ft': '2',  
-      '300ft': '4',
-    };
-
-    Object.entries(equipmentUsage.cables).forEach(([cableType, needed]) => {
-      const typeId = typeMapping[cableType];
-      if (typeId) {
-        const available = getAvailableQuantity(typeId, selectedLocation);
-        if (available < needed) {
-          issues.push(`${cableType} cables: need ${needed}, have ${available}`);
-        }
-      }
-    });
-
-    if (equipmentUsage.gauges > 0) {
-      const available = getAvailableQuantity('7', selectedLocation);
-      if (available < equipmentUsage.gauges) {
-        issues.push(`Pressure gauges: need ${equipmentUsage.gauges}, have ${available}`);
-      }
-    }
-
-    if (equipmentUsage.adapters > 0) {
-      const available = getAvailableQuantity('9', selectedLocation);
-      if (available < equipmentUsage.adapters) {
-        issues.push(`Y adapters: need ${equipmentUsage.adapters}, have ${available}`);
-      }
-    }
-
-    if (equipmentUsage.computers > 0) {
-      const available = getAvailableQuantity('11', selectedLocation);
-      if (available < equipmentUsage.computers) {
-        issues.push(`Company computers: need ${equipmentUsage.computers}, have ${available}`);
-      }
-    }
-
-    if (equipmentUsage.satellite > 0) {
-      const available = getAvailableQuantity('10', selectedLocation);
-      if (available < equipmentUsage.satellite) {
-        issues.push(`Satellite: need ${equipmentUsage.satellite}, have ${available}`);
-      }
-    }
-
-    return { hasIssues: issues.length > 0, issues };
-  };
-
+  // Auto-allocate when auto-sync is enabled and location changes
   useEffect(() => {
-    if (isAutoSyncEnabled && selectedLocation && onAutoAllocate) {
-      onAutoAllocate(selectedLocation);
+    if (isAutoSyncEnabled && selectedLocation) {
+      performComprehensiveAllocation(selectedLocation);
     }
-  }, [selectedLocation, isAutoSyncEnabled, onAutoAllocate]);
+  }, [selectedLocation, isAutoSyncEnabled]);
 
-  const availability = checkEquipmentAvailability();
+  const getDeployedEquipment = () => {
+    return data.equipmentItems.filter(
+      item => item.status === 'deployed' && item.jobId === jobId
+    );
+  };
+
+  const deployedEquipment = getDeployedEquipment();
+  const isConsistent = validateInventoryConsistency();
 
   return (
     <div className="space-y-4">
@@ -121,13 +74,18 @@ const JobEquipmentPanel: React.FC<JobEquipmentPanelProps> = ({
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-lg">
             <Package className="h-5 w-5" />
-            Job Equipment - {jobName}
+            Robust Equipment Tracking - {jobName}
+            {isConsistent ? (
+              <CheckCircle className="h-4 w-4 text-green-500" />
+            ) : (
+              <AlertTriangle className="h-4 w-4 text-yellow-500" />
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <AutoSyncControls
             isAutoSyncEnabled={isAutoSyncEnabled}
-            onToggleAutoSync={onToggleAutoSync}
+            onToggleAutoSync={setIsAutoSyncEnabled}
           />
 
           <EquipmentLocationSelector
@@ -135,23 +93,104 @@ const JobEquipmentPanel: React.FC<JobEquipmentPanelProps> = ({
             setSelectedLocation={setSelectedLocation}
           />
 
-          <EquipmentAvailabilityStatus
-            availability={availability}
-            equipmentUsage={equipmentUsage}
-            jobId={jobId}
-            selectedLocationId={selectedLocation}
-          />
+          {/* Equipment Summary */}
+          <div className="bg-blue-50 p-3 rounded-lg">
+            <h4 className="font-medium mb-2">Equipment Analysis Summary</h4>
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <div>Total Connections: {report.summary.totalConnections}</div>
+              <div>Direct Connections: {report.summary.directConnections}</div>
+              <div>Cable Types Used: {report.summary.cableTypes}</div>
+              <div>Total Cables: {report.summary.totalCables}</div>
+            </div>
+          </div>
 
-          <EquipmentUsageSummary
-            equipmentUsage={equipmentUsage}
-            isAutoSyncEnabled={isAutoSyncEnabled}
-            onAutoAllocate={onAutoAllocate}
-            selectedLocation={selectedLocation}
-          />
+          {/* Cable Details */}
+          {Object.keys(usage.cables).length > 0 && (
+            <div className="space-y-2">
+              <h4 className="font-medium">Cable Requirements</h4>
+              {Object.entries(usage.cables).map(([typeId, details]) => (
+                <div key={typeId} className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                  <div>
+                    <span className="font-medium">{details.typeName}</span>
+                    <span className="text-sm text-gray-500 ml-2">
+                      ({details.length} {details.category})
+                    </span>
+                  </div>
+                  <span className="font-bold">{details.quantity}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Equipment Requirements */}
+          {(usage.gauges > 0 || usage.adapters > 0 || usage.computers > 0 || usage.satellite > 0) && (
+            <div className="space-y-2">
+              <h4 className="font-medium">Equipment Requirements</h4>
+              {usage.gauges > 0 && (
+                <div className="flex justify-between p-2 bg-gray-50 rounded">
+                  <span>Pressure Gauges</span>
+                  <span className="font-bold">{usage.gauges}</span>
+                </div>
+              )}
+              {usage.adapters > 0 && (
+                <div className="flex justify-between p-2 bg-gray-50 rounded">
+                  <span>Y Adapters</span>
+                  <span className="font-bold">{usage.adapters}</span>
+                </div>
+              )}
+              {usage.computers > 0 && (
+                <div className="flex justify-between p-2 bg-gray-50 rounded">
+                  <span>Company Computers</span>
+                  <span className="font-bold">{usage.computers}</span>
+                </div>
+              )}
+              {usage.satellite > 0 && (
+                <div className="flex justify-between p-2 bg-gray-50 rounded">
+                  <span>Satellite Equipment</span>
+                  <span className="font-bold">{usage.satellite}</span>
+                </div>
+              )}
+            </div>
+          )}
 
           <Separator />
 
-          <DeployedEquipmentList jobId={jobId} />
+          {/* Deployed Equipment */}
+          <div>
+            <h4 className="font-medium mb-2">Currently Deployed ({deployedEquipment.length} items)</h4>
+            {deployedEquipment.length > 0 ? (
+              <div className="space-y-1">
+                {deployedEquipment.map(item => {
+                  const equipmentType = data.equipmentTypes.find(type => type.id === item.typeId);
+                  return (
+                    <div key={item.id} className="flex justify-between text-sm p-2 bg-green-50 rounded">
+                      <span>{equipmentType?.name || 'Unknown'}</span>
+                      <span className="font-medium">{item.quantity}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="text-gray-500 text-sm">No equipment currently deployed</p>
+            )}
+          </div>
+
+          {/* Manual Actions */}
+          <div className="flex gap-2">
+            <button
+              onClick={() => performComprehensiveAllocation(selectedLocation)}
+              className="flex-1 bg-blue-500 text-white px-3 py-2 rounded text-sm hover:bg-blue-600"
+              disabled={!selectedLocation}
+            >
+              Manual Sync Equipment
+            </button>
+            <button
+              onClick={returnAllJobEquipment}
+              className="flex-1 bg-red-500 text-white px-3 py-2 rounded text-sm hover:bg-red-600"
+            >
+              Return All Equipment
+            </button>
+          </div>
         </CardContent>
       </Card>
 

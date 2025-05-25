@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useCallback, useState, useMemo } from 'react';
 import {
   useNodesState,
@@ -13,6 +12,7 @@ import DiagramCanvas from './diagram/DiagramCanvas';
 import ConnectionGuide from './diagram/ConnectionGuide';
 import { useJobPersistence } from '@/hooks/useJobPersistence';
 import { useEnhancedEquipmentTracking } from '@/hooks/useEnhancedEquipmentTracking';
+import { useRobustEquipmentTracking } from '@/hooks/useRobustEquipmentTracking';
 import { useDiagramState } from '@/hooks/useDiagramState';
 import { useDiagramInitialization } from '@/hooks/useDiagramInitialization';
 import { useDiagramConnections } from '@/hooks/useDiagramConnections';
@@ -96,13 +96,15 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
 
   const { jobData, saveJobData } = useJobPersistence(job.id);
   
-  const { 
-    calculateEquipmentUsage,
-    autoAllocateEquipment,
-    returnEquipmentToLocation,
+  // Replace the existing useEnhancedEquipmentTracking with useRobustEquipmentTracking
+  const {
+    performComprehensiveAllocation,
+    returnAllJobEquipment,
+    validateInventoryConsistency,
+    analyzeEquipmentUsage,
     isAutoSyncEnabled,
     setIsAutoSyncEnabled,
-  } = useEnhancedEquipmentTracking(job.id, nodes, edges);
+  } = useRobustEquipmentTracking(job.id, nodes, edges);
 
   const { initializeJob } = useDiagramInitialization(
     job,
@@ -340,7 +342,26 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
   const wellsideGaugeNode = nodes.find(node => node.type === 'wellsideGauge');
   const companyComputerNodes = nodes.filter(node => node.type === 'companyComputer');
   const shearstreamBoxNodes = nodes.filter(node => node.type === 'mainBox');
-  const equipmentUsage = calculateEquipmentUsage();
+  const equipmentUsage = React.useMemo(() => {
+    const detailedUsage = analyzeEquipmentUsage();
+    
+    // Convert to legacy format for compatibility with existing components
+    const legacyFormat = {
+      cables: Object.fromEntries(
+        Object.entries(detailedUsage.cables).map(([typeId, details]) => [
+          details.length, // Use length as key for legacy compatibility
+          details.quantity
+        ])
+      ),
+      gauges: detailedUsage.gauges,
+      adapters: detailedUsage.adapters,
+      computers: detailedUsage.computers,
+      satellite: detailedUsage.satellite,
+      directConnections: detailedUsage.directConnections,
+    };
+
+    return legacyFormat;
+  }, [analyzeEquipmentUsage]);
 
   return (
     <div className="max-w-7xl mx-auto space-y-2">
@@ -379,13 +400,11 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
         <JobEquipmentPanel
           jobId={job.id}
           jobName={job.name}
-          equipmentUsage={equipmentUsage}
+          nodes={nodes}
+          edges={edges}
           extrasOnLocation={[]}
-          onAutoAllocate={autoAllocateEquipment}
           onAddExtra={() => {}}
           onRemoveExtra={() => {}}
-          isAutoSyncEnabled={isAutoSyncEnabled}
-          onToggleAutoSync={setIsAutoSyncEnabled}
         />
       </div>
 

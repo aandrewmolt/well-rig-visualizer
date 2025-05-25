@@ -197,13 +197,13 @@ export const useInventoryData = () => {
   };
 
   const updateEquipmentTypes = (types: EquipmentType[]) => {
-    const updatedData = { ...data, equipmentTypes: types };
+    const updatedData = { ...data, equipmentTypes: types, lastSync: new Date() };
     setData(updatedData);
     saveToLocalStorage(updatedData);
   };
 
   const updateStorageLocations = (locations: StorageLocation[]) => {
-    const updatedData = { ...data, storageLocations: locations };
+    const updatedData = { ...data, storageLocations: locations, lastSync: new Date() };
     setData(updatedData);
     saveToLocalStorage(updatedData);
   };
@@ -211,9 +211,30 @@ export const useInventoryData = () => {
   const updateEquipmentItems = (items: EquipmentItem[]) => {
     // Ensure minimum inventory when updating
     const enhancedItems = ensureMinimumInventory(items);
-    const updatedData = { ...data, equipmentItems: enhancedItems };
+    const updatedData = { 
+      ...data, 
+      equipmentItems: enhancedItems,
+      lastSync: new Date()
+    };
     setData(updatedData);
     saveToLocalStorage(updatedData);
+  };
+
+  const updateSingleEquipmentItem = (itemId: string, updates: Partial<EquipmentItem>) => {
+    const updatedItems = data.equipmentItems.map(item =>
+      item.id === itemId
+        ? { ...item, ...updates, lastUpdated: new Date() }
+        : item
+    );
+    updateEquipmentItems(updatedItems);
+  };
+
+  const getEquipmentByType = (typeId: string) => {
+    return data.equipmentItems.filter(item => item.typeId === typeId);
+  };
+
+  const getEquipmentByLocation = (locationId: string) => {
+    return data.equipmentItems.filter(item => item.locationId === locationId);
   };
 
   return {
@@ -224,6 +245,9 @@ export const useInventoryData = () => {
     updateEquipmentTypes,
     updateStorageLocations,
     updateEquipmentItems,
+    updateSingleEquipmentItem,
+    getEquipmentByType,
+    getEquipmentByLocation,
     resetToDefaultInventory,
   };
 };

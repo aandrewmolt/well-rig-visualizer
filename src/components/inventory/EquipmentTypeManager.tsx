@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
 import { useInventoryData, EquipmentType } from '@/hooks/useInventoryData';
 import { toast } from 'sonner';
+import EquipmentQuantityEditor from './EquipmentQuantityEditor';
 
 const EquipmentTypeManager = () => {
   const { data, updateEquipmentTypes } = useInventoryData();
@@ -178,13 +179,12 @@ const EquipmentTypeManager = () => {
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {types.map(type => {
-                  const itemCount = data.equipmentItems
-                    .filter(item => item.typeId === type.id)
-                    .reduce((sum, item) => sum + item.quantity, 0);
+                  const typeItems = data.equipmentItems.filter(item => item.typeId === type.id);
+                  const itemCount = typeItems.reduce((sum, item) => sum + item.quantity, 0);
 
                   return (
                     <div key={type.id} className="border rounded-lg p-4">
-                      <div className="flex items-start justify-between mb-2">
+                      <div className="flex items-start justify-between mb-3">
                         <h3 className="font-medium text-lg">{type.name}</h3>
                         <div className="flex space-x-1">
                           <Button
@@ -204,16 +204,49 @@ const EquipmentTypeManager = () => {
                           </Button>
                         </div>
                       </div>
+                      
                       {type.description && (
-                        <p className="text-sm text-gray-600 mb-2">{type.description}</p>
+                        <p className="text-sm text-gray-600 mb-3">{type.description}</p>
                       )}
-                      <div className="flex items-center justify-between">
+                      
+                      <div className="flex items-center justify-between mb-3">
                         <Badge className={getCategoryColor(type.category)}>
                           {type.category}
                         </Badge>
-                        <span className="text-sm text-gray-500">
-                          {itemCount} items
+                        <span className="text-sm font-medium text-gray-700">
+                          Total: {itemCount} items
                         </span>
+                      </div>
+
+                      {/* Enhanced Quantity Management */}
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-gray-600">Manage Quantities:</span>
+                          <EquipmentQuantityEditor
+                            equipmentTypeId={type.id}
+                            equipmentTypeName={type.name}
+                            currentItems={typeItems}
+                          />
+                        </div>
+                        
+                        {typeItems.length > 0 && (
+                          <div className="grid grid-cols-1 gap-1">
+                            {typeItems.map(item => (
+                              <div key={item.id} className="flex justify-between text-xs text-gray-600 bg-gray-50 px-2 py-1 rounded">
+                                <span>{data.storageLocations.find(loc => loc.id === item.locationId)?.name}</span>
+                                <span className="flex items-center gap-1">
+                                  <span className="font-medium">{item.quantity}</span>
+                                  <Badge variant={
+                                    item.status === 'available' ? 'default' :
+                                    item.status === 'deployed' ? 'secondary' : 'destructive'
+                                  } className="text-xs px-1 py-0">
+                                    {item.status}
+                                  </Badge>
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </div>
                   );

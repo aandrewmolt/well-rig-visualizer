@@ -1,5 +1,4 @@
-
-import React, { useRef, useEffect, useCallback, useState } from 'react';
+import React, { useRef, useEffect, useCallback, useState, useMemo } from 'react';
 import {
   useNodesState,
   useEdgesState,
@@ -114,7 +113,7 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
   );
 
   // Handle equipment selection
-  const handleEquipmentSelect = (type: 'shearstream-box' | 'starlink' | 'company-computer', equipmentId: string, index?: number) => {
+  const handleEquipmentSelect = useCallback((type: 'shearstream-box' | 'starlink' | 'company-computer', equipmentId: string, index?: number) => {
     const equipment = trackedEquipment.find(eq => eq.id === equipmentId);
     if (!equipment) return;
 
@@ -142,10 +141,10 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
       deployEquipment(equipmentId, job.id, job.name, equipment.name);
       updateCompanyComputerName(`company-computer-${index + 1}`, equipment.equipmentId, setNodes);
     }
-  };
+  }, [trackedEquipment, selectedShearstreamBox, selectedStarlink, selectedCompanyComputers, returnEquipment, deployEquipment, job, updateMainBoxName, updateSatelliteName, updateCompanyComputerName, setNodes]);
 
   // Calculate proper node ID counter from existing nodes
-  const calculateNodeIdCounter = (nodeList: any[]) => {
+  const calculateNodeIdCounter = useCallback((nodeList: any[]) => {
     let maxId = 0;
     nodeList.forEach(node => {
       const matches = node.id.match(/\d+/g);
@@ -155,7 +154,7 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
       }
     });
     return maxId + 1;
-  };
+  }, []);
 
   // Restore edge styling and data
   const restoreEdgesStyling = useCallback((edgeList: any[]) => {
@@ -172,60 +171,41 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
     }));
   }, []);
 
+  // Memoized save data
+  const saveDataMemo = useMemo(() => ({
+    name: job.name,
+    wellCount: job.wellCount,
+    hasWellsideGauge: job.hasWellsideGauge,
+    nodes,
+    edges,
+    mainBoxName,
+    satelliteName,
+    wellsideGaugeName,
+    companyComputerNames,
+    equipmentAssignment: {
+      shearstreamBoxId: selectedShearstreamBox || undefined,
+      starlinkId: selectedStarlink || undefined,
+      companyComputerIds: selectedCompanyComputers.filter(Boolean),
+    } as JobEquipmentAssignment,
+  }), [job, nodes, edges, mainBoxName, satelliteName, wellsideGaugeName, companyComputerNames, selectedShearstreamBox, selectedStarlink, selectedCompanyComputers]);
+
   // Save function with comprehensive data
   const performSave = useCallback(() => {
     if (isInitialized && (nodes.length > 0 || edges.length > 0)) {
-      console.log('Saving comprehensive job data with equipment tracking');
-      
-      const currentAssignment: JobEquipmentAssignment = {
-        shearstreamBoxId: selectedShearstreamBox || undefined,
-        starlinkId: selectedStarlink || undefined,
-        companyComputerIds: selectedCompanyComputers.filter(Boolean),
-      };
-      
-      saveJobData({
-        name: job.name,
-        wellCount: job.wellCount,
-        hasWellsideGauge: job.hasWellsideGauge,
-        nodes,
-        edges,
-        mainBoxName,
-        satelliteName,
-        wellsideGaugeName,
-        companyComputerNames,
-        equipmentAssignment: currentAssignment,
-      });
-
-      // Update job status to indicate equipment allocation
+      saveJobData(saveDataMemo);
       updateJob(job.id, { 
         equipmentAllocated: true,
         lastUpdated: new Date() 
       });
     }
-  }, [
-    nodes, 
-    edges, 
-    mainBoxName, 
-    satelliteName, 
-    wellsideGaugeName, 
-    companyComputerNames, 
-    selectedShearstreamBox,
-    selectedStarlink,
-    selectedCompanyComputers,
-    isInitialized, 
-    saveJobData, 
-    job,
-    updateJob
-  ]);
+  }, [isInitialized, nodes.length, edges.length, saveJobData, saveDataMemo, updateJob, job.id]);
 
   // Debounced save to prevent excessive saves
-  const debouncedSave = useDebouncedSave(performSave, 300);
+  const { debouncedSave, cleanup } = useDebouncedSave(performSave, 300);
 
   // Load persisted data on mount - single effect to prevent conflicts
   useEffect(() => {
     if (jobData && !isInitialized) {
-      console.log('Loading persisted job data:', jobData);
-      
       // Sync state with loaded data first
       syncWithLoadedData(jobData);
       
@@ -254,7 +234,6 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
       
       setIsInitialized(true);
     } else if (!jobData && !isInitialized) {
-      console.log('No persisted data found, initializing new job');
       initializeJob();
     }
   }, [
@@ -271,7 +250,8 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
     setIsInitialized,
     syncWithLoadedData,
     restoreEdgesStyling,
-    setEquipmentAssignment
+    setEquipmentAssignment,
+    calculateNodeIdCounter
   ]);
 
   // Trigger debounced save whenever relevant data changes
@@ -279,8 +259,14 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
     if (isInitialized) {
       debouncedSave();
     }
-  }, [nodes, edges, mainBoxName, satelliteName, wellsideGaugeName, companyComputerNames, selectedShearstreamBox, selectedStarlink, selectedCompanyComputers, isInitialized, debouncedSave]);
+  }, [saveDataMemo, isInitialized, debouncedSave]);
 
+  // Cleanup on unmount
+  useEffect(() => {
+    return cleanup;
+  }, [cleanup]);
+
+  // ... keep existing code (wellNodes, wellsideGaugeNode, companyComputerNodes, equipmentUsage calculations)
   const wellNodes = nodes.filter(node => node.type === 'well');
   const wellsideGaugeNode = nodes.find(node => node.type === 'wellsideGauge');
   const companyComputerNodes = nodes.filter(node => node.type === 'companyComputer');

@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -27,15 +27,14 @@ const EquipmentSelectionPanel: React.FC<EquipmentSelectionPanelProps> = ({
 }) => {
   const { getAvailableEquipment, trackedEquipment } = useTrackedEquipment();
 
-  const availableSSBoxes = getAvailableEquipment('shearstream-box');
-  const availableStarlinks = getAvailableEquipment('starlink');
-  const availableComputers = getAvailableEquipment('company-computer');
-
-  // Debug logging
-  console.log('EquipmentSelectionPanel - Total tracked equipment:', trackedEquipment.length);
-  console.log('Available SS Boxes:', availableSSBoxes);
-  console.log('Available Starlinks:', availableStarlinks);
-  console.log('Available Computers:', availableComputers);
+  // Memoize available equipment to prevent recalculation on every render
+  const availableEquipment = useMemo(() => {
+    return {
+      ssBoxes: getAvailableEquipment('shearstream-box'),
+      starlinks: getAvailableEquipment('starlink'),
+      computers: getAvailableEquipment('company-computer'),
+    };
+  }, [getAvailableEquipment]);
 
   const getEquipmentDisplay = (equipment: TrackedEquipment) => (
     <div className="flex items-center justify-between w-full">
@@ -63,7 +62,7 @@ const EquipmentSelectionPanel: React.FC<EquipmentSelectionPanelProps> = ({
         <div className="space-y-2">
           <div className="flex items-center gap-2">
             <Square className="h-3 w-3" />
-            <Label className="text-sm font-medium">ShearStream Box ({availableSSBoxes.length} available)</Label>
+            <Label className="text-sm font-medium">ShearStream Box ({availableEquipment.ssBoxes.length} available)</Label>
           </div>
           <Select
             value={selectedShearstreamBox || ''}
@@ -73,10 +72,10 @@ const EquipmentSelectionPanel: React.FC<EquipmentSelectionPanelProps> = ({
               <SelectValue placeholder="Select SS Box..." />
             </SelectTrigger>
             <SelectContent>
-              {availableSSBoxes.length === 0 ? (
+              {availableEquipment.ssBoxes.length === 0 ? (
                 <SelectItem value="none" disabled>No ShearStream boxes available</SelectItem>
               ) : (
-                availableSSBoxes.map(equipment => (
+                availableEquipment.ssBoxes.map(equipment => (
                   <SelectItem key={equipment.id} value={equipment.id}>
                     {getEquipmentDisplay(equipment)}
                   </SelectItem>
@@ -96,7 +95,7 @@ const EquipmentSelectionPanel: React.FC<EquipmentSelectionPanelProps> = ({
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <Satellite className="h-3 w-3" />
-              <Label className="text-sm font-medium">Starlink ({availableStarlinks.length} available)</Label>
+              <Label className="text-sm font-medium">Starlink ({availableEquipment.starlinks.length} available)</Label>
             </div>
             <Select
               value={selectedStarlink || ''}
@@ -106,10 +105,10 @@ const EquipmentSelectionPanel: React.FC<EquipmentSelectionPanelProps> = ({
                 <SelectValue placeholder="Select Starlink..." />
               </SelectTrigger>
               <SelectContent>
-                {availableStarlinks.length === 0 ? (
+                {availableEquipment.starlinks.length === 0 ? (
                   <SelectItem value="none" disabled>No Starlinks available</SelectItem>
                 ) : (
-                  availableStarlinks.map(equipment => (
+                  availableEquipment.starlinks.map(equipment => (
                     <SelectItem key={equipment.id} value={equipment.id}>
                       {getEquipmentDisplay(equipment)}
                     </SelectItem>
@@ -130,7 +129,7 @@ const EquipmentSelectionPanel: React.FC<EquipmentSelectionPanelProps> = ({
           <div className="space-y-3">
             <div className="flex items-center gap-2">
               <Monitor className="h-3 w-3" />
-              <Label className="text-sm font-medium">Company Computers ({availableComputers.length} available, {companyComputerCount} needed)</Label>
+              <Label className="text-sm font-medium">Company Computers ({availableEquipment.computers.length} available, {companyComputerCount} needed)</Label>
             </div>
             {Array.from({ length: companyComputerCount }, (_, index) => (
               <div key={index} className="space-y-2">
@@ -143,12 +142,12 @@ const EquipmentSelectionPanel: React.FC<EquipmentSelectionPanelProps> = ({
                     <SelectValue placeholder="Select Computer..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {availableComputers
+                    {availableEquipment.computers
                       .filter(eq => !selectedCompanyComputers.includes(eq.id) || selectedCompanyComputers[index] === eq.id)
                       .length === 0 ? (
                       <SelectItem value="none" disabled>No computers available</SelectItem>
                     ) : (
-                      availableComputers
+                      availableEquipment.computers
                         .filter(eq => !selectedCompanyComputers.includes(eq.id) || selectedCompanyComputers[index] === eq.id)
                         .map(equipment => (
                           <SelectItem key={equipment.id} value={equipment.id}>

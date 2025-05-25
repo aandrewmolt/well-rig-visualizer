@@ -14,5 +14,13 @@ export const useDebouncedSave = (saveFunction: () => void, delay: number = 500) 
     }, delay);
   }, [saveFunction, delay]);
 
-  return debouncedSave;
+  // Cleanup timeout on unmount
+  const cleanup = useCallback(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+  }, []);
+
+  return { debouncedSave, cleanup };
 };

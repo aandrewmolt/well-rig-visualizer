@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -99,12 +98,12 @@ const CableConfigurationPanel: React.FC<CableConfigurationPanelProps> = ({
 
         <div className="grid grid-cols-1 gap-2">
           <div>
-            <Label htmlFor="main-box-name" className="text-sm">Main Box Name</Label>
+            <Label htmlFor="main-box-name" className="text-sm">ShearStream Box Name</Label>
             <Input
               id="main-box-name"
               value={mainBoxName}
               onChange={(e) => updateMainBoxName(e.target.value)}
-              placeholder="SS001"
+              placeholder="ShearStream Box"
               className="h-8"
             />
           </div>

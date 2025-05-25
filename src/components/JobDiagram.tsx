@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useRef } from 'react';
+import React, { useCallback, useState, useRef, useEffect } from 'react';
 import {
   addEdge,
   useNodesState,
@@ -15,6 +15,8 @@ import WellConfigurationPanel from './diagram/WellConfigurationPanel';
 import JobEquipmentPanel from './diagram/JobEquipmentPanel';
 import DiagramCanvas from './diagram/DiagramCanvas';
 import ConnectionGuide from './diagram/ConnectionGuide';
+import { useJobPersistence } from '@/hooks/useJobPersistence';
+import { useEquipmentTracking } from '@/hooks/useEquipmentTracking';
 
 interface NodeData {
   label?: string;
@@ -40,10 +42,47 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [selectedCableType, setSelectedCableType] = useState<'100ft' | '200ft' | '300ft'>('200ft');
   const [nodeIdCounter, setNodeIdCounter] = useState(0);
-  const [mainBoxName, setMainBoxName] = useState('SS001');
+  const [mainBoxName, setMainBoxName] = useState('ShearStream Box');
   const [satelliteName, setSatelliteName] = useState('Starlink');
   const [wellsideGaugeName, setWellsideGaugeName] = useState('Wellside Gauge');
+  const [companyComputerNames, setCompanyComputerNames] = useState<Record<string, string>>({});
   const [isInitialized, setIsInitialized] = useState(false);
+
+  const { jobData, saveJobData } = useJobPersistence(job.id);
+  const { usage, allocateEquipmentToJob } = useEquipmentTracking(job.id, nodes, edges);
+
+  // Load persisted data on mount
+  useEffect(() => {
+    if (jobData && !isInitialized) {
+      setNodes(jobData.nodes || []);
+      setEdges(jobData.edges || []);
+      setMainBoxName(jobData.mainBoxName || 'ShearStream Box');
+      setSatelliteName(jobData.satelliteName || 'Starlink');
+      setWellsideGaugeName(jobData.wellsideGaugeName || 'Wellside Gauge');
+      setCompanyComputerNames(jobData.companyComputerNames || {});
+      setNodeIdCounter(jobData.nodes?.length || 0);
+      setIsInitialized(true);
+    } else if (!jobData && !isInitialized) {
+      initializeJob();
+    }
+  }, [jobData, isInitialized]);
+
+  // Save data whenever it changes
+  useEffect(() => {
+    if (isInitialized) {
+      saveJobData({
+        name: job.name,
+        wellCount: job.wellCount,
+        hasWellsideGauge: job.hasWellsideGauge,
+        nodes,
+        edges,
+        mainBoxName,
+        satelliteName,
+        wellsideGaugeName,
+        companyComputerNames,
+      });
+    }
+  }, [nodes, edges, mainBoxName, satelliteName, wellsideGaugeName, companyComputerNames, isInitialized]);
 
   const updateMainBoxName = (newName: string) => {
     setMainBoxName(newName);
@@ -57,6 +96,7 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
   };
 
   const updateCompanyComputerName = (computerId: string, newName: string) => {
+    setCompanyComputerNames(prev => ({ ...prev, [computerId]: newName }));
     setNodes((nds) => 
       nds.map((node) => 
         node.id === computerId 
@@ -93,7 +133,7 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
     
     const initialNodes: Node[] = [];
     
-    // Create main box node
+    // Create main box node (ShearStream Box)
     const mainBoxNode: Node = {
       id: 'main-box',
       type: 'mainBox',
@@ -162,7 +202,7 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
     setEdges([]);
     setNodeIdCounter(job.wellCount + (job.hasWellsideGauge ? 4 : 3));
     setIsInitialized(true);
-  }, [job, mainBoxName, satelliteName, wellsideGaugeName, setNodes, setEdges, isInitialized]);
+  }, [job, mainBoxName, satelliteName, wellsideGaugeName, isInitialized]);
 
   // Initialize the diagram only once when component mounts
   React.useEffect(() => {
@@ -276,6 +316,12 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
 
   const clearDiagram = () => {
     setIsInitialized(false);
+    setNodes([]);
+    setEdges([]);
+    setMainBoxName('ShearStream Box');
+    setSatelliteName('Starlink');
+    setWellsideGaugeName('Wellside Gauge');
+    setCompanyComputerNames({});
     setTimeout(() => {
       initializeJob();
     }, 0);
@@ -309,7 +355,7 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
 
   return (
     <div className="max-w-7xl mx-auto space-y-2">
-      {/* Configuration Sections - Now with Equipment Panel */}
+      {/* Configuration Sections */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <CableConfigurationPanel
           selectedCableType={selectedCableType}
@@ -341,6 +387,8 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
         <JobEquipmentPanel
           jobId={job.id}
           jobName={job.name}
+          equipmentUsage={usage}
+          onAllocateEquipment={allocateEquipmentToJob}
         />
       </div>
 

@@ -15,7 +15,7 @@ const MainBoxNode = ({ data }: { data: any }) => {
     <div className="bg-gray-800 text-white rounded-lg p-4 border-2 border-gray-600 min-w-[200px]">
       <div className="flex items-center gap-2 mb-3">
         <Square className="h-5 w-5" />
-        <h3 className="font-bold text-lg">Main Box</h3>
+        <h3 className="font-bold text-lg">{data.label || 'ShearStream Box'}</h3>
       </div>
       
       <div className="space-y-2">

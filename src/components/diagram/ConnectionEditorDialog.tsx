@@ -64,7 +64,7 @@ const ConnectionEditorDialog: React.FC<ConnectionEditorDialogProps> = ({
 
   const getNodeLabel = (node: Node | undefined): string => {
     if (!node) return 'Unknown';
-    return node.data?.label || node.id || 'Unknown';
+    return String(node.data?.label || node.id || 'Unknown');
   };
 
   const handleSave = () => {

@@ -22,7 +22,7 @@ const SatelliteNode = ({ data }: { data: any }) => {
         <Satellite className="h-6 w-6" />
         <div>
           <h3 className="font-bold">{data.label}</h3>
-          <p className="text-xs text-green-100">Satellite</p>
+          <p className="text-xs text-green-100">Starlink</p>
         </div>
       </div>
     </div>

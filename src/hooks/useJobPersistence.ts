@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { Node, Edge } from '@xyflow/react';
+import { JobEquipmentAssignment } from '@/types/equipment';
 
 export interface JobData {
   id: string;
@@ -13,6 +14,7 @@ export interface JobData {
   satelliteName: string;
   wellsideGaugeName: string;
   companyComputerNames: Record<string, string>;
+  equipmentAssignment?: JobEquipmentAssignment;
   lastUpdated: Date;
 }
 
@@ -55,6 +57,7 @@ export const useJobPersistence = (jobId: string) => {
     updated.satelliteName = updated.satelliteName || 'Starlink';
     updated.wellsideGaugeName = updated.wellsideGaugeName || 'Wellside Gauge';
     updated.companyComputerNames = updated.companyComputerNames || {};
+    updated.equipmentAssignment = updated.equipmentAssignment || { companyComputerIds: [] };
     updated.nodes = updated.nodes || [];
     updated.edges = updated.edges || [];
     
@@ -98,6 +101,9 @@ export const useJobPersistence = (jobId: string) => {
             data: edge.data || { cableType: '200ft', label: '200ft' }
           }));
         }
+        
+        // Ensure equipment assignment exists
+        parsed.equipmentAssignment = parsed.equipmentAssignment || { companyComputerIds: [] };
         
         console.log('Successfully loaded job data from localStorage');
         setJobData(parsed);

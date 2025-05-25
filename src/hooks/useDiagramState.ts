@@ -1,6 +1,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { Node, Edge } from '@xyflow/react';
+import { JobEquipmentAssignment } from '@/types/equipment';
 
 export const useDiagramState = () => {
   const [selectedCableType, setSelectedCableType] = useState<'100ft' | '200ft' | '300ft'>('200ft');
@@ -10,6 +11,9 @@ export const useDiagramState = () => {
   const [wellsideGaugeName, setWellsideGaugeName] = useState('Wellside Gauge');
   const [companyComputerNames, setCompanyComputerNames] = useState<Record<string, string>>({});
   const [isInitialized, setIsInitialized] = useState(false);
+  const [equipmentAssignment, setEquipmentAssignment] = useState<JobEquipmentAssignment>({
+    companyComputerIds: []
+  });
 
   // Sync state with loaded data
   const syncWithLoadedData = useCallback((jobData: any) => {
@@ -18,6 +22,7 @@ export const useDiagramState = () => {
       setSatelliteName(jobData.satelliteName || 'Starlink');
       setWellsideGaugeName(jobData.wellsideGaugeName || 'Wellside Gauge');
       setCompanyComputerNames(jobData.companyComputerNames || {});
+      setEquipmentAssignment(jobData.equipmentAssignment || { companyComputerIds: [] });
     }
   }, []);
 
@@ -80,6 +85,8 @@ export const useDiagramState = () => {
     setCompanyComputerNames,
     isInitialized,
     setIsInitialized,
+    equipmentAssignment,
+    setEquipmentAssignment,
     updateMainBoxName,
     updateCompanyComputerName,
     updateSatelliteName,

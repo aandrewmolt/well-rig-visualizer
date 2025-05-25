@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { useInventoryData, EquipmentItem, IndividualEquipment } from './useInventoryData';
 import { useAuditTrail } from './useAuditTrail';
@@ -162,8 +161,7 @@ export const useEquipmentValidation = () => {
           entityType: 'equipment',
           entityId: 'system',
           details: {
-            reason: `Auto-fixed ${fixedCount} validation issues`,
-            fixedIssues: issues.slice(0, fixedCount).map(i => i.message)
+            reason: `Auto-fixed ${fixedCount} validation issues`
           },
           metadata: { source: 'auto-sync' }
         });

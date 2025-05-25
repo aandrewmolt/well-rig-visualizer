@@ -22,7 +22,7 @@ interface BulkTransferParams {
 }
 
 interface BulkStatusUpdateParams {
-  newStatus: 'available' | 'deployed' | 'red-tagged' | 'maintenance';
+  newStatus: 'available' | 'deployed' | 'red-tagged';
   reason?: string;
 }
 

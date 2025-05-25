@@ -20,6 +20,7 @@ import { useDebouncedSave } from '@/hooks/useDebouncedSave';
 import { useJobStorage } from '@/hooks/useJobStorage';
 import { useTrackedEquipment } from '@/hooks/useTrackedEquipment';
 import { JobEquipmentAssignment } from '@/types/equipment';
+import { useInventoryData } from '@/hooks/useInventoryData';
 
 interface Job {
   id: string;
@@ -39,6 +40,7 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const { updateJob } = useJobStorage();
   const { trackedEquipment, deployEquipment, returnEquipment } = useTrackedEquipment();
+  const { data: inventoryData } = useInventoryData();
 
   // Equipment assignment state
   const [selectedShearstreamBox, setSelectedShearstreamBox] = useState<string>('');
@@ -68,6 +70,27 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
     updateWellsideGaugeName,
     syncWithLoadedData,
   } = useDiagramState();
+
+  // Initialize selectedCableType with first available cable if not set
+  React.useEffect(() => {
+    if (!selectedCableType && inventoryData.equipmentTypes.length > 0) {
+      const firstAvailableCable = inventoryData.equipmentTypes
+        .filter(type => type.category === 'cables')
+        .find(cableType => {
+          const availableItems = inventoryData.equipmentItems
+            .filter(item => 
+              item.typeId === cableType.id && 
+              item.status === 'available' && 
+              item.quantity > 0
+            );
+          return availableItems.length > 0;
+        });
+      
+      if (firstAvailableCable) {
+        setSelectedCableType(firstAvailableCable.id);
+      }
+    }
+  }, [selectedCableType, setSelectedCableType, inventoryData]);
 
   const { jobData, saveJobData } = useJobPersistence(job.id);
   
@@ -158,18 +181,30 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
 
   // Restore edge styling and data
   const restoreEdgesStyling = useCallback((edgeList: any[]) => {
-    return edgeList.map(edge => ({
-      ...edge,
-      type: edge.type || 'cable',
-      style: edge.style || {
-        stroke: edge.data?.cableType === '100ft' ? '#ef4444' : 
-               edge.data?.cableType === '200ft' ? '#3b82f6' : 
-               edge.data?.cableType === '300ft' ? '#10b981' : '#6b7280',
-        strokeWidth: 3,
-      },
-      data: edge.data || { cableType: '200ft', label: '200ft' }
-    }));
-  }, []);
+    // Get cable type name for styling
+    const cableType = inventoryData.equipmentTypes.find(type => type.id === edge.data?.cableTypeId);
+    const cableName = cableType?.name || '';
+    
+    const getEdgeColor = (name: string) => {
+      const lowerName = name.toLowerCase();
+      if (lowerName.includes('100ft')) return '#ef4444';
+      if (lowerName.includes('200ft')) return '#3b82f6';
+      if (lowerName.includes('300ft')) return '#10b981';
+      return '#6b7280';
+    };
+
+    return edgeList.map(edge => {
+      return {
+        ...edge,
+        type: edge.type || 'cable',
+        style: edge.style || {
+          stroke: getEdgeColor(cableName),
+          strokeWidth: 3,
+        },
+        data: edge.data || { cableTypeId: selectedCableType, label: cableName }
+      };
+    });
+  }, [inventoryData.equipmentTypes, selectedCableType]);
 
   // Memoized save data
   const saveDataMemo = useMemo(() => ({
@@ -182,12 +217,13 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
     satelliteName,
     wellsideGaugeName,
     companyComputerNames,
+    selectedCableType, // Save the selected cable type ID
     equipmentAssignment: {
       shearstreamBoxId: selectedShearstreamBox || undefined,
       starlinkId: selectedStarlink || undefined,
       companyComputerIds: selectedCompanyComputers.filter(Boolean),
     } as JobEquipmentAssignment,
-  }), [job, nodes, edges, mainBoxName, satelliteName, wellsideGaugeName, companyComputerNames, selectedShearstreamBox, selectedStarlink, selectedCompanyComputers]);
+  }), [job, nodes, edges, mainBoxName, satelliteName, wellsideGaugeName, companyComputerNames, selectedCableType, selectedShearstreamBox, selectedStarlink, selectedCompanyComputers]);
 
   // Save function with comprehensive data
   const performSave = useCallback(() => {
@@ -220,6 +256,11 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
       setWellsideGaugeName(jobData.wellsideGaugeName || 'Wellside Gauge');
       setCompanyComputerNames(jobData.companyComputerNames || {});
       
+      // Load selected cable type
+      if (jobData.selectedCableType) {
+        setSelectedCableType(jobData.selectedCableType);
+      }
+      
       // Load equipment assignment
       if (jobData.equipmentAssignment) {
         setSelectedShearstreamBox(jobData.equipmentAssignment.shearstreamBoxId || '');
@@ -246,6 +287,7 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
     setSatelliteName, 
     setWellsideGaugeName, 
     setCompanyComputerNames, 
+    setSelectedCableType,
     setNodeIdCounter, 
     setIsInitialized,
     syncWithLoadedData,

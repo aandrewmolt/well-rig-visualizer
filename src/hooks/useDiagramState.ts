@@ -1,73 +1,76 @@
+import { useState, useCallback } from 'react';
+import { Node } from '@xyflow/react';
 
-import { useState, useCallback, useEffect } from 'react';
-import { Node, Edge } from '@xyflow/react';
-import { JobEquipmentAssignment } from '@/types/equipment';
+export interface JobEquipmentAssignment {
+  shearstreamBoxId?: string;
+  starlinkId?: string;
+  companyComputerIds: string[];
+}
 
 export const useDiagramState = () => {
-  const [selectedCableType, setSelectedCableType] = useState<'100ft' | '200ft' | '300ft'>('200ft');
-  const [nodeIdCounter, setNodeIdCounter] = useState(0);
+  // Change selectedCableType to use string instead of hardcoded union
+  const [selectedCableType, setSelectedCableType] = useState<string>('');
+  const [nodeIdCounter, setNodeIdCounter] = useState(1);
   const [mainBoxName, setMainBoxName] = useState('ShearStream Box');
   const [satelliteName, setSatelliteName] = useState('Starlink');
   const [wellsideGaugeName, setWellsideGaugeName] = useState('Wellside Gauge');
   const [companyComputerNames, setCompanyComputerNames] = useState<Record<string, string>>({});
   const [isInitialized, setIsInitialized] = useState(false);
   const [equipmentAssignment, setEquipmentAssignment] = useState<JobEquipmentAssignment>({
-    companyComputerIds: []
+    companyComputerIds: [],
   });
 
-  // Sync state with loaded data
+  const updateMainBoxName = useCallback((name: string, setNodes: (updater: (nodes: Node[]) => Node[]) => void) => {
+    setMainBoxName(name);
+    setNodes((nodes) =>
+      nodes.map((node) =>
+        node.type === 'mainBox'
+          ? { ...node, data: { ...node.data, label: name } }
+          : node
+      )
+    );
+  }, []);
+
+  const updateCompanyComputerName = useCallback((nodeId: string, name: string, setNodes: (updater: (nodes: Node[]) => Node[]) => void) => {
+    setCompanyComputerNames(prev => ({ ...prev, [nodeId]: name }));
+    setNodes((nodes) =>
+      nodes.map((node) =>
+        node.id === nodeId
+          ? { ...node, data: { ...node.data, label: name } }
+          : node
+      )
+    );
+  }, []);
+
+  const updateSatelliteName = useCallback((name: string, setNodes: (updater: (nodes: Node[]) => Node[]) => void) => {
+    setSatelliteName(name);
+    setNodes((nodes) =>
+      nodes.map((node) =>
+        node.type === 'satellite'
+          ? { ...node, data: { ...node.data, label: name } }
+          : node
+      )
+    );
+  }, []);
+
+  const updateWellsideGaugeName = useCallback((name: string, setNodes: (updater: (nodes: Node[]) => Node[]) => void) => {
+    setWellsideGaugeName(name);
+    setNodes((nodes) =>
+      nodes.map((node) =>
+        node.type === 'wellsideGauge'
+          ? { ...node, data: { ...node.data, label: name } }
+          : node
+      )
+    );
+  }, []);
+
   const syncWithLoadedData = useCallback((jobData: any) => {
-    if (jobData) {
-      setMainBoxName(jobData.mainBoxName || 'ShearStream Box');
-      setSatelliteName(jobData.satelliteName || 'Starlink');
-      setWellsideGaugeName(jobData.wellsideGaugeName || 'Wellside Gauge');
-      setCompanyComputerNames(jobData.companyComputerNames || {});
-      setEquipmentAssignment(jobData.equipmentAssignment || { companyComputerIds: [] });
+    if (jobData.selectedCableType) {
+      setSelectedCableType(jobData.selectedCableType);
     }
-  }, []);
-
-  const updateMainBoxName = useCallback((newName: string, setNodes: (updater: (nodes: Node[]) => Node[]) => void) => {
-    setMainBoxName(newName);
-    setNodes((nds) => 
-      nds.map((node) => 
-        node.id === 'main-box' 
-          ? { ...node, data: { ...node.data, label: newName } }
-          : node
-      )
-    );
-  }, []);
-
-  const updateCompanyComputerName = useCallback((computerId: string, newName: string, setNodes: (updater: (nodes: Node[]) => Node[]) => void) => {
-    setCompanyComputerNames(prev => ({ ...prev, [computerId]: newName }));
-    setNodes((nds) => 
-      nds.map((node) => 
-        node.id === computerId 
-          ? { ...node, data: { ...node.data, label: newName } }
-          : node
-      )
-    );
-  }, []);
-
-  const updateSatelliteName = useCallback((newName: string, setNodes: (updater: (nodes: Node[]) => Node[]) => void) => {
-    setSatelliteName(newName);
-    setNodes((nds) => 
-      nds.map((node) => 
-        node.id === 'satellite' 
-          ? { ...node, data: { ...node.data, label: newName } }
-          : node
-      )
-    );
-  }, []);
-
-  const updateWellsideGaugeName = useCallback((newName: string, setNodes: (updater: (nodes: Node[]) => Node[]) => void) => {
-    setWellsideGaugeName(newName);
-    setNodes((nds) => 
-      nds.map((node) => 
-        node.id === 'wellside-gauge' 
-          ? { ...node, data: { ...node.data, label: newName } }
-          : node
-      )
-    );
+    if (jobData.equipmentAssignment) {
+      setEquipmentAssignment(jobData.equipmentAssignment);
+    }
   }, []);
 
   return {

@@ -5,10 +5,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Route, Square, Download, Monitor } from 'lucide-react';
+import { useInventoryData } from '@/hooks/useInventoryData';
 
 interface CableConfigurationPanelProps {
-  selectedCableType: '100ft' | '200ft' | '300ft';
-  setSelectedCableType: (type: '100ft' | '200ft' | '300ft') => void;
+  selectedCableType: string;
+  setSelectedCableType: (type: string) => void;
   addYAdapter: () => void;
   addCompanyComputer: () => void;
   clearDiagram: () => void;
@@ -23,6 +24,31 @@ const CableConfigurationPanel: React.FC<CableConfigurationPanelProps> = ({
   clearDiagram,
   saveDiagram,
 }) => {
+  const { data } = useInventoryData();
+
+  // Get available cable types from inventory
+  const availableCables = data.equipmentTypes
+    .filter(type => type.category === 'cables')
+    .map(cableType => {
+      const availableItems = data.equipmentItems
+        .filter(item => 
+          item.typeId === cableType.id && 
+          item.status === 'available' && 
+          item.quantity > 0
+        );
+      
+      const totalQuantity = availableItems.reduce((sum, item) => sum + item.quantity, 0);
+      
+      return {
+        id: cableType.id,
+        name: cableType.name,
+        availableQuantity: totalQuantity,
+      };
+    })
+    .filter(cable => cable.availableQuantity > 0); // Only show cables with available quantity
+
+  const selectedCableName = availableCables.find(cable => cable.id === selectedCableType)?.name || '';
+
   return (
     <Card className="bg-white shadow-lg">
       <CardHeader className="pb-2">
@@ -35,16 +61,30 @@ const CableConfigurationPanel: React.FC<CableConfigurationPanelProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2 items-end">
           <div>
             <Label htmlFor="cable-type" className="text-sm">Cable Type</Label>
-            <Select value={selectedCableType} onValueChange={(value: any) => setSelectedCableType(value)}>
+            <Select value={selectedCableType} onValueChange={setSelectedCableType}>
               <SelectTrigger id="cable-type" className="h-8">
-                <SelectValue />
+                <SelectValue placeholder="Select cable type..." />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="100ft">100ft Cable</SelectItem>
-                <SelectItem value="200ft">200ft Cable</SelectItem>
-                <SelectItem value="300ft">300ft Reel</SelectItem>
+                {availableCables.length === 0 ? (
+                  <SelectItem value="none" disabled>No cables available</SelectItem>
+                ) : (
+                  availableCables.map(cable => (
+                    <SelectItem key={cable.id} value={cable.id}>
+                      <div className="flex items-center justify-between w-full">
+                        <span>{cable.name}</span>
+                        <span className="text-xs text-gray-500 ml-2">({cable.availableQuantity} available)</span>
+                      </div>
+                    </SelectItem>
+                  ))
+                )}
               </SelectContent>
             </Select>
+            {selectedCableName && (
+              <div className="text-xs text-gray-600 mt-1">
+                Selected: {selectedCableName}
+              </div>
+            )}
           </div>
           
           <Button onClick={addYAdapter} variant="outline" size="sm" className="flex items-center gap-2 h-8">

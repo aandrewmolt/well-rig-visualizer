@@ -13,13 +13,13 @@ import { Plus, FileText, ArrowLeft, Trash2, Calendar } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useJobStorage, StoredJob } from '@/hooks/useJobStorage';
 import { useInventoryData } from '@/hooks/useInventoryData';
-import { useEnhancedEquipmentTracking } from '@/hooks/useEnhancedEquipmentTracking';
+import { useJobPersistence } from '@/hooks/useJobPersistence';
 import { Badge } from '@/components/ui/badge';
 
 const CableJobs = () => {
   const navigate = useNavigate();
   const { jobs, addJob, deleteJob } = useJobStorage();
-  const { data } = useInventoryData();
+  const { data, updateEquipmentItems } = useInventoryData();
   const [selectedJob, setSelectedJob] = useState<StoredJob | null>(null);
   const [newJobName, setNewJobName] = useState('');
   const [newJobWells, setNewJobWells] = useState(1);
@@ -62,18 +62,54 @@ const CableJobs = () => {
   const confirmDeleteJob = (returnLocationId: string) => {
     if (!jobToDelete) return;
 
-    // Return equipment using enhanced tracking
-    const { returnEquipmentToLocation } = useEnhancedEquipmentTracking(
-      jobToDelete.id, 
-      [], 
-      []
+    console.log('Starting job deletion process for:', jobToDelete.id);
+
+    // Get deployed equipment for this job before deletion
+    const deployedEquipment = data.equipmentItems.filter(
+      item => item.status === 'deployed' && item.jobId === jobToDelete.id
     );
-    
-    returnEquipmentToLocation(returnLocationId);
+
+    console.log('Found deployed equipment:', deployedEquipment);
+
+    if (deployedEquipment.length > 0) {
+      // Return equipment to specified location
+      const updatedItems = data.equipmentItems.filter(item => 
+        !(item.status === 'deployed' && item.jobId === jobToDelete.id)
+      );
+
+      // Return quantities to available items at target location
+      deployedEquipment.forEach(deployedItem => {
+        const availableItem = updatedItems.find(
+          item => 
+            item.typeId === deployedItem.typeId && 
+            item.locationId === returnLocationId && 
+            item.status === 'available'
+        );
+
+        if (availableItem) {
+          availableItem.quantity += deployedItem.quantity;
+          availableItem.lastUpdated = new Date();
+        } else {
+          // Create new available item at target location
+          updatedItems.push({
+            id: `returned-${deployedItem.typeId}-${returnLocationId}-${Date.now()}`,
+            typeId: deployedItem.typeId,
+            locationId: returnLocationId,
+            quantity: deployedItem.quantity,
+            status: 'available',
+            lastUpdated: new Date(),
+          });
+        }
+      });
+
+      updateEquipmentItems(updatedItems);
+      console.log('Equipment returned to location:', returnLocationId);
+    }
     
     // Delete job data from localStorage
     try {
       localStorage.removeItem(`job-${jobToDelete.id}`);
+      console.log('Job data removed from localStorage');
     } catch (error) {
       console.error('Failed to remove job data:', error);
     }
@@ -81,7 +117,8 @@ const CableJobs = () => {
     // Remove from jobs list
     deleteJob(jobToDelete.id);
     
-    toast.success(`Job "${jobToDelete.name}" deleted and equipment returned`);
+    const locationName = data.storageLocations.find(loc => loc.id === returnLocationId)?.name || 'Unknown';
+    toast.success(`Job "${jobToDelete.name}" deleted and equipment returned to ${locationName}`);
     setJobToDelete(null);
     setIsDeletionDialogOpen(false);
     

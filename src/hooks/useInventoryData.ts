@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 
@@ -71,10 +72,40 @@ export const useInventoryData = () => {
       id: `item-${type.id}`,
       typeId: type.id,
       locationId: '1', // Midland Office
-      quantity: 20, // 20 pieces of each equipment type
+      quantity: 25, // Increased default quantity for better availability
       status: 'available' as const,
       lastUpdated: new Date(),
     }));
+  };
+
+  const ensureMinimumInventory = (items: EquipmentItem[]): EquipmentItem[] => {
+    const updatedItems = [...items];
+    const midlandOfficeId = '1';
+    
+    // Ensure each equipment type has minimum quantity at Midland Office
+    DEFAULT_EQUIPMENT_TYPES.forEach(type => {
+      const existingItem = updatedItems.find(
+        item => item.typeId === type.id && item.locationId === midlandOfficeId && item.status === 'available'
+      );
+      
+      if (!existingItem) {
+        // Create new item if none exists
+        updatedItems.push({
+          id: `auto-item-${type.id}-${Date.now()}`,
+          typeId: type.id,
+          locationId: midlandOfficeId,
+          quantity: 25,
+          status: 'available',
+          lastUpdated: new Date(),
+        });
+      } else if (existingItem.quantity < 5) {
+        // Top up if quantity is too low
+        existingItem.quantity = Math.max(existingItem.quantity + 10, 15);
+        existingItem.lastUpdated = new Date();
+      }
+    });
+    
+    return updatedItems;
   };
 
   // Initialize default data on first load
@@ -89,17 +120,11 @@ export const useInventoryData = () => {
             lastSync: new Date(parsedData.lastSync),
           };
           
-          // Check if Midland Office (id: '1') has any equipment
-          const midlandItems = loadedData.equipmentItems.filter((item: EquipmentItem) => item.locationId === '1');
-          
-          if (midlandItems.length === 0) {
-            // If Midland Office has no equipment, add default inventory
-            const defaultItems = createDefaultInventory();
-            loadedData.equipmentItems = [...loadedData.equipmentItems, ...defaultItems];
-            saveToLocalStorage(loadedData);
-          }
+          // Ensure minimum inventory levels
+          loadedData.equipmentItems = ensureMinimumInventory(loadedData.equipmentItems);
           
           setData(loadedData);
+          saveToLocalStorage(loadedData);
           setSyncStatus('synced');
         } catch (error) {
           console.error('Failed to parse stored data:', error);
@@ -111,7 +136,7 @@ export const useInventoryData = () => {
           saveToLocalStorage(initialData);
         }
       } else {
-        // Initialize with 20 pieces of each equipment type at Midland Office
+        // Initialize with default inventory
         const initialData = {
           ...data,
           equipmentItems: createDefaultInventory(),
@@ -143,7 +168,7 @@ export const useInventoryData = () => {
     
     setData(defaultData);
     saveToLocalStorage(defaultData);
-    toast.success('Inventory reset to default with 20 pieces of each equipment at Midland Office');
+    toast.success('Inventory reset to default with 25 pieces of each equipment at Midland Office');
   };
 
   const syncData = async () => {
@@ -184,7 +209,9 @@ export const useInventoryData = () => {
   };
 
   const updateEquipmentItems = (items: EquipmentItem[]) => {
-    const updatedData = { ...data, equipmentItems: items };
+    // Ensure minimum inventory when updating
+    const enhancedItems = ensureMinimumInventory(items);
+    const updatedData = { ...data, equipmentItems: enhancedItems };
     setData(updatedData);
     saveToLocalStorage(updatedData);
   };

@@ -138,6 +138,8 @@ const JobEquipmentPanel: React.FC<JobEquipmentPanelProps> = ({
           <EquipmentAvailabilityStatus
             availability={availability}
             equipmentUsage={equipmentUsage}
+            jobId={jobId}
+            selectedLocationId={selectedLocation}
           />
 
           <EquipmentUsageSummary

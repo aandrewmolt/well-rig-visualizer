@@ -168,6 +168,7 @@ export const useEnhancedEquipmentTracking = (jobId: string, nodes: Node[], edges
     if (availableItem && availableItem.quantity >= quantity) {
       // Sufficient equipment available
       availableItem.quantity -= quantity;
+      availableItem.lastUpdated = new Date();
       
       // Add deployed record
       updatedItems.push({
@@ -187,6 +188,7 @@ export const useEnhancedEquipmentTracking = (jobId: string, nodes: Node[], edges
       if (availableItem && currentAvailable > 0) {
         // Use what's available
         availableItem.quantity = 0;
+        availableItem.lastUpdated = new Date();
         updatedItems.push({
           id: `deployed-${typeId}-${jobId}-${Date.now()}-partial`,
           typeId,
@@ -228,35 +230,40 @@ export const useEnhancedEquipmentTracking = (jobId: string, nodes: Node[], edges
   };
 
   const returnAllJobEquipment = () => {
+    const deployedItems = data.equipmentItems.filter(
+      item => item.status === 'deployed' && item.jobId === jobId
+    );
+
+    if (deployedItems.length === 0) return;
+
     const updatedItems = data.equipmentItems.filter(item => 
       !(item.status === 'deployed' && item.jobId === jobId)
     );
 
     // Return quantities to available items
-    data.equipmentItems
-      .filter(item => item.status === 'deployed' && item.jobId === jobId)
-      .forEach(deployedItem => {
-        const availableItem = updatedItems.find(
-          item => 
-            item.typeId === deployedItem.typeId && 
-            item.locationId === deployedItem.locationId && 
-            item.status === 'available'
-        );
+    deployedItems.forEach(deployedItem => {
+      const availableItem = updatedItems.find(
+        item => 
+          item.typeId === deployedItem.typeId && 
+          item.locationId === deployedItem.locationId && 
+          item.status === 'available'
+      );
 
-        if (availableItem) {
-          availableItem.quantity += deployedItem.quantity;
-        } else {
-          // Create new available item
-          updatedItems.push({
-            id: `returned-${deployedItem.typeId}-${deployedItem.locationId}-${Date.now()}`,
-            typeId: deployedItem.typeId,
-            locationId: deployedItem.locationId,
-            quantity: deployedItem.quantity,
-            status: 'available',
-            lastUpdated: new Date(),
-          });
-        }
-      });
+      if (availableItem) {
+        availableItem.quantity += deployedItem.quantity;
+        availableItem.lastUpdated = new Date();
+      } else {
+        // Create new available item
+        updatedItems.push({
+          id: `returned-${deployedItem.typeId}-${deployedItem.locationId}-${Date.now()}`,
+          typeId: deployedItem.typeId,
+          locationId: deployedItem.locationId,
+          quantity: deployedItem.quantity,
+          status: 'available',
+          lastUpdated: new Date(),
+        });
+      }
+    });
 
     updateEquipmentItems(updatedItems);
   };
@@ -283,6 +290,7 @@ export const useEnhancedEquipmentTracking = (jobId: string, nodes: Node[], edges
 
       if (availableItem) {
         availableItem.quantity += deployedItem.quantity;
+        availableItem.lastUpdated = new Date();
       } else {
         // Create new available item at target location
         updatedItems.push({

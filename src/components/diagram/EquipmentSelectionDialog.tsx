@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -66,7 +65,7 @@ const EquipmentSelectionDialog: React.FC<EquipmentSelectionDialogProps> = ({
 
   const handleConfirm = () => {
     const assignment: JobEquipmentAssignment = {
-      shearstreamBoxId: selectedShearstreamBox || undefined,
+      shearstreamBoxIds: selectedShearstreamBox ? [selectedShearstreamBox] : [],
       starlinkId: selectedStarlink || undefined,
       companyComputerIds: selectedCompanyComputers.filter(Boolean),
     };

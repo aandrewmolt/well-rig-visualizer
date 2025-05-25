@@ -1,4 +1,3 @@
-
 import { useMemo } from 'react';
 import { EquipmentType, StorageLocation, EquipmentItem } from '@/types/inventory';
 
@@ -13,7 +12,8 @@ const EQUIPMENT_TYPES: EquipmentType[] = [
   { id: '8', name: 'Pencil Gauge', category: 'gauges', requiresIndividualTracking: true, defaultIdPrefix: 'PC-' },
   { id: '9', name: 'Y Adapter Cable', category: 'adapters', requiresIndividualTracking: false },
   { id: '10', name: 'Starlink', category: 'communication', requiresIndividualTracking: true, defaultIdPrefix: 'SL-' },
-  { id: '11', name: 'Customer Computer', category: 'communication', requiresIndividualTracking: true, defaultIdPrefix: 'CC-' },
+  { id: '11', name: 'Company Computer', category: 'communication', requiresIndividualTracking: true, defaultIdPrefix: 'CC-' },
+  { id: '12', name: 'ShearStream Box', category: 'communication', requiresIndividualTracking: true, defaultIdPrefix: 'SS-' },
 ];
 
 const STORAGE_LOCATIONS: StorageLocation[] = [

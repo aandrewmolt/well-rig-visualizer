@@ -64,7 +64,14 @@ export const useTrackedEquipmentSync = () => {
     return mergedEquipment;
   };
 
+  // Force sync with immediate callback
+  const forceSyncFromInventory = () => {
+    console.log('Force syncing from inventory immediately');
+    return syncFromInventory();
+  };
+
   return {
     syncFromInventory,
+    forceSyncFromInventory,
   };
 };

@@ -55,7 +55,14 @@ export const useIndividualEquipmentManager = (
     saveImmediately,
     discardChanges,
     unsavedCount,
-  } = useDraftEquipmentManager(individualEquipment, updateIndividualEquipment);
+  } = useDraftEquipmentManager(individualEquipment, (equipment) => {
+    // Enhanced save callback with immediate sync trigger
+    updateIndividualEquipment(equipment);
+    // Small delay to ensure tracked equipment sync happens
+    setTimeout(() => {
+      console.log('Individual equipment saved, triggering sync check');
+    }, 200);
+  });
 
   useEffect(() => {
     if (onDraftCountChange) {
@@ -148,7 +155,7 @@ export const useIndividualEquipmentManager = (
       addDraftEquipment(newEquipment, saveImmediate);
       toast({
         title: "Equipment Added",
-        description: saveImmediate ? "Equipment saved successfully" : "Equipment added to drafts (will auto-save in 1 second)",
+        description: saveImmediate ? "Equipment saved successfully" : "Equipment added to drafts (will auto-save in 0.5 seconds)",
       });
     }
 
@@ -195,7 +202,7 @@ export const useIndividualEquipmentManager = (
       title: "Bulk Creation",
       description: saveImmediate 
         ? `${bulkCreateData.count} equipment items saved successfully`
-        : `${bulkCreateData.count} equipment items added to drafts (will auto-save in 1 second)`,
+        : `${bulkCreateData.count} equipment items added to drafts (will auto-save in 0.5 seconds)`,
     });
     setIsBulkCreateOpen(false);
     setBulkCreateData({

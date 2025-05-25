@@ -13,7 +13,7 @@ export const useTrackedEquipment = () => {
   const [deploymentHistory, setDeploymentHistory] = useState<EquipmentDeploymentHistory[]>([]);
 
   const { createDefaultEquipment } = useTrackedEquipmentTypes();
-  const { syncFromInventory } = useTrackedEquipmentSync();
+  const { syncFromInventory, forceSyncFromInventory } = useTrackedEquipmentSync();
   const { loadData, saveData } = useTrackedEquipmentStorage();
   const operations = useTrackedEquipmentOperations(
     trackedEquipment,
@@ -23,32 +23,39 @@ export const useTrackedEquipment = () => {
   );
 
   // Force sync function that can be called externally
-  const forceSyncFromInventory = () => {
-    console.log('Force syncing tracked equipment from inventory');
-    const syncedEquipment = syncFromInventory();
+  const performForceSyncFromInventory = () => {
+    console.log('Performing force sync from inventory');
+    const syncedEquipment = forceSyncFromInventory();
     setTrackedEquipment(syncedEquipment);
+    return syncedEquipment;
   };
 
-  // Load data and sync on mount
+  // Load data on mount
   useEffect(() => {
     const historyData = loadData();
     setDeploymentHistory(historyData);
   }, []);
 
-  // Sync from inventory whenever inventory data changes - trigger sync when individual equipment changes
+  // Sync from inventory with improved timing - trigger sync when individual equipment changes
   useEffect(() => {
     console.log('Inventory data change detected, checking for sync...');
     console.log('Individual equipment count:', inventoryData.individualEquipment.length);
     
     if (inventoryData.individualEquipment.length > 0) {
-      const syncedEquipment = syncFromInventory();
-      setTrackedEquipment(syncedEquipment);
+      // Use a slight delay to ensure all inventory operations are complete
+      const timeoutId = setTimeout(() => {
+        console.log('Executing delayed sync from inventory');
+        const syncedEquipment = syncFromInventory();
+        setTrackedEquipment(syncedEquipment);
+      }, 100);
+      
+      return () => clearTimeout(timeoutId);
     } else if (trackedEquipment.length === 0) {
       // Fallback to default equipment if no inventory data
       console.log('No inventory data, falling back to default equipment');
       setTrackedEquipment(createDefaultEquipment());
     }
-  }, [inventoryData.individualEquipment, inventoryData.lastSync]); // Added lastSync to trigger sync when equipment is saved
+  }, [inventoryData.individualEquipment, inventoryData.lastSync, inventoryData.equipmentTypes]); 
 
   // Save whenever tracked equipment or deployment history changes
   useEffect(() => {
@@ -60,7 +67,7 @@ export const useTrackedEquipment = () => {
   return {
     trackedEquipment,
     deploymentHistory,
-    forceSyncFromInventory,
+    forceSyncFromInventory: performForceSyncFromInventory,
     ...operations,
   };
 };

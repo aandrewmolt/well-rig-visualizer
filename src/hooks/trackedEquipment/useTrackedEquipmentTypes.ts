@@ -11,9 +11,9 @@ export const useTrackedEquipmentTypes = () => {
     if (!equipmentType) return null;
     
     const typeName = equipmentType.name.toLowerCase();
-    if (typeName.includes('shearstream') || typeName.includes('ss')) return 'shearstream-box';
-    if (typeName.includes('starlink') || typeName.includes('sl')) return 'starlink';
-    if (typeName.includes('computer') || typeName.includes('cc')) return 'company-computer';
+    if (typeName.includes('shearstream') || typeName.includes('ss') || equipmentType.id === '12') return 'shearstream-box';
+    if (typeName.includes('starlink') || typeName.includes('sl') || equipmentType.id === '10') return 'starlink';
+    if (typeName.includes('computer') || typeName.includes('cc') || equipmentType.id === '11') return 'company-computer';
     
     return null;
   };

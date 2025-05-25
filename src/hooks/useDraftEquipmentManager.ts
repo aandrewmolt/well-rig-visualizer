@@ -1,5 +1,5 @@
 
-import { useState, useCallback, useRef, useMemo } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { IndividualEquipment } from '@/hooks/useInventoryData';
 import { useDebouncedSave } from '@/hooks/useDebouncedSave';
 import { toast } from '@/hooks/use-toast';
@@ -23,7 +23,7 @@ export const useDraftEquipmentManager = (
 
   const saveChanges = useCallback(() => {
     console.log('Saving changes, hasUnsavedChanges:', hasUnsavedChanges);
-    if (!hasUnsavedChanges) return;
+    if (!hasUnsavedChanges || draftEquipment.length === 0) return;
 
     const finalEquipment: IndividualEquipment[] = [
       ...originalDataStable,
@@ -43,10 +43,11 @@ export const useDraftEquipmentManager = (
     });
   }, [draftEquipment, hasUnsavedChanges, onSave, originalDataStable]);
 
-  // Reduced auto-save delay from 3000ms to 1000ms for faster saves
-  const debouncedSave = useDebouncedSave(saveChanges, 1000);
+  // Reduced auto-save delay to 500ms for faster saves
+  const debouncedSave = useDebouncedSave(saveChanges, 500);
 
   const saveImmediately = useCallback(() => {
+    console.log('Immediate save triggered');
     saveChanges();
   }, [saveChanges]);
 
@@ -55,7 +56,8 @@ export const useDraftEquipmentManager = (
     setDraftEquipment(prev => [...prev, { ...equipment, isNew: true, isDirty: true }]);
     setHasUnsavedChanges(true);
     if (immediate) {
-      saveImmediately();
+      // Use setTimeout to ensure state is updated before save
+      setTimeout(() => saveImmediately(), 0);
     } else {
       debouncedSave();
     }
@@ -94,7 +96,8 @@ export const useDraftEquipmentManager = (
     setDraftEquipment(prev => [...prev, ...equipmentList.map(eq => ({ ...eq, isNew: true, isDirty: true }))]);
     setHasUnsavedChanges(true);
     if (immediate) {
-      saveImmediately();
+      // Use setTimeout to ensure state is updated before save
+      setTimeout(() => saveImmediately(), 0);
     } else {
       debouncedSave();
     }

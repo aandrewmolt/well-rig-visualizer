@@ -14,6 +14,7 @@ interface AuditEntry {
     quantity?: number;
     fromLocation?: string;
     toLocation?: string;
+    locationId?: string;
     jobId?: string;
     reason?: string;
   };

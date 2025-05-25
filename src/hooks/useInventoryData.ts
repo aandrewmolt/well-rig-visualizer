@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 
@@ -78,6 +77,45 @@ export const useInventoryData = () => {
     }));
   };
 
+  const cleanupDuplicateDeployments = (items: EquipmentItem[]): EquipmentItem[] => {
+    console.log('Cleaning up duplicate deployments...');
+    const deploymentMap = new Map<string, EquipmentItem>();
+    const cleanedItems: EquipmentItem[] = [];
+    
+    for (const item of items) {
+      if (item.status === 'deployed' && item.jobId) {
+        const deploymentKey = `${item.typeId}-${item.jobId}`;
+        
+        if (deploymentMap.has(deploymentKey)) {
+          // Found duplicate - consolidate quantities
+          const existing = deploymentMap.get(deploymentKey)!;
+          console.log(`Consolidating duplicate deployment: ${deploymentKey} (${existing.quantity} + ${item.quantity})`);
+          existing.quantity += item.quantity;
+          existing.lastUpdated = new Date();
+        } else {
+          // First instance of this deployment
+          deploymentMap.set(deploymentKey, { ...item });
+        }
+      } else {
+        // Not a deployment - keep as is
+        cleanedItems.push(item);
+      }
+    }
+    
+    // Add consolidated deployments
+    deploymentMap.forEach(deployment => {
+      cleanedItems.push(deployment);
+    });
+    
+    const removedCount = items.length - cleanedItems.length;
+    if (removedCount > 0) {
+      console.log(`Removed ${removedCount} duplicate deployment records`);
+      toast.info(`Cleaned up ${removedCount} duplicate equipment records`);
+    }
+    
+    return cleanedItems;
+  };
+
   const ensureMinimumInventory = (items: EquipmentItem[]): EquipmentItem[] => {
     const updatedItems = [...items];
     const midlandOfficeId = '1';
@@ -120,7 +158,8 @@ export const useInventoryData = () => {
             lastSync: new Date(parsedData.lastSync),
           };
           
-          // Ensure minimum inventory levels
+          // Clean up duplicates and ensure minimum inventory
+          loadedData.equipmentItems = cleanupDuplicateDeployments(loadedData.equipmentItems);
           loadedData.equipmentItems = ensureMinimumInventory(loadedData.equipmentItems);
           
           setData(loadedData);
@@ -209,8 +248,9 @@ export const useInventoryData = () => {
   };
 
   const updateEquipmentItems = (items: EquipmentItem[]) => {
-    // Ensure minimum inventory when updating
-    const enhancedItems = ensureMinimumInventory(items);
+    // Clean up duplicates and ensure minimum inventory when updating
+    const cleanedItems = cleanupDuplicateDeployments(items);
+    const enhancedItems = ensureMinimumInventory(cleanedItems);
     const updatedData = { 
       ...data, 
       equipmentItems: enhancedItems,
@@ -249,5 +289,6 @@ export const useInventoryData = () => {
     getEquipmentByType,
     getEquipmentByLocation,
     resetToDefaultInventory,
+    cleanupDuplicateDeployments,
   };
 };

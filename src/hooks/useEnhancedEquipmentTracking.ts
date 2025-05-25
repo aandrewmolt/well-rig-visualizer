@@ -10,13 +10,12 @@ import { useEquipmentReturner } from './equipment/useEquipmentReturner';
 
 export const useEnhancedEquipmentTracking = (jobId: string, nodes: Node[], edges: Edge[]) => {
   const { data, updateEquipmentItems } = useInventoryData();
-  // Default to false to prevent automatic allocation
   const [isAutoSyncEnabled, setIsAutoSyncEnabled] = useState(false);
 
   // Use the smaller, focused hooks
   const { calculateEquipmentUsage } = useEquipmentUsageCalculator(nodes, edges);
   const { ensureEquipmentTypesExist } = useEquipmentTypeManager();
-  const { performEquipmentAllocation, createAuditEntries } = useEquipmentAllocator(jobId);
+  const { performEquipmentAllocation, createAuditEntries, cleanupDuplicateDeployments } = useEquipmentAllocator(jobId);
   const { returnAllJobEquipment, returnEquipmentToLocation } = useEquipmentReturner(jobId);
 
   const autoAllocateEquipment = (locationId: string, usage?: EquipmentUsage) => {
@@ -25,24 +24,43 @@ export const useEnhancedEquipmentTracking = (jobId: string, nodes: Node[], edges
       return;
     }
 
-    // Safety check - only proceed if explicitly called (manual sync)
-    console.log('Manual equipment allocation requested for job:', jobId);
+    console.log('Equipment allocation/update requested for job:', jobId);
 
     const currentUsage = usage || calculateEquipmentUsage();
     
     // Ensure all equipment types exist before allocation
     ensureEquipmentTypesExist(currentUsage);
 
-    // Return any previously allocated equipment for this job
-    returnAllJobEquipment();
+    // Clean up any duplicate deployments first
+    let updatedItems = [...data.equipmentItems];
+    updatedItems = cleanupDuplicateDeployments(updatedItems);
 
-    const updatedItems = [...data.equipmentItems];
+    // Check if we have any existing deployments for this job
+    const existingDeployments = updatedItems.filter(
+      item => item.status === 'deployed' && item.jobId === jobId
+    );
+
+    const hasExistingDeployments = existingDeployments.length > 0;
+
+    // Perform allocation/update
     const allocatedItems = performEquipmentAllocation(locationId, currentUsage, updatedItems);
 
     updateEquipmentItems(updatedItems);
+    
+    // Create audit entries for changes
     createAuditEntries(allocatedItems, locationId);
 
-    toast.success(`Equipment manually allocated: ${allocatedItems.length} types deployed`);
+    // Provide better user feedback
+    const updatedCount = allocatedItems.filter(item => item.updated).length;
+    const totalTypes = allocatedItems.length;
+
+    if (hasExistingDeployments && updatedCount > 0) {
+      toast.success(`Equipment allocation updated: ${updatedCount} of ${totalTypes} types modified`);
+    } else if (hasExistingDeployments && updatedCount === 0) {
+      toast.info('Equipment allocation unchanged - already up to date');
+    } else {
+      toast.success(`Equipment allocated: ${totalTypes} types deployed`);
+    }
   };
 
   return {

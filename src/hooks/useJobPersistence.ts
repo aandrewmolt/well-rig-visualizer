@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Node, Edge } from '@xyflow/react';
 import { JobEquipmentAssignment } from '@/types/equipment';
@@ -14,6 +13,7 @@ export interface JobData {
   satelliteName: string;
   wellsideGaugeName: string;
   companyComputerNames: Record<string, string>;
+  selectedCableType?: string; // Add the missing property
   equipmentAssignment?: JobEquipmentAssignment;
   lastUpdated: Date;
 }

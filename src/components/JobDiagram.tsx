@@ -47,6 +47,7 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
   const [selectedStarlink, setSelectedStarlink] = useState<string>('');
   const [selectedCompanyComputers, setSelectedCompanyComputers] = useState<string[]>([]);
 
+  // ... keep existing code (useDiagramState hook call)
   const {
     selectedCableType,
     setSelectedCableType,
@@ -179,29 +180,27 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
     return maxId + 1;
   }, []);
 
-  // Restore edge styling and data
+  // Fix: Restore edge styling and data - remove reference to undefined 'edge'
   const restoreEdgesStyling = useCallback((edgeList: any[]) => {
-    // Get cable type name for styling
-    const cableType = inventoryData.equipmentTypes.find(type => type.id === edge.data?.cableTypeId);
-    const cableName = cableType?.name || '';
-    
-    const getEdgeColor = (name: string) => {
-      const lowerName = name.toLowerCase();
+    const getEdgeColor = (cableTypeId: string) => {
+      const cableType = inventoryData.equipmentTypes.find(type => type.id === cableTypeId);
+      const cableName = cableType?.name || '';
+      const lowerName = cableName.toLowerCase();
       if (lowerName.includes('100ft')) return '#ef4444';
       if (lowerName.includes('200ft')) return '#3b82f6';
       if (lowerName.includes('300ft')) return '#10b981';
       return '#6b7280';
     };
 
-    return edgeList.map(edge => {
+    return edgeList.map(edgeItem => {
       return {
-        ...edge,
-        type: edge.type || 'cable',
-        style: edge.style || {
-          stroke: getEdgeColor(cableName),
+        ...edgeItem,
+        type: edgeItem.type || 'cable',
+        style: edgeItem.style || {
+          stroke: getEdgeColor(edgeItem.data?.cableTypeId || selectedCableType),
           strokeWidth: 3,
         },
-        data: edge.data || { cableTypeId: selectedCableType, label: cableName }
+        data: edgeItem.data || { cableTypeId: selectedCableType, label: 'Cable' }
       };
     });
   }, [inventoryData.equipmentTypes, selectedCableType]);
@@ -256,7 +255,7 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
       setWellsideGaugeName(jobData.wellsideGaugeName || 'Wellside Gauge');
       setCompanyComputerNames(jobData.companyComputerNames || {});
       
-      // Load selected cable type
+      // Fix: Load selected cable type with fallback
       if (jobData.selectedCableType) {
         setSelectedCableType(jobData.selectedCableType);
       }

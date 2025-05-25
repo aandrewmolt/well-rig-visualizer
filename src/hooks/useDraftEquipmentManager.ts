@@ -22,7 +22,6 @@ export const useDraftEquipmentManager = (
   const originalDataStable = useMemo(() => originalEquipment, [originalEquipment.length]);
 
   const saveChanges = useCallback(() => {
-    console.log('Saving changes, hasUnsavedChanges:', hasUnsavedChanges);
     if (!hasUnsavedChanges || draftEquipment.length === 0) return;
 
     const finalEquipment: IndividualEquipment[] = [
@@ -43,16 +42,14 @@ export const useDraftEquipmentManager = (
     });
   }, [draftEquipment, hasUnsavedChanges, onSave, originalDataStable]);
 
-  // Reduced auto-save delay to 500ms for faster saves
-  const debouncedSave = useDebouncedSave(saveChanges, 500);
+  // Destructure the debounced save properly
+  const { debouncedSave, cleanup } = useDebouncedSave(saveChanges, 500);
 
   const saveImmediately = useCallback(() => {
-    console.log('Immediate save triggered');
     saveChanges();
   }, [saveChanges]);
 
   const addDraftEquipment = useCallback((equipment: DraftEquipment, immediate = false) => {
-    console.log('Adding draft equipment:', equipment, 'immediate:', immediate);
     setDraftEquipment(prev => [...prev, { ...equipment, isNew: true, isDirty: true }]);
     setHasUnsavedChanges(true);
     if (immediate) {
@@ -64,7 +61,6 @@ export const useDraftEquipmentManager = (
   }, [debouncedSave, saveImmediately]);
 
   const updateDraftEquipment = useCallback((id: string, updates: Partial<DraftEquipment>) => {
-    console.log('Updating draft equipment:', id, updates);
     setDraftEquipment(prev => prev.map(eq => 
       eq.id === id ? { ...eq, ...updates, isDirty: true } : eq
     ));
@@ -73,7 +69,6 @@ export const useDraftEquipmentManager = (
   }, [debouncedSave]);
 
   const removeDraftEquipment = useCallback((id: string) => {
-    console.log('Removing draft equipment:', id);
     setDraftEquipment(prev => {
       const newDrafts = prev.filter(eq => eq.id !== id);
       setHasUnsavedChanges(newDrafts.length > 0);
@@ -82,7 +77,6 @@ export const useDraftEquipmentManager = (
   }, []);
 
   const discardChanges = useCallback(() => {
-    console.log('Discarding changes');
     setDraftEquipment([]);
     setHasUnsavedChanges(false);
     toast({
@@ -92,7 +86,6 @@ export const useDraftEquipmentManager = (
   }, []);
 
   const addBulkDraftEquipment = useCallback((equipmentList: DraftEquipment[], immediate = false) => {
-    console.log('Adding bulk draft equipment:', equipmentList.length, 'items, immediate:', immediate);
     setDraftEquipment(prev => [...prev, ...equipmentList.map(eq => ({ ...eq, isNew: true, isDirty: true }))]);
     setHasUnsavedChanges(true);
     if (immediate) {

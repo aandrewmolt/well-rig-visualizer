@@ -43,14 +43,23 @@ export const useDraftEquipmentManager = (
     });
   }, [draftEquipment, hasUnsavedChanges, onSave, originalDataStable]);
 
-  const debouncedSave = useDebouncedSave(saveChanges, 3000);
+  // Reduced auto-save delay from 3000ms to 1000ms for faster saves
+  const debouncedSave = useDebouncedSave(saveChanges, 1000);
 
-  const addDraftEquipment = useCallback((equipment: DraftEquipment) => {
-    console.log('Adding draft equipment:', equipment);
+  const saveImmediately = useCallback(() => {
+    saveChanges();
+  }, [saveChanges]);
+
+  const addDraftEquipment = useCallback((equipment: DraftEquipment, immediate = false) => {
+    console.log('Adding draft equipment:', equipment, 'immediate:', immediate);
     setDraftEquipment(prev => [...prev, { ...equipment, isNew: true, isDirty: true }]);
     setHasUnsavedChanges(true);
-    debouncedSave();
-  }, [debouncedSave]);
+    if (immediate) {
+      saveImmediately();
+    } else {
+      debouncedSave();
+    }
+  }, [debouncedSave, saveImmediately]);
 
   const updateDraftEquipment = useCallback((id: string, updates: Partial<DraftEquipment>) => {
     console.log('Updating draft equipment:', id, updates);
@@ -80,12 +89,16 @@ export const useDraftEquipmentManager = (
     });
   }, []);
 
-  const addBulkDraftEquipment = useCallback((equipmentList: DraftEquipment[]) => {
-    console.log('Adding bulk draft equipment:', equipmentList.length, 'items');
+  const addBulkDraftEquipment = useCallback((equipmentList: DraftEquipment[], immediate = false) => {
+    console.log('Adding bulk draft equipment:', equipmentList.length, 'items, immediate:', immediate);
     setDraftEquipment(prev => [...prev, ...equipmentList.map(eq => ({ ...eq, isNew: true, isDirty: true }))]);
     setHasUnsavedChanges(true);
-    debouncedSave();
-  }, [debouncedSave]);
+    if (immediate) {
+      saveImmediately();
+    } else {
+      debouncedSave();
+    }
+  }, [debouncedSave, saveImmediately]);
 
   return {
     draftEquipment,
@@ -95,6 +108,7 @@ export const useDraftEquipmentManager = (
     removeDraftEquipment,
     addBulkDraftEquipment,
     saveChanges,
+    saveImmediately,
     discardChanges,
     unsavedCount: draftEquipment.length,
   };

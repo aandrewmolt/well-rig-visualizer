@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { TrackedEquipment, EquipmentDeploymentHistory, JobEquipmentAssignment } from '@/types/equipment';
 import { useInventoryData, IndividualEquipment } from '@/hooks/useInventoryData';
@@ -25,6 +24,7 @@ export const useTrackedEquipment = () => {
   // Convert individual equipment to tracked equipment format
   const syncFromInventory = () => {
     console.log('Syncing tracked equipment from inventory data');
+    console.log('Total individual equipment items:', inventoryData.individualEquipment.length);
     
     // Get relevant individual equipment (only tracked types)
     const relevantEquipment = inventoryData.individualEquipment.filter(eq => {
@@ -32,11 +32,12 @@ export const useTrackedEquipment = () => {
       return mappedType !== null;
     });
 
-    console.log('Found relevant equipment:', relevantEquipment.length);
+    console.log('Found relevant equipment for tracking:', relevantEquipment.length);
 
     // Convert to tracked equipment format
     const syncedEquipment: TrackedEquipment[] = relevantEquipment.map(eq => {
       const mappedType = mapToTrackedType(eq.typeId);
+      console.log(`Mapping equipment ${eq.equipmentId} (${eq.name}) to type ${mappedType}`);
       return {
         id: eq.id,
         equipmentId: eq.equipmentId,
@@ -80,8 +81,19 @@ export const useTrackedEquipment = () => {
       }
     });
 
-    console.log('Merged equipment count:', mergedEquipment.length);
+    console.log('Final merged equipment count:', mergedEquipment.length);
+    console.log('Merged equipment by type:', mergedEquipment.reduce((acc, eq) => {
+      acc[eq.type] = (acc[eq.type] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>));
+    
     setTrackedEquipment(mergedEquipment);
+  };
+
+  // Force sync function that can be called externally
+  const forceSyncFromInventory = () => {
+    console.log('Force syncing tracked equipment from inventory');
+    syncFromInventory();
   };
 
   const createDefaultEquipment = (): TrackedEquipment[] => [
@@ -231,15 +243,19 @@ export const useTrackedEquipment = () => {
     loadData();
   }, []);
 
-  // Sync from inventory whenever inventory data changes
+  // Sync from inventory whenever inventory data changes - trigger sync when individual equipment changes
   useEffect(() => {
+    console.log('Inventory data change detected, checking for sync...');
+    console.log('Individual equipment count:', inventoryData.individualEquipment.length);
+    
     if (inventoryData.individualEquipment.length > 0) {
       syncFromInventory();
     } else if (trackedEquipment.length === 0) {
       // Fallback to default equipment if no inventory data
+      console.log('No inventory data, falling back to default equipment');
       setTrackedEquipment(createDefaultEquipment());
     }
-  }, [inventoryData.individualEquipment]);
+  }, [inventoryData.individualEquipment, inventoryData.lastSync]); // Added lastSync to trigger sync when equipment is saved
 
   // Save whenever tracked equipment or deployment history changes
   useEffect(() => {
@@ -256,5 +272,6 @@ export const useTrackedEquipment = () => {
     updateEquipment,
     getAvailableEquipment,
     getEquipmentHistory,
+    forceSyncFromInventory,
   };
 };

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Edit2, Trash2, Package, Save } from 'lucide-react';
+import { Plus, Edit2, Trash2, Package, Save, Clock } from 'lucide-react';
 import { useInventoryData, IndividualEquipment, EquipmentType } from '@/hooks/useInventoryData';
 import { useDraftEquipmentManager, DraftEquipment } from '@/hooks/useDraftEquipmentManager';
 import SaveControlBar from './SaveControlBar';
@@ -15,9 +14,13 @@ import { toast } from '@/hooks/use-toast';
 
 interface IndividualEquipmentManagerProps {
   equipmentType: EquipmentType;
+  onDraftCountChange?: (count: number) => void;
 }
 
-const IndividualEquipmentManager: React.FC<IndividualEquipmentManagerProps> = ({ equipmentType }) => {
+const IndividualEquipmentManager: React.FC<IndividualEquipmentManagerProps> = ({ 
+  equipmentType, 
+  onDraftCountChange 
+}) => {
   const { data, updateIndividualEquipment } = useInventoryData();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isBulkCreateOpen, setIsBulkCreateOpen] = useState(false);
@@ -48,13 +51,23 @@ const IndividualEquipmentManager: React.FC<IndividualEquipmentManagerProps> = ({
     addDraftEquipment,
     addBulkDraftEquipment,
     saveChanges,
+    saveImmediately,
     discardChanges,
     unsavedCount,
   } = useDraftEquipmentManager(individualEquipment, updateIndividualEquipment);
 
+  // Update parent component about draft count changes
+  useEffect(() => {
+    if (onDraftCountChange) {
+      onDraftCountChange(draftEquipment.length);
+    }
+  }, [draftEquipment.length, onDraftCountChange]);
+
   // Memoize the combined equipment array with stable IDs
   const allEquipment = useMemo(() => {
-    console.log('Recalculating allEquipment array');
+    console.log('Recalculating allEquipment array for type:', equipmentType.name);
+    console.log('Individual equipment count:', individualEquipment.length);
+    console.log('Draft equipment count:', draftEquipment.length);
     return [
       ...individualEquipment,
       ...draftEquipment.map((draft, index) => ({
@@ -63,7 +76,7 @@ const IndividualEquipmentManager: React.FC<IndividualEquipmentManagerProps> = ({
         lastUpdated: draft.lastUpdated || new Date('2024-01-01'), // Use stable date for drafts
       } as IndividualEquipment))
     ];
-  }, [individualEquipment, draftEquipment, equipmentType.id]);
+  }, [individualEquipment, draftEquipment, equipmentType.id, equipmentType.name]);
 
   // Memoize the next equipment ID generation
   const generateNextEquipmentId = useCallback(() => {
@@ -94,7 +107,7 @@ const IndividualEquipmentManager: React.FC<IndividualEquipmentManagerProps> = ({
     setIsDialogOpen(true);
   }, [editingEquipment, generateNextEquipmentId]);
 
-  const handleSubmit = useCallback(() => {
+  const handleSubmit = useCallback((saveImmediate = false) => {
     if (!formData.equipmentId.trim() || !formData.name.trim() || !formData.locationId) {
       toast({
         title: "Validation Error",
@@ -141,17 +154,17 @@ const IndividualEquipmentManager: React.FC<IndividualEquipmentManagerProps> = ({
         status: 'available',
         ...formData
       };
-      addDraftEquipment(newEquipment);
+      addDraftEquipment(newEquipment, saveImmediate);
       toast({
         title: "Equipment Added",
-        description: "Equipment added to drafts (click Save to confirm)",
+        description: saveImmediate ? "Equipment saved successfully" : "Equipment added to drafts (will auto-save in 1 second)",
       });
     }
 
     resetForm();
   }, [formData, allEquipment, editingEquipment, data.individualEquipment, updateIndividualEquipment, equipmentType.id, addDraftEquipment]);
 
-  const handleBulkCreate = useCallback(() => {
+  const handleBulkCreate = useCallback((saveImmediate = false) => {
     if (!bulkCreateData.locationId || bulkCreateData.count <= 0) {
       toast({
         title: "Validation Error",
@@ -186,10 +199,12 @@ const IndividualEquipmentManager: React.FC<IndividualEquipmentManagerProps> = ({
       });
     }
 
-    addBulkDraftEquipment(newEquipment);
+    addBulkDraftEquipment(newEquipment, saveImmediate);
     toast({
       title: "Bulk Creation",
-      description: `${bulkCreateData.count} equipment items added to drafts (click Save to confirm)`,
+      description: saveImmediate 
+        ? `${bulkCreateData.count} equipment items saved successfully`
+        : `${bulkCreateData.count} equipment items added to drafts (will auto-save in 1 second)`,
     });
     setIsBulkCreateOpen(false);
     setBulkCreateData({
@@ -279,18 +294,21 @@ const IndividualEquipmentManager: React.FC<IndividualEquipmentManagerProps> = ({
             <div className="flex items-center gap-2">
               <Package className="h-5 w-5" />
               Individual {equipmentType.name} Items
-              <Badge variant="outline">{allEquipment.length} items</Badge>
-              {hasUnsavedChanges && (
+              <Badge variant="outline">{individualEquipment.length} saved</Badge>
+              {draftEquipment.length > 0 && (
                 <Badge className="bg-orange-100 text-orange-800">
-                  {unsavedCount} unsaved
+                  {draftEquipment.length} draft
                 </Badge>
               )}
+              <Badge variant="secondary">
+                {allEquipment.length} total
+              </Badge>
             </div>
             <div className="flex gap-2">
               {hasUnsavedChanges && (
-                <Button onClick={saveChanges} size="sm" className="bg-green-600 hover:bg-green-700">
+                <Button onClick={saveImmediately} size="sm" className="bg-green-600 hover:bg-green-700">
                   <Save className="mr-2 h-4 w-4" />
-                  Save All
+                  Save All Now
                 </Button>
               )}
               
@@ -347,8 +365,14 @@ const IndividualEquipmentManager: React.FC<IndividualEquipmentManagerProps> = ({
                       </Select>
                     </div>
                     <div className="flex space-x-2">
-                      <Button onClick={handleBulkCreate} className="flex-1">Create Items</Button>
-                      <Button onClick={() => setIsBulkCreateOpen(false)} variant="outline" className="flex-1">Cancel</Button>
+                      <Button onClick={() => handleBulkCreate(false)} variant="outline" className="flex-1">
+                        <Clock className="mr-2 h-4 w-4" />
+                        Add to Drafts
+                      </Button>
+                      <Button onClick={() => handleBulkCreate(true)} className="flex-1">
+                        <Save className="mr-2 h-4 w-4" />
+                        Create & Save Now
+                      </Button>
                     </div>
                   </div>
                 </DialogContent>
@@ -414,10 +438,14 @@ const IndividualEquipmentManager: React.FC<IndividualEquipmentManagerProps> = ({
                       />
                     </div>
                     <div className="flex space-x-2">
-                      <Button onClick={handleSubmit} className="flex-1">
-                        {editingEquipment ? 'Update' : 'Add'}
+                      <Button onClick={() => handleSubmit(false)} variant="outline" className="flex-1">
+                        <Clock className="mr-2 h-4 w-4" />
+                        {editingEquipment ? 'Update' : 'Add to Drafts'}
                       </Button>
-                      <Button onClick={resetForm} variant="outline" className="flex-1">Cancel</Button>
+                      <Button onClick={() => handleSubmit(true)} className="flex-1">
+                        <Save className="mr-2 h-4 w-4" />
+                        {editingEquipment ? 'Update' : 'Add & Save Now'}
+                      </Button>
                     </div>
                   </div>
                 </DialogContent>
@@ -490,7 +518,7 @@ const IndividualEquipmentManager: React.FC<IndividualEquipmentManagerProps> = ({
       <SaveControlBar
         hasUnsavedChanges={hasUnsavedChanges}
         unsavedCount={unsavedCount}
-        onSave={saveChanges}
+        onSave={saveImmediately}
         onDiscard={discardChanges}
       />
     </>

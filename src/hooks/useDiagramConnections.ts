@@ -3,6 +3,7 @@ import { useCallback } from 'react';
 import { Connection, Edge, Node, addEdge } from '@xyflow/react';
 import { toast } from 'sonner';
 import { useInventoryData } from '@/hooks/useInventoryData';
+import { useCableConnectionValidator } from './equipment/useCableConnectionValidator';
 
 export const useDiagramConnections = (
   selectedCableType: string,
@@ -10,6 +11,7 @@ export const useDiagramConnections = (
   setEdges: (updater: (edges: Edge[]) => Edge[]) => void
 ) => {
   const { data } = useInventoryData();
+  const { validateConnection } = useCableConnectionValidator();
 
   const onConnect = useCallback(
     (params: Connection) => {
@@ -29,7 +31,7 @@ export const useDiagramConnections = (
           data: { 
             connectionType: 'direct',
             label: 'Direct',
-            canSwitchType: true // Flag to indicate this connection can be switched
+            canSwitchType: true
           },
           style: {
             stroke: '#8b5cf6',
@@ -42,30 +44,6 @@ export const useDiagramConnections = (
         return;
       }
       
-      // Original direct connection logic for other Y adapter connections
-      const isDirectConnection = sourceNode?.type === 'yAdapter' && 
-        (targetNode?.type === 'well' || targetNode?.type === 'wellsideGauge');
-      
-      if (isDirectConnection) {
-        const edge: Edge = {
-          ...params,
-          id: `edge-${Date.now()}`,
-          type: 'direct',
-          data: { 
-            connectionType: 'direct',
-            label: 'Direct'
-          },
-          style: {
-            stroke: '#8b5cf6',
-            strokeWidth: 4,
-            strokeDasharray: '5,5',
-          },
-        };
-        setEdges((eds) => addEdge(edge, eds));
-        toast.success('Direct connection established!');
-        return;
-      }
-      
       // Get cable type information from inventory
       const cableType = data.equipmentTypes.find(type => type.id === selectedCableType);
       if (!cableType) {
@@ -73,19 +51,11 @@ export const useDiagramConnections = (
         return;
       }
 
-      // Handle cable connections with enhanced rules
-      const cableName = cableType.name.toLowerCase();
-      
-      // Enhanced connection rules
-      if (cableName.includes('300ft') || cableName.includes('reel')) {
-        if (sourceNode?.type === 'mainBox' && targetNode?.type !== 'yAdapter') {
-          toast.error(`${cableType.name} can only connect from Main Box to Y Adapters!`);
-          return;
-        }
-        if (sourceNode?.type !== 'mainBox' && sourceNode?.type !== 'yAdapter') {
-          toast.error(`${cableType.name} must originate from Main Box or Y Adapter!`);
-          return;
-        }
+      // Validate the connection using the new validator
+      const validation = validateConnection(sourceNode, targetNode, selectedCableType);
+      if (!validation.isValid) {
+        toast.error(`Connection not allowed: ${validation.reason}`);
+        return;
       }
 
       // Create cable connection edge with dynamic styling based on cable type
@@ -115,7 +85,7 @@ export const useDiagramConnections = (
       setEdges((eds) => addEdge(edge, eds));
       toast.success(`${cableType.name} connected!`);
     },
-    [selectedCableType, setEdges, nodes, data.equipmentTypes]
+    [selectedCableType, setEdges, nodes, data.equipmentTypes, validateConnection]
   );
 
   return { onConnect };

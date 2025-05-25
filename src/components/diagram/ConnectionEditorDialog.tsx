@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Node } from '@xyflow/react';
 import { useInventoryData } from '@/hooks/useInventoryData';
+import { useCableConnectionValidator } from '@/hooks/equipment/useCableConnectionValidator';
 
 interface ConnectionEditorDialogProps {
   isOpen: boolean;
@@ -30,6 +31,7 @@ const ConnectionEditorDialog: React.FC<ConnectionEditorDialogProps> = ({
   nodes
 }) => {
   const { data: inventoryData } = useInventoryData();
+  const { getValidCablesForConnection, validateConnection } = useCableConnectionValidator();
   const [newSourceId, setNewSourceId] = useState(currentEdge.source);
   const [newTargetId, setNewTargetId] = useState(currentEdge.target);
   const [newSourceHandle, setNewSourceHandle] = useState(currentEdge.sourceHandle || '');
@@ -45,18 +47,11 @@ const ConnectionEditorDialog: React.FC<ConnectionEditorDialogProps> = ({
   const canSwitchConnectionType = isYAdapterConnection && 
     (targetNode?.type === 'well' || targetNode?.type === 'wellsideGauge' || targetNode?.type === 'companyComputer');
 
-  // Get available 100ft cables
-  const available100ftCables = inventoryData.equipmentTypes
-    .filter(type => type.category === 'cables' && type.name.toLowerCase().includes('100ft'))
-    .filter(cableType => {
-      const availableItems = inventoryData.equipmentItems
-        .filter(item => 
-          item.typeId === cableType.id && 
-          item.status === 'available' && 
-          item.quantity > 0
-        );
-      return availableItems.length > 0;
-    });
+  // Get valid cables for the current connection
+  const validCables = getValidCablesForConnection(sourceNode, targetNode);
+  const available100ftCables = validCables.filter(rule => 
+    rule.cableName.toLowerCase().includes('100ft')
+  );
 
   const getAvailableSourceHandles = (node: Node) => {
     if (node?.type === 'mainBox') {
@@ -89,6 +84,15 @@ const ConnectionEditorDialog: React.FC<ConnectionEditorDialogProps> = ({
   };
 
   const handleSave = () => {
+    // Validate connection if using cable
+    if (connectionType === 'cable' && selectedCableType) {
+      const validation = validateConnection(sourceNode, targetNode, selectedCableType);
+      if (!validation.isValid) {
+        alert(`Invalid connection: ${validation.reason}`);
+        return;
+      }
+    }
+
     onUpdateConnection(
       newSourceId, 
       newTargetId, 
@@ -176,27 +180,33 @@ const ConnectionEditorDialog: React.FC<ConnectionEditorDialogProps> = ({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="direct">Direct Connection</SelectItem>
-                  <SelectItem value="cable">100ft Cable</SelectItem>
+                  <SelectItem value="cable">Cable Connection</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           )}
 
-          {connectionType === 'cable' && available100ftCables.length > 0 && (
+          {connectionType === 'cable' && validCables.length > 0 && (
             <div>
               <Label>Cable Type</Label>
               <Select value={selectedCableType} onValueChange={setSelectedCableType}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select 100ft cable" />
+                  <SelectValue placeholder="Select valid cable" />
                 </SelectTrigger>
                 <SelectContent>
-                  {available100ftCables.map(cable => (
-                    <SelectItem key={cable.id} value={cable.id}>
-                      {cable.name}
+                  {validCables.map(cable => (
+                    <SelectItem key={cable.cableTypeId} value={cable.cableTypeId}>
+                      {cable.cableName} {cable.version && `(${cable.version})`}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+          )}
+
+          {connectionType === 'cable' && validCables.length === 0 && (
+            <div className="text-sm text-red-600 p-2 bg-red-50 rounded">
+              No valid cable types available for this connection.
             </div>
           )}
 
@@ -221,6 +231,11 @@ const ConnectionEditorDialog: React.FC<ConnectionEditorDialogProps> = ({
           <div className="text-sm text-gray-600">
             <p>Current: {getNodeLabel(nodes.find(n => n.id === currentEdge.source))} → {getNodeLabel(nodes.find(n => n.id === currentEdge.target))}</p>
             <p>Type: {currentEdge.data?.connectionType === 'direct' ? 'Direct' : currentEdge.data?.label || 'Cable'}</p>
+            {validCables.length > 0 && (
+              <p className="text-green-600 mt-1">
+                Valid cables: {validCables.map(c => c.cableName).join(', ')}
+              </p>
+            )}
           </div>
         </div>
 

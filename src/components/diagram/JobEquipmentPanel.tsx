@@ -74,7 +74,7 @@ const JobEquipmentPanel: React.FC<JobEquipmentPanelProps> = ({
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-lg">
             <Package className="h-5 w-5" />
-            Robust Equipment Tracking - {jobName}
+            Enhanced Equipment Tracking - {jobName}
             {isConsistent ? (
               <CheckCircle className="h-4 w-4 text-green-500" />
             ) : (
@@ -95,7 +95,7 @@ const JobEquipmentPanel: React.FC<JobEquipmentPanelProps> = ({
 
           {/* Equipment Summary */}
           <div className="bg-blue-50 p-3 rounded-lg">
-            <h4 className="font-medium mb-2">Equipment Analysis Summary</h4>
+            <h4 className="font-medium mb-2">Connection Analysis Summary</h4>
             <div className="grid grid-cols-2 gap-2 text-sm">
               <div>Total Connections: {report.summary.totalConnections}</div>
               <div>Direct Connections: {report.summary.directConnections}</div>
@@ -104,19 +104,26 @@ const JobEquipmentPanel: React.FC<JobEquipmentPanelProps> = ({
             </div>
           </div>
 
-          {/* Cable Details */}
+          {/* Enhanced Cable Details */}
           {Object.keys(usage.cables).length > 0 && (
             <div className="space-y-2">
               <h4 className="font-medium">Cable Requirements</h4>
               {Object.entries(usage.cables).map(([typeId, details]) => (
-                <div key={typeId} className="flex justify-between items-center p-2 bg-gray-50 rounded">
-                  <div>
-                    <span className="font-medium">{details.typeName}</span>
-                    <span className="text-sm text-gray-500 ml-2">
-                      ({details.length} {details.category})
-                    </span>
+                <div key={typeId} className="p-2 bg-gray-50 rounded">
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <span className="font-medium">{details.typeName}</span>
+                      <div className="text-xs text-gray-500 mt-1">
+                        {details.length} {details.category}
+                        {details.version && (
+                          <span className="ml-2 px-1 bg-blue-100 text-blue-700 rounded">
+                            {details.version}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <span className="font-bold text-lg">{details.quantity}</span>
                   </div>
-                  <span className="font-bold">{details.quantity}</span>
                 </div>
               ))}
             </div>

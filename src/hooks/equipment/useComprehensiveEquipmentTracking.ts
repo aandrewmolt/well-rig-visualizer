@@ -14,8 +14,9 @@ interface DetailedEquipmentUsage {
     [typeId: string]: {
       typeName: string;
       quantity: number;
-      category: string; // 'reel' | 'cable'
-      length: string; // '100ft' | '200ft' | '300ft'
+      category: string;
+      length: string;
+      version?: string;
     };
   };
   gauges: number;
@@ -54,14 +55,23 @@ export const useComprehensiveEquipmentTracking = (nodes: Node[], edges: Edge[]) 
         
         if (equipmentType) {
           if (!usage.cables[cableTypeId]) {
-            // Determine cable characteristics from name
+            // Enhanced cable characteristic detection
             const name = equipmentType.name.toLowerCase();
             let length = '200ft'; // default
             let category = 'cable';
+            let version = undefined;
             
             if (name.includes('100ft')) length = '100ft';
             else if (name.includes('200ft')) length = '200ft';
-            else if (name.includes('300ft')) length = '300ft';
+            else if (name.includes('300ft')) {
+              length = '300ft';
+              // Determine version for 300ft cables
+              if (name.includes('old') || name.includes('legacy')) {
+                version = 'old (Y adapter only)';
+              } else if (name.includes('new') || name.includes('direct')) {
+                version = 'new (direct to wells)';
+              }
+            }
             
             if (name.includes('reel')) category = 'reel';
 
@@ -70,6 +80,7 @@ export const useComprehensiveEquipmentTracking = (nodes: Node[], edges: Edge[]) 
               quantity: 0,
               category,
               length,
+              version,
             };
           }
           usage.cables[cableTypeId].quantity++;
@@ -106,7 +117,7 @@ export const useComprehensiveEquipmentTracking = (nodes: Node[], edges: Edge[]) 
     const issues: string[] = [];
     const warnings: string[] = [];
 
-    // Check cable availability
+    // Check cable availability with enhanced details
     Object.entries(usage.cables).forEach(([typeId, details]) => {
       const available = data.equipmentItems
         .filter(item => 
@@ -123,12 +134,14 @@ export const useComprehensiveEquipmentTracking = (nodes: Node[], edges: Edge[]) 
         )
         .reduce((sum, item) => sum + item.quantity, 0);
 
+      const typeDescription = `${details.typeName}${details.version ? ` (${details.version})` : ''}`;
+
       if (available < details.quantity) {
         issues.push(
-          `${details.typeName}: Need ${details.quantity}, have ${available} available (${deployed} deployed elsewhere)`
+          `${typeDescription}: Need ${details.quantity}, have ${available} available (${deployed} deployed elsewhere)`
         );
       } else if (available === details.quantity) {
-        warnings.push(`${details.typeName}: Exact match - no spares available`);
+        warnings.push(`${typeDescription}: Exact match - no spares available`);
       }
     });
 
@@ -177,7 +190,7 @@ export const useComprehensiveEquipmentTracking = (nodes: Node[], edges: Edge[]) 
       },
     };
 
-    console.log('Equipment Usage Report:', report);
+    console.log('Enhanced Equipment Usage Report:', report);
     return report;
   };
 

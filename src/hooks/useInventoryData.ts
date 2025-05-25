@@ -30,11 +30,14 @@ export const useInventoryData = () => {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('offline');
+  const [isInitialized, setIsInitialized] = useState(false);
 
   const operations = useInventoryOperations(data, setData);
 
-  // Initialize default data on first load
+  // Initialize default data on first load - run cleanup only once
   useEffect(() => {
+    if (isInitialized) return;
+    
     const initializeData = () => {
       const storedData = loadFromLocalStorage();
       if (storedData) {
@@ -63,10 +66,11 @@ export const useInventoryData = () => {
         setData(initialData);
         saveToLocalStorage(initialData);
       }
+      setIsInitialized(true);
     };
 
     initializeData();
-  }, [cleanupDuplicateDeployments, ensureMinimumInventory, loadFromLocalStorage, saveToLocalStorage, createDefaultInventory, DEFAULT_EQUIPMENT_TYPES, DEFAULT_STORAGE_LOCATIONS]);
+  }, [isInitialized, cleanupDuplicateDeployments, ensureMinimumInventory, loadFromLocalStorage, saveToLocalStorage, createDefaultInventory, DEFAULT_EQUIPMENT_TYPES, DEFAULT_STORAGE_LOCATIONS]);
 
   const handleResetToDefaultInventory = () => {
     const defaultData = resetToDefaultInventory();

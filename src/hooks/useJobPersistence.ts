@@ -66,7 +66,7 @@ export const useJobPersistence = (jobId: string) => {
     try {
       const serialized = JSON.stringify(updated);
       localStorage.setItem(`job-${jobId}`, serialized);
-      console.log('Successfully saved job data to localStorage');
+      console.log('Successfully saved job data to localStorage with equipment assignment');
     } catch (error) {
       console.error('Failed to save job data to localStorage:', error);
     }
@@ -105,7 +105,7 @@ export const useJobPersistence = (jobId: string) => {
         // Ensure equipment assignment exists
         parsed.equipmentAssignment = parsed.equipmentAssignment || { companyComputerIds: [] };
         
-        console.log('Successfully loaded job data from localStorage');
+        console.log('Successfully loaded job data from localStorage with equipment assignment');
         setJobData(parsed);
         return parsed;
       } catch (error) {

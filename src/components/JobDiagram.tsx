@@ -1,4 +1,5 @@
-import React, { useRef, useEffect, useCallback } from 'react';
+
+import React, { useRef, useEffect, useCallback, useState } from 'react';
 import {
   useNodesState,
   useEdgesState,
@@ -7,6 +8,7 @@ import '@xyflow/react/dist/style.css';
 import CableConfigurationPanel from './diagram/CableConfigurationPanel';
 import WellConfigurationPanel from './diagram/WellConfigurationPanel';
 import JobEquipmentPanel from './diagram/JobEquipmentPanel';
+import EquipmentSelectionPanel from './diagram/EquipmentSelectionPanel';
 import DiagramCanvas from './diagram/DiagramCanvas';
 import ConnectionGuide from './diagram/ConnectionGuide';
 import { useJobPersistence } from '@/hooks/useJobPersistence';
@@ -17,6 +19,8 @@ import { useDiagramConnections } from '@/hooks/useDiagramConnections';
 import { useDiagramActions } from '@/hooks/useDiagramActions';
 import { useDebouncedSave } from '@/hooks/useDebouncedSave';
 import { useJobStorage } from '@/hooks/useJobStorage';
+import { useTrackedEquipment } from '@/hooks/useTrackedEquipment';
+import { JobEquipmentAssignment } from '@/types/equipment';
 
 interface Job {
   id: string;
@@ -35,6 +39,12 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const { updateJob } = useJobStorage();
+  const { trackedEquipment, deployEquipment, returnEquipment } = useTrackedEquipment();
+
+  // Equipment assignment state
+  const [selectedShearstreamBox, setSelectedShearstreamBox] = useState<string>('');
+  const [selectedStarlink, setSelectedStarlink] = useState<string>('');
+  const [selectedCompanyComputers, setSelectedCompanyComputers] = useState<string[]>([]);
 
   const {
     selectedCableType,
@@ -51,6 +61,8 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
     setCompanyComputerNames,
     isInitialized,
     setIsInitialized,
+    equipmentAssignment,
+    setEquipmentAssignment,
     updateMainBoxName,
     updateCompanyComputerName,
     updateSatelliteName,
@@ -101,6 +113,37 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
     reactFlowWrapper
   );
 
+  // Handle equipment selection
+  const handleEquipmentSelect = (type: 'shearstream-box' | 'starlink' | 'company-computer', equipmentId: string, index?: number) => {
+    const equipment = trackedEquipment.find(eq => eq.id === equipmentId);
+    if (!equipment) return;
+
+    if (type === 'shearstream-box') {
+      if (selectedShearstreamBox) {
+        returnEquipment(selectedShearstreamBox);
+      }
+      setSelectedShearstreamBox(equipmentId);
+      deployEquipment(equipmentId, job.id, job.name, equipment.name);
+      updateMainBoxName(equipment.equipmentId, setNodes);
+    } else if (type === 'starlink') {
+      if (selectedStarlink) {
+        returnEquipment(selectedStarlink);
+      }
+      setSelectedStarlink(equipmentId);
+      deployEquipment(equipmentId, job.id, job.name, equipment.name);
+      updateSatelliteName(equipment.equipmentId, setNodes);
+    } else if (type === 'company-computer' && index !== undefined) {
+      const newComputers = [...selectedCompanyComputers];
+      if (newComputers[index]) {
+        returnEquipment(newComputers[index]);
+      }
+      newComputers[index] = equipmentId;
+      setSelectedCompanyComputers(newComputers);
+      deployEquipment(equipmentId, job.id, job.name, equipment.name);
+      updateCompanyComputerName(`company-computer-${index + 1}`, equipment.equipmentId, setNodes);
+    }
+  };
+
   // Calculate proper node ID counter from existing nodes
   const calculateNodeIdCounter = (nodeList: any[]) => {
     let maxId = 0;
@@ -134,6 +177,12 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
     if (isInitialized && (nodes.length > 0 || edges.length > 0)) {
       console.log('Saving comprehensive job data with equipment tracking');
       
+      const currentAssignment: JobEquipmentAssignment = {
+        shearstreamBoxId: selectedShearstreamBox || undefined,
+        starlinkId: selectedStarlink || undefined,
+        companyComputerIds: selectedCompanyComputers.filter(Boolean),
+      };
+      
       saveJobData({
         name: job.name,
         wellCount: job.wellCount,
@@ -144,6 +193,7 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
         satelliteName,
         wellsideGaugeName,
         companyComputerNames,
+        equipmentAssignment: currentAssignment,
       });
 
       // Update job status to indicate equipment allocation
@@ -159,6 +209,9 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
     satelliteName, 
     wellsideGaugeName, 
     companyComputerNames, 
+    selectedShearstreamBox,
+    selectedStarlink,
+    selectedCompanyComputers,
     isInitialized, 
     saveJobData, 
     job,
@@ -187,6 +240,14 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
       setWellsideGaugeName(jobData.wellsideGaugeName || 'Wellside Gauge');
       setCompanyComputerNames(jobData.companyComputerNames || {});
       
+      // Load equipment assignment
+      if (jobData.equipmentAssignment) {
+        setSelectedShearstreamBox(jobData.equipmentAssignment.shearstreamBoxId || '');
+        setSelectedStarlink(jobData.equipmentAssignment.starlinkId || '');
+        setSelectedCompanyComputers(jobData.equipmentAssignment.companyComputerIds || []);
+        setEquipmentAssignment(jobData.equipmentAssignment);
+      }
+      
       // Calculate proper node ID counter from existing nodes
       const calculatedCounter = calculateNodeIdCounter(jobData.nodes || []);
       setNodeIdCounter(calculatedCounter);
@@ -209,7 +270,8 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
     setNodeIdCounter, 
     setIsInitialized,
     syncWithLoadedData,
-    restoreEdgesStyling
+    restoreEdgesStyling,
+    setEquipmentAssignment
   ]);
 
   // Trigger debounced save whenever relevant data changes
@@ -217,7 +279,7 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
     if (isInitialized) {
       debouncedSave();
     }
-  }, [nodes, edges, mainBoxName, satelliteName, wellsideGaugeName, companyComputerNames, isInitialized, debouncedSave]);
+  }, [nodes, edges, mainBoxName, satelliteName, wellsideGaugeName, companyComputerNames, selectedShearstreamBox, selectedStarlink, selectedCompanyComputers, isInitialized, debouncedSave]);
 
   const wellNodes = nodes.filter(node => node.type === 'well');
   const wellsideGaugeNode = nodes.find(node => node.type === 'wellsideGauge');
@@ -227,23 +289,23 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
   return (
     <div className="max-w-7xl mx-auto space-y-2">
       {/* Configuration Sections */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
         <CableConfigurationPanel
           selectedCableType={selectedCableType}
           setSelectedCableType={setSelectedCableType}
-          mainBoxName={mainBoxName}
-          updateMainBoxName={(name) => updateMainBoxName(name, setNodes)}
-          companyComputerNodes={companyComputerNodes}
-          updateCompanyComputerName={(id, name) => updateCompanyComputerName(id, name, setNodes)}
-          satelliteName={satelliteName}
-          updateSatelliteName={(name) => updateSatelliteName(name, setNodes)}
-          wellsideGaugeName={wellsideGaugeName}
-          updateWellsideGaugeName={(name) => updateWellsideGaugeName(name, setNodes)}
-          hasWellsideGauge={job.hasWellsideGauge}
           addYAdapter={addYAdapter}
           addCompanyComputer={addCompanyComputer}
           clearDiagram={clearDiagram}
           saveDiagram={saveDiagram}
+        />
+
+        <EquipmentSelectionPanel
+          selectedShearstreamBox={selectedShearstreamBox}
+          selectedStarlink={selectedStarlink}
+          selectedCompanyComputers={selectedCompanyComputers}
+          companyComputerCount={companyComputerNodes.length}
+          onEquipmentSelect={handleEquipmentSelect}
+          hasWellsideGauge={job.hasWellsideGauge}
         />
 
         <WellConfigurationPanel

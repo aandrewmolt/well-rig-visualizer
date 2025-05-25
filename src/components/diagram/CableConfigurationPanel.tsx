@@ -1,30 +1,14 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Route, Square, Download, Monitor } from 'lucide-react';
-import { Node } from '@xyflow/react';
-
-interface NodeData {
-  label?: string;
-  color?: string;
-  wellNumber?: number;
-}
 
 interface CableConfigurationPanelProps {
   selectedCableType: '100ft' | '200ft' | '300ft';
   setSelectedCableType: (type: '100ft' | '200ft' | '300ft') => void;
-  mainBoxName: string;
-  updateMainBoxName: (name: string) => void;
-  companyComputerNodes: Node[];
-  updateCompanyComputerName: (id: string, name: string) => void;
-  satelliteName: string;
-  updateSatelliteName: (name: string) => void;
-  wellsideGaugeName: string;
-  updateWellsideGaugeName: (name: string) => void;
-  hasWellsideGauge: boolean;
   addYAdapter: () => void;
   addCompanyComputer: () => void;
   clearDiagram: () => void;
@@ -34,15 +18,6 @@ interface CableConfigurationPanelProps {
 const CableConfigurationPanel: React.FC<CableConfigurationPanelProps> = ({
   selectedCableType,
   setSelectedCableType,
-  mainBoxName,
-  updateMainBoxName,
-  companyComputerNodes,
-  updateCompanyComputerName,
-  satelliteName,
-  updateSatelliteName,
-  wellsideGaugeName,
-  updateWellsideGaugeName,
-  hasWellsideGauge,
   addYAdapter,
   addCompanyComputer,
   clearDiagram,
@@ -94,61 +69,6 @@ const CableConfigurationPanel: React.FC<CableConfigurationPanelProps> = ({
             <Download className="h-3 w-3" />
             Save Diagram
           </Button>
-        </div>
-
-        <div className="grid grid-cols-1 gap-2">
-          <div>
-            <Label htmlFor="main-box-name" className="text-sm">ShearStream Box Name</Label>
-            <Input
-              id="main-box-name"
-              value={mainBoxName}
-              onChange={(e) => updateMainBoxName(e.target.value)}
-              placeholder="ShearStream Box"
-              className="h-8"
-            />
-          </div>
-
-          {companyComputerNodes.map((computerNode, index) => {
-            const nodeData = computerNode.data as NodeData;
-            return (
-              <div key={computerNode.id}>
-                <Label htmlFor={`computer-name-${computerNode.id}`} className="text-sm">
-                  Company Computer {companyComputerNodes.length > 1 ? index + 1 : ''}
-                </Label>
-                <Input
-                  id={`computer-name-${computerNode.id}`}
-                  value={nodeData.label || ''}
-                  onChange={(e) => updateCompanyComputerName(computerNode.id, e.target.value)}
-                  placeholder="Company Computer"
-                  className="h-8"
-                />
-              </div>
-            );
-          })}
-          
-          <div>
-            <Label htmlFor="satellite-name" className="text-sm">Satellite Name</Label>
-            <Input
-              id="satellite-name"
-              value={satelliteName}
-              onChange={(e) => updateSatelliteName(e.target.value)}
-              placeholder="Starlink"
-              className="h-8"
-            />
-          </div>
-
-          {hasWellsideGauge && (
-            <div>
-              <Label htmlFor="wellside-gauge-name" className="text-sm">Wellside Gauge Name</Label>
-              <Input
-                id="wellside-gauge-name"
-                value={wellsideGaugeName}
-                onChange={(e) => updateWellsideGaugeName(e.target.value)}
-                placeholder="Wellside Gauge"
-                className="h-8"
-              />
-            </div>
-          )}
         </div>
       </CardContent>
     </Card>

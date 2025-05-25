@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Node, Edge } from '@xyflow/react';
 import { useInventoryData, EquipmentType, EquipmentItem } from './useInventoryData';
@@ -21,7 +20,8 @@ interface EquipmentUsage {
 export const useEnhancedEquipmentTracking = (jobId: string, nodes: Node[], edges: Edge[]) => {
   const { data, updateEquipmentItems, updateEquipmentTypes } = useInventoryData();
   const { addAuditEntry } = useAuditTrail();
-  const [isAutoSyncEnabled, setIsAutoSyncEnabled] = useState(true);
+  // CHANGED: Default to false to prevent automatic allocation
+  const [isAutoSyncEnabled, setIsAutoSyncEnabled] = useState(false);
 
   const calculateEquipmentUsage = (): EquipmentUsage => {
     const usage: EquipmentUsage = {
@@ -120,7 +120,7 @@ export const useEnhancedEquipmentTracking = (jobId: string, nodes: Node[], edges
           entityType: 'type',
           entityId: type.id,
           details: { after: type },
-          metadata: { source: 'auto-sync' },
+          metadata: { source: 'manual-sync' },
         });
       });
       
@@ -129,7 +129,13 @@ export const useEnhancedEquipmentTracking = (jobId: string, nodes: Node[], edges
   };
 
   const autoAllocateEquipment = (locationId: string, usage?: EquipmentUsage) => {
-    if (!locationId || !isAutoSyncEnabled) return;
+    if (!locationId) {
+      toast.error('Please select a location before allocating equipment');
+      return;
+    }
+
+    // ADDED: Safety check - only proceed if explicitly called (manual sync)
+    console.log('Manual equipment allocation requested for job:', jobId);
 
     const currentUsage = usage || calculateEquipmentUsage();
     
@@ -198,11 +204,11 @@ export const useEnhancedEquipmentTracking = (jobId: string, nodes: Node[], edges
           fromLocation: locationId,
           jobId,
         },
-        metadata: { source: 'auto-sync' },
+        metadata: { source: 'manual-sync' },
       });
     });
 
-    toast.success(`Equipment automatically allocated: ${allocatedItems.length} types deployed`);
+    toast.success(`Equipment manually allocated: ${allocatedItems.length} types deployed`);
   };
 
   const allocateOrCreateEquipment = (
@@ -235,7 +241,7 @@ export const useEnhancedEquipmentTracking = (jobId: string, nodes: Node[], edges
         lastUpdated: new Date(),
       });
     } else {
-      // Insufficient equipment - create or supplement
+      // CHANGED: More conservative approach - warn instead of auto-creating
       const currentAvailable = availableItem ? availableItem.quantity : 0;
       const needed = quantity - currentAvailable;
 
@@ -256,48 +262,55 @@ export const useEnhancedEquipmentTracking = (jobId: string, nodes: Node[], edges
         });
       }
 
-      // Create additional inventory for what's needed
+      // CHANGED: Only create if specifically requested, with better user feedback
       if (needed > 0) {
-        const newAvailableItem = {
-          id: `auto-created-${typeId}-${locationId}-${Date.now()}`,
-          typeId,
-          locationId,
-          quantity: 0, // Will be immediately allocated
-          status: 'available' as const,
-          lastUpdated: new Date(),
-        };
-        updatedItems.push(newAvailableItem);
-
-        // Add deployed record for the needed amount
-        updatedItems.push({
-          id: `deployed-${typeId}-${jobId}-${Date.now()}-created`,
-          typeId,
-          locationId,
-          quantity: needed,
-          status: 'deployed',
-          jobId,
-          lastUpdated: new Date(),
-        });
-
-        allocated += needed;
-        created = needed;
-
         const typeName = data.equipmentTypes.find(t => t.id === typeId)?.name || 'Unknown';
         
-        // Audit trail for equipment creation
-        addAuditEntry({
-          action: 'create',
-          entityType: 'equipment',
-          entityId: typeId,
-          details: { 
-            quantity: needed,
-            reason: 'Auto-created for job allocation',
-            toLocation: locationId,
-          },
-          metadata: { source: 'auto-sync' },
-        });
+        // Ask user for confirmation before creating new equipment
+        const shouldCreate = confirm(`Not enough ${typeName} available (need ${needed} more). Create additional inventory?`);
         
-        toast.info(`Created ${needed} additional ${typeName} for job allocation`);
+        if (shouldCreate) {
+          const newAvailableItem = {
+            id: `manual-created-${typeId}-${locationId}-${Date.now()}`,
+            typeId,
+            locationId,
+            quantity: 0, // Will be immediately allocated
+            status: 'available' as const,
+            lastUpdated: new Date(),
+          };
+          updatedItems.push(newAvailableItem);
+
+          // Add deployed record for the needed amount
+          updatedItems.push({
+            id: `deployed-${typeId}-${jobId}-${Date.now()}-created`,
+            typeId,
+            locationId,
+            quantity: needed,
+            status: 'deployed',
+            jobId,
+            lastUpdated: new Date(),
+          });
+
+          allocated += needed;
+          created = needed;
+
+          // Audit trail for equipment creation
+          addAuditEntry({
+            action: 'create',
+            entityType: 'equipment',
+            entityId: typeId,
+            details: { 
+              quantity: needed,
+              reason: 'Manual creation for job allocation',
+              toLocation: locationId,
+            },
+            metadata: { source: 'manual-sync' },
+          });
+          
+          toast.info(`Created ${needed} additional ${typeName} for job allocation`);
+        } else {
+          toast.warning(`Insufficient ${typeName} - only allocated ${allocated} of ${quantity} needed`);
+        }
       }
     }
 
@@ -349,7 +362,7 @@ export const useEnhancedEquipmentTracking = (jobId: string, nodes: Node[], edges
           toLocation: deployedItem.locationId,
           jobId,
         },
-        metadata: { source: 'auto-sync' },
+        metadata: { source: 'manual-sync' },
       });
     });
 
@@ -411,21 +424,6 @@ export const useEnhancedEquipmentTracking = (jobId: string, nodes: Node[], edges
     const locationName = data.storageLocations.find(loc => loc.id === targetLocationId)?.name || 'Unknown';
     toast.success(`Equipment returned to ${locationName}`);
   };
-
-  // Auto-sync when diagram changes
-  useEffect(() => {
-    if (isAutoSyncEnabled && (nodes.length > 0 || edges.length > 0)) {
-      // Find the source location for this job
-      const deployedItems = data.equipmentItems.filter(
-        item => item.status === 'deployed' && item.jobId === jobId
-      );
-      
-      if (deployedItems.length > 0) {
-        const sourceLocationId = deployedItems[0].locationId;
-        autoAllocateEquipment(sourceLocationId);
-      }
-    }
-  }, [nodes, edges, isAutoSyncEnabled]);
 
   return {
     calculateEquipmentUsage,

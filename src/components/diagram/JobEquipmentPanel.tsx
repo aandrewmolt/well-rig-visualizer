@@ -1,13 +1,15 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Package, MapPin, Activity, AlertCircle, RefreshCw, Settings } from 'lucide-react';
+import { Package } from 'lucide-react';
 import { useInventoryData } from '@/hooks/useInventoryData';
 import ExtrasOnLocationPanel from './ExtrasOnLocationPanel';
-import { toast } from 'sonner';
+import AutoSyncControls from './equipment/AutoSyncControls';
+import EquipmentLocationSelector from './equipment/EquipmentLocationSelector';
+import EquipmentAvailabilityStatus from './equipment/EquipmentAvailabilityStatus';
+import EquipmentUsageSummary from './equipment/EquipmentUsageSummary';
+import DeployedEquipmentList from './equipment/DeployedEquipmentList';
 
 interface JobEquipmentPanelProps {
   jobId: string;
@@ -47,18 +49,6 @@ const JobEquipmentPanel: React.FC<JobEquipmentPanelProps> = ({
 }) => {
   const { data } = useInventoryData();
   const [selectedLocation, setSelectedLocation] = useState<string>(data.storageLocations[0]?.id || '');
-
-  const getEquipmentTypeName = (typeId: string) => {
-    return data.equipmentTypes.find(type => type.id === typeId)?.name || 'Unknown';
-  };
-
-  const getLocationName = (locationId: string) => {
-    return data.storageLocations.find(loc => loc.id === locationId)?.name || 'Unknown';
-  };
-
-  const getDeployedEquipment = () => {
-    return data.equipmentItems.filter(item => item.status === 'deployed' && item.jobId === jobId);
-  };
 
   const getAvailableQuantity = (typeId: string, locationId: string) => {
     return data.equipmentItems
@@ -123,7 +113,6 @@ const JobEquipmentPanel: React.FC<JobEquipmentPanelProps> = ({
     }
   }, [selectedLocation, isAutoSyncEnabled, onAutoAllocate]);
 
-  const deployedEquipment = getDeployedEquipment();
   const availability = checkEquipmentAvailability();
 
   return (
@@ -136,167 +125,34 @@ const JobEquipmentPanel: React.FC<JobEquipmentPanelProps> = ({
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Enhanced Auto-Sync Controls */}
-          <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
-            <div className="flex items-center gap-2">
-              <Settings className="h-4 w-4 text-blue-600" />
-              <span className="text-sm font-medium">Real-time Equipment Sync</span>
-              <Badge variant={isAutoSyncEnabled ? 'default' : 'secondary'}>
-                {isAutoSyncEnabled ? 'ENABLED' : 'DISABLED'}
-              </Badge>
-            </div>
-            {onToggleAutoSync && (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => onToggleAutoSync(!isAutoSyncEnabled)}
-              >
-                {isAutoSyncEnabled ? 'Disable' : 'Enable'}
-              </Button>
-            )}
-          </div>
+          <AutoSyncControls
+            isAutoSyncEnabled={isAutoSyncEnabled}
+            onToggleAutoSync={onToggleAutoSync}
+          />
 
-          {isAutoSyncEnabled && (
-            <div className="text-xs text-blue-600 bg-blue-50 p-2 rounded">
-              🔄 Equipment automatically syncs when diagram changes
-            </div>
-          )}
+          <EquipmentLocationSelector
+            selectedLocation={selectedLocation}
+            setSelectedLocation={setSelectedLocation}
+          />
 
-          {/* Storage Location Selection */}
-          <div>
-            <label className="text-sm font-medium mb-2 block">Equipment Source Location</label>
-            <Select value={selectedLocation} onValueChange={setSelectedLocation}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select storage location" />
-              </SelectTrigger>
-              <SelectContent>
-                {data.storageLocations.map(location => (
-                  <SelectItem key={location.id} value={location.id}>
-                    <div className="flex items-center gap-2">
-                      <MapPin className="h-4 w-4" />
-                      {location.name}
-                      {location.isDefault && <Badge variant="outline" className="text-xs">Default</Badge>}
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <EquipmentAvailabilityStatus
+            availability={availability}
+            equipmentUsage={equipmentUsage}
+          />
 
-          {/* Equipment Availability Status */}
-          {availability.hasIssues ? (
-            <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg">
-              <div className="flex items-center gap-2 mb-2">
-                <AlertCircle className="h-4 w-4 text-orange-600" />
-                <span className="text-sm font-medium text-orange-800">
-                  Equipment Auto-Created
-                </span>
-              </div>
-              <div className="text-xs text-orange-700 mb-2">
-                Missing equipment was automatically created to fulfill job requirements:
-              </div>
-              <div className="space-y-1">
-                {availability.issues.map((issue, index) => (
-                  <div key={index} className="text-xs text-orange-700">• {issue}</div>
-                ))}
-              </div>
-            </div>
-          ) : equipmentUsage && (
-            <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-              <div className="flex items-center gap-2 text-sm font-medium text-green-800">
-                ✅ All equipment available at selected location
-              </div>
-            </div>
-          )}
-
-          {/* Equipment Usage Summary */}
-          {equipmentUsage && (
-            <div>
-              <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
-                <Activity className="h-4 w-4" />
-                Equipment Required from Diagram
-              </h4>
-              <div className="space-y-2 p-3 bg-blue-50 rounded-lg">
-                {Object.entries(equipmentUsage.cables).map(([type, count]) => (
-                  <div key={type} className="flex justify-between text-sm">
-                    <span>{type} Cables:</span>
-                    <Badge variant="secondary">{count}</Badge>
-                  </div>
-                ))}
-                {equipmentUsage.gauges > 0 && (
-                  <div className="flex justify-between text-sm">
-                    <span>Pressure Gauges:</span>
-                    <Badge variant="secondary">{equipmentUsage.gauges}</Badge>
-                  </div>
-                )}
-                {equipmentUsage.adapters > 0 && (
-                  <div className="flex justify-between text-sm">
-                    <span>Y Adapters:</span>
-                    <Badge variant="secondary">{equipmentUsage.adapters}</Badge>
-                  </div>
-                )}
-                {equipmentUsage.computers > 0 && (
-                  <div className="flex justify-between text-sm">
-                    <span>Company Computers:</span>
-                    <Badge variant="secondary">{equipmentUsage.computers}</Badge>
-                  </div>
-                )}
-                {equipmentUsage.satellite > 0 && (
-                  <div className="flex justify-between text-sm">
-                    <span>Satellite:</span>
-                    <Badge variant="secondary">{equipmentUsage.satellite}</Badge>
-                  </div>
-                )}
-                {!isAutoSyncEnabled && onAutoAllocate && selectedLocation && (
-                  <Button
-                    onClick={() => onAutoAllocate(selectedLocation)}
-                    size="sm"
-                    className="w-full mt-2"
-                  >
-                    <RefreshCw className="mr-2 h-3 w-3" />
-                    Manually Sync Equipment
-                  </Button>
-                )}
-              </div>
-            </div>
-          )}
+          <EquipmentUsageSummary
+            equipmentUsage={equipmentUsage}
+            isAutoSyncEnabled={isAutoSyncEnabled}
+            onAutoAllocate={onAutoAllocate}
+            selectedLocation={selectedLocation}
+          />
 
           <Separator />
 
-          {/* Currently Deployed Equipment with Enhanced Details */}
-          <div>
-            <h4 className="text-sm font-medium mb-2">Equipment Deployed to Job</h4>
-            {deployedEquipment.length === 0 ? (
-              <p className="text-sm text-gray-500">No equipment currently deployed</p>
-            ) : (
-              <div className="space-y-2">
-                {deployedEquipment.map(item => (
-                  <div key={item.id} className="flex items-center justify-between p-3 border rounded-lg bg-green-50 border-green-200">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-medium">{getEquipmentTypeName(item.typeId)}</span>
-                        <Badge variant="outline">{item.quantity}x</Badge>
-                        <Badge className="text-xs bg-green-100 text-green-800 border-green-300">
-                          Active
-                        </Badge>
-                      </div>
-                      <div className="text-xs text-gray-500 space-y-1">
-                        <div>Source: {getLocationName(item.locationId)}</div>
-                        <div>Deployed: {new Date(item.lastUpdated).toLocaleDateString()}</div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-                <div className="text-xs text-gray-500 mt-2 p-2 bg-gray-50 rounded">
-                  💡 Equipment is automatically returned when job is deleted
-                </div>
-              </div>
-            )}
-          </div>
+          <DeployedEquipmentList jobId={jobId} />
         </CardContent>
       </Card>
 
-      {/* Extras on Location Panel */}
       <ExtrasOnLocationPanel
         extrasOnLocation={extrasOnLocation}
         onAddExtra={onAddExtra || (() => {})}

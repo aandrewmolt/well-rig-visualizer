@@ -41,7 +41,8 @@ export const useDiagramActions = (
       const newComputer: Node = {
         id: `company-computer-${nodeIdCounter}`,
         type: 'companyComputer',
-        position: { x: 50 + (existingComputers.length * 30), y: 300 + (existingComputers.length * 100) },
+        // Position further left with more spacing to prevent overlap
+        position: { x: -150 + (existingComputers.length * 200), y: 300 + (existingComputers.length * 150) },
         data: { label: `Company Computer ${existingComputers.length + 1}` },
         draggable: true,
       };

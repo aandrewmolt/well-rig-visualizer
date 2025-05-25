@@ -36,21 +36,21 @@ export const useDiagramInitialization = (
     };
     initialNodes.push(mainBoxNode);
 
-    // Create initial company computer node
+    // Create initial company computer node - moved further left to prevent overlap
     const companyComputerNode: Node = {
       id: 'company-computer-1',
       type: 'companyComputer',
-      position: { x: 50, y: 300 },
+      position: { x: -150, y: 300 },
       data: { label: 'Company Computer' },
       draggable: true,
     };
     initialNodes.push(companyComputerNode);
 
-    // Create satellite node
+    // Create satellite node - also moved left
     const satelliteNode: Node = {
       id: 'satellite',
       type: 'satellite',
-      position: { x: 50, y: 500 },
+      position: { x: -150, y: 500 },
       data: { label: satelliteName },
       draggable: true,
     };

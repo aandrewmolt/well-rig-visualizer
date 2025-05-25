@@ -99,25 +99,48 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
     reactFlowWrapper
   );
 
-  // Load persisted data on mount
+  // Calculate proper node ID counter from existing nodes
+  const calculateNodeIdCounter = (nodeList: any[]) => {
+    let maxId = 0;
+    nodeList.forEach(node => {
+      // Extract numeric parts from node IDs
+      const matches = node.id.match(/\d+/g);
+      if (matches) {
+        const numbers = matches.map(Number);
+        maxId = Math.max(maxId, ...numbers);
+      }
+    });
+    return maxId + 1;
+  };
+
+  // Load persisted data on mount - single effect to prevent conflicts
   useEffect(() => {
     if (jobData && !isInitialized) {
+      console.log('Loading persisted job data:', jobData);
+      
+      // Restore all persisted data
       setNodes(jobData.nodes || []);
       setEdges(jobData.edges || []);
       setMainBoxName(jobData.mainBoxName || 'ShearStream Box');
       setSatelliteName(jobData.satelliteName || 'Starlink');
       setWellsideGaugeName(jobData.wellsideGaugeName || 'Wellside Gauge');
       setCompanyComputerNames(jobData.companyComputerNames || {});
-      setNodeIdCounter(jobData.nodes?.length || 0);
+      
+      // Calculate proper node ID counter from existing nodes
+      const calculatedCounter = calculateNodeIdCounter(jobData.nodes || []);
+      setNodeIdCounter(calculatedCounter);
+      
       setIsInitialized(true);
     } else if (!jobData && !isInitialized) {
+      console.log('No persisted data found, initializing new job');
       initializeJob();
     }
-  }, [jobData, isInitialized]);
+  }, [jobData, isInitialized, initializeJob, setNodes, setEdges, setMainBoxName, setSatelliteName, setWellsideGaugeName, setCompanyComputerNames, setNodeIdCounter, setIsInitialized]);
 
   // Save data whenever it changes
   useEffect(() => {
-    if (isInitialized) {
+    if (isInitialized && (nodes.length > 0 || edges.length > 0)) {
+      console.log('Saving job data:', { nodes, edges });
       saveJobData({
         name: job.name,
         wellCount: job.wellCount,
@@ -130,14 +153,7 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
         companyComputerNames,
       });
     }
-  }, [nodes, edges, mainBoxName, satelliteName, wellsideGaugeName, companyComputerNames, isInitialized]);
-
-  // Initialize the diagram only once when component mounts
-  React.useEffect(() => {
-    if (!isInitialized) {
-      initializeJob();
-    }
-  }, [initializeJob, isInitialized]);
+  }, [nodes, edges, mainBoxName, satelliteName, wellsideGaugeName, companyComputerNames, isInitialized, saveJobData, job]);
 
   const wellNodes = nodes.filter(node => node.type === 'well');
   const wellsideGaugeNode = nodes.find(node => node.type === 'wellsideGauge');

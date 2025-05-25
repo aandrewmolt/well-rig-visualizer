@@ -102,8 +102,9 @@ export const useJobDiagramEquipment = ({
   // Handle adding/removing SS boxes
   const handleAddShearstreamBox = useCallback(() => {
     addShearstreamBox();
-    setSelectedShearstreamBoxes(prev => [...prev, '']);
-  }, [addShearstreamBox, setSelectedShearstreamBoxes]);
+    const newBoxes = [...selectedShearstreamBoxes, ''];
+    setSelectedShearstreamBoxes(newBoxes);
+  }, [addShearstreamBox, selectedShearstreamBoxes, setSelectedShearstreamBoxes]);
 
   const handleRemoveShearstreamBox = useCallback((index: number) => {
     // Return equipment if assigned
@@ -116,7 +117,8 @@ export const useJobDiagramEquipment = ({
     removeShearstreamBox(boxNodeId);
     
     // Update selected boxes array
-    setSelectedShearstreamBoxes(prev => prev.filter((_, i) => i !== index));
+    const newBoxes = selectedShearstreamBoxes.filter((_, i) => i !== index);
+    setSelectedShearstreamBoxes(newBoxes);
   }, [selectedShearstreamBoxes, returnEquipment, removeShearstreamBox, setSelectedShearstreamBoxes]);
 
   return {

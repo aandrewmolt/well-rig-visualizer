@@ -1,6 +1,8 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { BaseEdge, getBezierPath, EdgeLabelRenderer, useReactFlow } from '@xyflow/react';
+import { Edit } from 'lucide-react';
+import ConnectionEditorDialog from '../diagram/ConnectionEditorDialog';
 
 const DirectEdge = ({
   id,
@@ -13,8 +15,14 @@ const DirectEdge = ({
   style = {},
   markerEnd,
   selected,
+  source,
+  target,
+  sourceHandle,
+  targetHandle,
+  data,
 }: any) => {
-  const { setEdges } = useReactFlow();
+  const { setEdges, getNodes } = useReactFlow();
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   
   const [edgePath, labelX, labelY] = getBezierPath({
     sourceX,
@@ -27,6 +35,35 @@ const DirectEdge = ({
 
   const handleDelete = () => {
     setEdges((edges) => edges.filter((edge) => edge.id !== id));
+  };
+
+  const handleEdit = () => {
+    setIsEditDialogOpen(true);
+  };
+
+  const handleUpdateConnection = (newSourceId: string, newTargetId: string, newSourceHandle?: string, newTargetHandle?: string) => {
+    setEdges((edges) => 
+      edges.map((edge) => 
+        edge.id === id 
+          ? {
+              ...edge,
+              source: newSourceId,
+              target: newTargetId,
+              sourceHandle: newSourceHandle,
+              targetHandle: newTargetHandle,
+            }
+          : edge
+      )
+    );
+  };
+
+  const currentEdge = {
+    id,
+    source,
+    target,
+    sourceHandle,
+    targetHandle,
+    data,
   };
 
   return (
@@ -60,17 +97,34 @@ const DirectEdge = ({
           <div className="flex items-center gap-2">
             Direct
             {selected && (
-              <button
-                onClick={handleDelete}
-                className="text-red-500 hover:text-red-700 font-bold text-sm"
-                title="Delete connection"
-              >
-                ×
-              </button>
+              <div className="flex gap-1">
+                <button
+                  onClick={handleEdit}
+                  className="text-blue-500 hover:text-blue-700 font-bold text-sm flex items-center"
+                  title="Edit connection"
+                >
+                  <Edit className="h-3 w-3" />
+                </button>
+                <button
+                  onClick={handleDelete}
+                  className="text-red-500 hover:text-red-700 font-bold text-sm"
+                  title="Delete connection"
+                >
+                  ×
+                </button>
+              </div>
             )}
           </div>
         </div>
       </EdgeLabelRenderer>
+
+      <ConnectionEditorDialog
+        isOpen={isEditDialogOpen}
+        onClose={() => setIsEditDialogOpen(false)}
+        onUpdateConnection={handleUpdateConnection}
+        currentEdge={currentEdge}
+        nodes={getNodes()}
+      />
     </>
   );
 };

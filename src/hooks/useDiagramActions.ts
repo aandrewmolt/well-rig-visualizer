@@ -1,4 +1,3 @@
-
 import { useCallback } from 'react';
 import { Node } from '@xyflow/react';
 import { toast } from 'sonner';
@@ -17,7 +16,7 @@ export const useDiagramActions = (
   nodeIdCounter: number,
   setNodeIdCounter: (counter: number) => void,
   setNodes: (updater: (nodes: Node[]) => Node[]) => void,
-  setEdges: (edges: any[]) => void,
+  setEdges: (updater: (edges: any[]) => any[]) => void,
   setIsInitialized: (initialized: boolean) => void,
   initializeJob: () => void,
   reactFlowWrapper: React.RefObject<HTMLDivElement>
@@ -125,7 +124,7 @@ export const useDiagramActions = (
   const clearDiagram = useCallback(() => {
     setIsInitialized(false);
     setNodes(() => []);
-    setEdges([]);
+    setEdges(() => []);
     setTimeout(() => {
       initializeJob();
     }, 0);

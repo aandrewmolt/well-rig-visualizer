@@ -3,6 +3,7 @@ import { Node, Edge } from '@xyflow/react';
 
 interface EdgeData {
   cableType?: '100ft' | '200ft' | '300ft';
+  connectionType?: 'cable' | 'direct';
   label?: string;
 }
 
@@ -12,6 +13,7 @@ export interface EquipmentUsage {
   adapters: number;
   computers: number;
   satellite: number;
+  directConnections: number;
 }
 
 export const useEquipmentUsageCalculator = (nodes: Node[], edges: Edge[]) => {
@@ -22,13 +24,20 @@ export const useEquipmentUsageCalculator = (nodes: Node[], edges: Edge[]) => {
       adapters: 0,
       computers: 0,
       satellite: 0,
+      directConnections: 0,
     };
 
-    // Count cables from edges with proper type checking
+    // Count cables and direct connections from edges
     edges.forEach(edge => {
       const edgeData = edge.data as EdgeData;
-      const cableType = edgeData?.cableType || '200ft';
-      usage.cables[cableType] = (usage.cables[cableType] || 0) + 1;
+      
+      if (edgeData?.connectionType === 'direct') {
+        usage.directConnections += 1;
+      } else {
+        // Handle cable connections
+        const cableType = edgeData?.cableType || '200ft';
+        usage.cables[cableType] = (usage.cables[cableType] || 0) + 1;
+      }
     });
 
     // Count equipment from nodes

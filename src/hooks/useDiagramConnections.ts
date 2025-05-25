@@ -13,6 +13,32 @@ export const useDiagramConnections = (
       const sourceNode = nodes.find(node => node.id === params.source);
       const targetNode = nodes.find(node => node.id === params.target);
       
+      // Check if this is a direct connection (Y adapter to well/wellside gauge)
+      const isDirectConnection = sourceNode?.type === 'yAdapter' && 
+        (targetNode?.type === 'well' || targetNode?.type === 'wellsideGauge');
+      
+      if (isDirectConnection) {
+        // Create direct connection without cable type validation
+        const edge: Edge = {
+          ...params,
+          id: `edge-${Date.now()}`,
+          type: 'direct',
+          data: { 
+            connectionType: 'direct',
+            label: 'Direct'
+          },
+          style: {
+            stroke: '#8b5cf6',
+            strokeWidth: 4,
+            strokeDasharray: '5,5',
+          },
+        };
+        setEdges((eds) => addEdge(edge, eds));
+        toast.success('Direct connection established!');
+        return;
+      }
+      
+      // Handle cable connections with existing validation
       if (selectedCableType === '300ft') {
         // 300ft cables can only connect from main box to Y adapter
         if (sourceNode?.type === 'mainBox' && targetNode?.type !== 'yAdapter') {
@@ -25,21 +51,14 @@ export const useDiagramConnections = (
         }
       }
 
-      // Y Adapters can connect directly to wells without cable type restrictions
-      if (sourceNode?.type === 'yAdapter') {
-        // Allow direct connection from Y adapter to wells or wellside gauge
-        if (targetNode?.type === 'well' || targetNode?.type === 'wellsideGauge') {
-          // No cable type validation needed for Y adapter direct connections
-        }
-      }
-
       const edge: Edge = {
         ...params,
         id: `edge-${Date.now()}`,
         type: 'cable',
         data: { 
           cableType: selectedCableType,
-          label: selectedCableType
+          label: selectedCableType,
+          connectionType: 'cable'
         },
         style: {
           stroke: selectedCableType === '100ft' ? '#ef4444' : 

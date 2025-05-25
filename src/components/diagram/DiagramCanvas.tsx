@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
   ReactFlow,
@@ -18,6 +17,7 @@ import CompanyComputerNode from '../nodes/CompanyComputerNode';
 import SatelliteNode from '../nodes/SatelliteNode';
 import WellsideGaugeNode from '../nodes/WellsideGaugeNode';
 import CableEdge from '../edges/CableEdge';
+import DirectEdge from '../edges/DirectEdge';
 
 const nodeTypes = {
   mainBox: MainBoxNode,
@@ -30,6 +30,7 @@ const nodeTypes = {
 
 const edgeTypes = {
   cable: CableEdge,
+  direct: DirectEdge,
 };
 
 interface DiagramCanvasProps {

@@ -6,6 +6,8 @@ export interface EquipmentType {
   name: string;
   category: 'cables' | 'gauges' | 'adapters' | 'communication' | 'other';
   description?: string;
+  requiresIndividualTracking: boolean;
+  defaultIdPrefix?: string;
 }
 
 export interface StorageLocation {
@@ -28,25 +30,43 @@ export interface EquipmentItem {
   lastUpdated: Date;
 }
 
+export interface IndividualEquipment {
+  id: string;
+  equipmentId: string; // User-defined ID like "SS-001"
+  name: string; // User-friendly name
+  typeId: string;
+  locationId: string;
+  status: 'available' | 'deployed' | 'maintenance' | 'red-tagged' | 'retired';
+  jobId?: string;
+  serialNumber?: string;
+  purchaseDate?: Date;
+  warrantyExpiry?: Date;
+  notes?: string;
+  redTagReason?: string;
+  redTagPhoto?: string;
+  lastUpdated: Date;
+}
+
 interface InventoryData {
   equipmentTypes: EquipmentType[];
   storageLocations: StorageLocation[];
   equipmentItems: EquipmentItem[];
+  individualEquipment: IndividualEquipment[];
   lastSync: Date;
 }
 
 const DEFAULT_EQUIPMENT_TYPES: EquipmentType[] = [
-  { id: '1', name: '100ft Cable', category: 'cables' },
-  { id: '2', name: '200ft Cable', category: 'cables' },
-  { id: '3', name: '200ft Reel', category: 'cables' },
-  { id: '4', name: '300ft Cable (New Version)', category: 'cables' },
-  { id: '5', name: '300ft Cable (Old Version)', category: 'cables' },
-  { id: '6', name: '300ft Reel', category: 'cables' },
-  { id: '7', name: '1502 Pressure Gauge', category: 'gauges' },
-  { id: '8', name: 'Pencil Gauge', category: 'gauges' },
-  { id: '9', name: 'Y Adapter Cable', category: 'adapters' },
-  { id: '10', name: 'Starlink', category: 'communication' },
-  { id: '11', name: 'Customer Computer', category: 'communication' },
+  { id: '1', name: '100ft Cable', category: 'cables', requiresIndividualTracking: false },
+  { id: '2', name: '200ft Cable', category: 'cables', requiresIndividualTracking: false },
+  { id: '3', name: '200ft Reel', category: 'cables', requiresIndividualTracking: false },
+  { id: '4', name: '300ft Cable (New Version)', category: 'cables', requiresIndividualTracking: false },
+  { id: '5', name: '300ft Cable (Old Version)', category: 'cables', requiresIndividualTracking: false },
+  { id: '6', name: '300ft Reel', category: 'cables', requiresIndividualTracking: false },
+  { id: '7', name: '1502 Pressure Gauge', category: 'gauges', requiresIndividualTracking: true, defaultIdPrefix: 'PG-' },
+  { id: '8', name: 'Pencil Gauge', category: 'gauges', requiresIndividualTracking: true, defaultIdPrefix: 'PC-' },
+  { id: '9', name: 'Y Adapter Cable', category: 'adapters', requiresIndividualTracking: false },
+  { id: '10', name: 'Starlink', category: 'communication', requiresIndividualTracking: true, defaultIdPrefix: 'SL-' },
+  { id: '11', name: 'Customer Computer', category: 'communication', requiresIndividualTracking: true, defaultIdPrefix: 'CC-' },
 ];
 
 const DEFAULT_STORAGE_LOCATIONS: StorageLocation[] = [
@@ -61,6 +81,7 @@ export const useInventoryData = () => {
     equipmentTypes: DEFAULT_EQUIPMENT_TYPES,
     storageLocations: DEFAULT_STORAGE_LOCATIONS,
     equipmentItems: [],
+    individualEquipment: [],
     lastSync: new Date(),
   });
   const [isLoading, setIsLoading] = useState(false);
@@ -156,6 +177,8 @@ export const useInventoryData = () => {
           const loadedData = {
             ...parsedData,
             lastSync: new Date(parsedData.lastSync),
+            // Ensure individualEquipment exists for older data
+            individualEquipment: parsedData.individualEquipment || [],
           };
           
           // Clean up duplicates and ensure minimum inventory
@@ -202,6 +225,7 @@ export const useInventoryData = () => {
       equipmentTypes: DEFAULT_EQUIPMENT_TYPES,
       storageLocations: DEFAULT_STORAGE_LOCATIONS,
       equipmentItems: createDefaultInventory(),
+      individualEquipment: [],
       lastSync: new Date(),
     };
     
@@ -260,6 +284,16 @@ export const useInventoryData = () => {
     saveToLocalStorage(updatedData);
   };
 
+  const updateIndividualEquipment = (equipment: IndividualEquipment[]) => {
+    const updatedData = { 
+      ...data, 
+      individualEquipment: equipment,
+      lastSync: new Date()
+    };
+    setData(updatedData);
+    saveToLocalStorage(updatedData);
+  };
+
   const updateSingleEquipmentItem = (itemId: string, updates: Partial<EquipmentItem>) => {
     const updatedItems = data.equipmentItems.map(item =>
       item.id === itemId
@@ -269,12 +303,29 @@ export const useInventoryData = () => {
     updateEquipmentItems(updatedItems);
   };
 
+  const updateSingleIndividualEquipment = (equipmentId: string, updates: Partial<IndividualEquipment>) => {
+    const updatedEquipment = data.individualEquipment.map(equipment =>
+      equipment.id === equipmentId
+        ? { ...equipment, ...updates, lastUpdated: new Date() }
+        : equipment
+    );
+    updateIndividualEquipment(updatedEquipment);
+  };
+
   const getEquipmentByType = (typeId: string) => {
     return data.equipmentItems.filter(item => item.typeId === typeId);
   };
 
+  const getIndividualEquipmentByType = (typeId: string) => {
+    return data.individualEquipment.filter(equipment => equipment.typeId === typeId);
+  };
+
   const getEquipmentByLocation = (locationId: string) => {
     return data.equipmentItems.filter(item => item.locationId === locationId);
+  };
+
+  const getIndividualEquipmentByLocation = (locationId: string) => {
+    return data.individualEquipment.filter(equipment => equipment.locationId === locationId);
   };
 
   return {
@@ -285,9 +336,13 @@ export const useInventoryData = () => {
     updateEquipmentTypes,
     updateStorageLocations,
     updateEquipmentItems,
+    updateIndividualEquipment,
     updateSingleEquipmentItem,
+    updateSingleIndividualEquipment,
     getEquipmentByType,
+    getIndividualEquipmentByType,
     getEquipmentByLocation,
+    getIndividualEquipmentByLocation,
     resetToDefaultInventory,
     cleanupDuplicateDeployments,
   };

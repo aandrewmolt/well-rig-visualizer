@@ -9,14 +9,14 @@ export const useEquipmentTypeManager = () => {
   const { addAuditEntry } = useAuditTrail();
 
   const ensureEquipmentTypesExist = (usage: EquipmentUsage) => {
-    const typeMapping: { [key: string]: { id: string; name: string; category: string } } = {
-      '100ft': { id: '1', name: '100ft Cable', category: 'cables' },
-      '200ft': { id: '2', name: '200ft Cable', category: 'cables' },
-      '300ft': { id: '4', name: '300ft Cable (New Version)', category: 'cables' },
-      'gauge': { id: '7', name: '1502 Pressure Gauge', category: 'gauges' },
-      'adapter': { id: '9', name: 'Y Adapter Cable', category: 'adapters' },
-      'computer': { id: '11', name: 'Customer Computer', category: 'communication' },
-      'satellite': { id: '10', name: 'Starlink', category: 'communication' },
+    const typeMapping: { [key: string]: { id: string; name: string; category: string; requiresIndividualTracking: boolean; defaultIdPrefix?: string } } = {
+      '100ft': { id: '1', name: '100ft Cable', category: 'cables', requiresIndividualTracking: false },
+      '200ft': { id: '2', name: '200ft Cable', category: 'cables', requiresIndividualTracking: false },
+      '300ft': { id: '4', name: '300ft Cable (New Version)', category: 'cables', requiresIndividualTracking: false },
+      'gauge': { id: '7', name: '1502 Pressure Gauge', category: 'gauges', requiresIndividualTracking: true, defaultIdPrefix: 'PG-' },
+      'adapter': { id: '9', name: 'Y Adapter Cable', category: 'adapters', requiresIndividualTracking: false },
+      'computer': { id: '11', name: 'Customer Computer', category: 'communication', requiresIndividualTracking: true, defaultIdPrefix: 'CC-' },
+      'satellite': { id: '10', name: 'Starlink', category: 'communication', requiresIndividualTracking: true, defaultIdPrefix: 'SL-' },
     };
 
     const missingTypes: EquipmentType[] = [];
@@ -29,6 +29,8 @@ export const useEquipmentTypeManager = () => {
           id: typeInfo.id,
           name: typeInfo.name,
           category: typeInfo.category as any,
+          requiresIndividualTracking: typeInfo.requiresIndividualTracking,
+          defaultIdPrefix: typeInfo.defaultIdPrefix,
         });
       }
     });
@@ -49,6 +51,8 @@ export const useEquipmentTypeManager = () => {
             id: typeInfo.id,
             name: typeInfo.name,
             category: typeInfo.category as any,
+            requiresIndividualTracking: typeInfo.requiresIndividualTracking,
+            defaultIdPrefix: typeInfo.defaultIdPrefix,
           });
         }
       }

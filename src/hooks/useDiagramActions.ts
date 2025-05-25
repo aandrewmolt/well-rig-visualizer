@@ -84,7 +84,7 @@ export const useDiagramActions = (
 
   const clearDiagram = useCallback(() => {
     setIsInitialized(false);
-    setNodes([]);
+    setNodes(() => []);
     setEdges([]);
     setTimeout(() => {
       initializeJob();

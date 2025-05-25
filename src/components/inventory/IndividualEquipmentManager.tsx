@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -69,6 +70,20 @@ const IndividualEquipmentManager: React.FC<IndividualEquipmentManagerProps> = ({
     }
     
     return newId;
+  };
+
+  // Initialize form data when dialog opens for new equipment
+  const handleAddItemClick = () => {
+    if (!editingEquipment) {
+      setFormData({
+        equipmentId: generateNextEquipmentId(),
+        name: '',
+        locationId: '',
+        serialNumber: '',
+        notes: ''
+      });
+    }
+    setIsDialogOpen(true);
   };
 
   const handleSubmit = () => {
@@ -210,7 +225,7 @@ const IndividualEquipmentManager: React.FC<IndividualEquipmentManagerProps> = ({
 
   const resetForm = () => {
     setFormData({
-      equipmentId: generateNextEquipmentId(),
+      equipmentId: '',
       name: '',
       locationId: '',
       serialNumber: '',
@@ -333,7 +348,7 @@ const IndividualEquipmentManager: React.FC<IndividualEquipmentManagerProps> = ({
 
               <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button size="sm" onClick={() => setFormData({...formData, equipmentId: generateNextEquipmentId()})}>
+                  <Button size="sm" onClick={handleAddItemClick}>
                     <Plus className="mr-2 h-4 w-4" />
                     Add Item
                   </Button>

@@ -1,3 +1,4 @@
+
 import React, { useRef, useEffect, useCallback, useState, useMemo } from 'react';
 import {
   useNodesState,
@@ -6,12 +7,11 @@ import {
 import '@xyflow/react/dist/style.css';
 import CableConfigurationPanel from './diagram/CableConfigurationPanel';
 import WellConfigurationPanel from './diagram/WellConfigurationPanel';
-import JobEquipmentPanel from './diagram/JobEquipmentPanel';
-import EquipmentSelectionPanel from './diagram/EquipmentSelectionPanel';
+import CompactJobEquipmentPanel from './diagram/CompactJobEquipmentPanel';
+import CompactEquipmentSelectionPanel from './diagram/CompactEquipmentSelectionPanel';
 import DiagramCanvas from './diagram/DiagramCanvas';
 import ConnectionGuide from './diagram/ConnectionGuide';
 import { useJobPersistence } from '@/hooks/useJobPersistence';
-import { useEnhancedEquipmentTracking } from '@/hooks/useEnhancedEquipmentTracking';
 import { useRobustEquipmentTracking } from '@/hooks/useRobustEquipmentTracking';
 import { useDiagramState } from '@/hooks/useDiagramState';
 import { useDiagramInitialization } from '@/hooks/useDiagramInitialization';
@@ -155,9 +155,10 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
       setSelectedShearstreamBoxes(newBoxes);
       deployEquipment(equipmentId, job.id, job.name, equipment.name);
       
-      // Update the specific SS box node
+      // Update the specific SS box node with standardized format
       const boxNodeId = index === 0 ? 'main-box' : `main-box-${index + 1}`;
-      updateMainBoxName(boxNodeId, equipment.equipmentId, setNodes);
+      const standardizedId = `SS-${equipment.equipmentId.padStart(3, '0')}`;
+      updateMainBoxName(boxNodeId, standardizedId, setNodes);
     } else if (type === 'starlink') {
       if (selectedStarlink) {
         returnEquipment(selectedStarlink);
@@ -173,7 +174,10 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
       newComputers[index] = equipmentId;
       setSelectedCompanyComputers(newComputers);
       deployEquipment(equipmentId, job.id, job.name, equipment.name);
-      updateCompanyComputerName(`company-computer-${index + 1}`, equipment.equipmentId, setNodes);
+      
+      // Update computer node with standardized CC format
+      const standardizedId = `CC-${equipment.equipmentId.padStart(3, '0')}`;
+      updateCompanyComputerName(`company-computer-${index + 1}`, standardizedId, setNodes);
     }
   }, [trackedEquipment, selectedShearstreamBoxes, selectedStarlink, selectedCompanyComputers, returnEquipment, deployEquipment, job, updateMainBoxName, updateSatelliteName, updateCompanyComputerName, setNodes]);
 
@@ -210,7 +214,6 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
     return maxId + 1;
   }, []);
 
-  // Fix: Restore edge styling and data - remove reference to undefined 'edge'
   const restoreEdgesStyling = useCallback((edgeList: any[]) => {
     const getEdgeColor = (cableTypeId: string) => {
       const cableType = inventoryData.equipmentTypes.find(type => type.id === cableTypeId);
@@ -235,7 +238,6 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
     });
   }, [inventoryData.equipmentTypes, selectedCableType]);
 
-  // Memoized save data - updated for multiple SS boxes
   const saveDataMemo = useMemo(() => ({
     name: job.name,
     wellCount: job.wellCount,
@@ -254,7 +256,6 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
     } as JobEquipmentAssignment,
   }), [job, nodes, edges, mainBoxName, satelliteName, wellsideGaugeName, companyComputerNames, selectedCableType, selectedShearstreamBoxes, selectedStarlink, selectedCompanyComputers]);
 
-  // Save function with comprehensive data
   const performSave = useCallback(() => {
     if (isInitialized && (nodes.length > 0 || edges.length > 0)) {
       saveJobData(saveDataMemo);
@@ -265,7 +266,6 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
     }
   }, [isInitialized, nodes.length, edges.length, saveJobData, saveDataMemo, updateJob, job.id]);
 
-  // Debounced save to prevent excessive saves
   const { debouncedSave, cleanup } = useDebouncedSave(performSave, 300);
 
   // Load persisted data on mount - single effect to prevent conflicts
@@ -365,8 +365,8 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
 
   return (
     <div className="max-w-7xl mx-auto space-y-2">
-      {/* Configuration Sections */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+      {/* Compact Configuration Grid - More rows, better spacing */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 xl:grid-cols-5 gap-3">
         <CableConfigurationPanel
           selectedCableType={selectedCableType}
           setSelectedCableType={setSelectedCableType}
@@ -376,7 +376,7 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
           saveDiagram={saveDiagram}
         />
 
-        <EquipmentSelectionPanel
+        <CompactEquipmentSelectionPanel
           selectedShearstreamBoxes={selectedShearstreamBoxes}
           selectedStarlink={selectedStarlink}
           selectedCompanyComputers={selectedCompanyComputers}
@@ -397,15 +397,17 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
           updateWellsideGaugeColor={updateWellsideGaugeColor}
         />
 
-        <JobEquipmentPanel
+        <CompactJobEquipmentPanel
           jobId={job.id}
           jobName={job.name}
           nodes={nodes}
           edges={edges}
-          extrasOnLocation={[]}
-          onAddExtra={() => {}}
-          onRemoveExtra={() => {}}
         />
+
+        {/* Optional 5th column for future expansion */}
+        <div className="hidden xl:block">
+          {/* Reserved for additional controls if needed */}
+        </div>
       </div>
 
       {/* Diagram Section */}

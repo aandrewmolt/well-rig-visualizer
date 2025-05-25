@@ -17,6 +17,15 @@ interface EquipmentUsage {
   satellite: number;
 }
 
+interface ExtrasOnLocation {
+  id: string;
+  equipmentTypeId: string;
+  quantity: number;
+  reason: string;
+  addedDate: Date;
+  notes?: string;
+}
+
 export const useEquipmentTracking = (jobId: string, nodes: Node[], edges: Edge[]) => {
   const { data, updateEquipmentItems } = useInventoryData();
   const [usage, setUsage] = useState<EquipmentUsage>({
@@ -26,6 +35,8 @@ export const useEquipmentTracking = (jobId: string, nodes: Node[], edges: Edge[]
     computers: 0,
     satellite: 0,
   });
+  const [extrasOnLocation, setExtrasOnLocation] = useState<ExtrasOnLocation[]>([]);
+  const [lastAutoAllocation, setLastAutoAllocation] = useState<string>('');
 
   const calculateEquipmentUsage = () => {
     const newUsage: EquipmentUsage = {
@@ -68,8 +79,18 @@ export const useEquipmentTracking = (jobId: string, nodes: Node[], edges: Edge[]
     return newUsage;
   };
 
-  const allocateEquipmentToJob = (locationId: string) => {
+  const autoAllocateEquipment = (locationId: string) => {
+    if (!locationId) return;
+
     const currentUsage = calculateEquipmentUsage();
+    const usageKey = JSON.stringify({ nodes: nodes.length, edges: edges.length, locationId });
+    
+    // Only auto-allocate if the diagram or location changed
+    if (usageKey === lastAutoAllocation) return;
+
+    // First, return any previously allocated equipment for this job
+    returnAllJobEquipment();
+
     const updatedItems = [...data.equipmentItems];
 
     // Allocate cables
@@ -82,82 +103,160 @@ export const useEquipmentTracking = (jobId: string, nodes: Node[], edges: Edge[]
       
       const typeId = typeMapping[cableType];
       if (typeId) {
-        const availableItem = updatedItems.find(
-          item => item.typeId === typeId && item.locationId === locationId && item.status === 'available'
-        );
-        
-        if (availableItem && availableItem.quantity >= quantity) {
-          availableItem.quantity -= quantity;
-          
-          // Add deployed record
-          updatedItems.push({
-            id: `deployed-${typeId}-${Date.now()}`,
-            typeId,
-            locationId,
-            quantity,
-            status: 'deployed',
-            jobId,
-            lastUpdated: new Date(),
-          });
-        } else {
-          toast.error(`Insufficient ${cableType} cables available`);
-        }
+        allocateEquipmentType(updatedItems, typeId, quantity, locationId);
       }
     });
 
     // Allocate gauges (1502 Pressure Gauge)
     if (currentUsage.gauges > 0) {
-      const gaugeItem = updatedItems.find(
-        item => item.typeId === '7' && item.locationId === locationId && item.status === 'available'
-      );
-      
-      if (gaugeItem && gaugeItem.quantity >= currentUsage.gauges) {
-        gaugeItem.quantity -= currentUsage.gauges;
-        
-        updatedItems.push({
-          id: `deployed-gauge-${Date.now()}`,
-          typeId: '7',
-          locationId,
-          quantity: currentUsage.gauges,
-          status: 'deployed',
-          jobId,
-          lastUpdated: new Date(),
-        });
-      } else {
-        toast.error('Insufficient pressure gauges available');
-      }
+      allocateEquipmentType(updatedItems, '7', currentUsage.gauges, locationId);
     }
 
     // Allocate Y adapters
     if (currentUsage.adapters > 0) {
-      const adapterItem = updatedItems.find(
-        item => item.typeId === '9' && item.locationId === locationId && item.status === 'available'
-      );
-      
-      if (adapterItem && adapterItem.quantity >= currentUsage.adapters) {
-        adapterItem.quantity -= currentUsage.adapters;
-        
-        updatedItems.push({
-          id: `deployed-adapter-${Date.now()}`,
-          typeId: '9',
-          locationId,
-          quantity: currentUsage.adapters,
-          status: 'deployed',
-          jobId,
-          lastUpdated: new Date(),
-        });
-      } else {
-        toast.error('Insufficient Y adapters available');
-      }
+      allocateEquipmentType(updatedItems, '9', currentUsage.adapters, locationId);
+    }
+
+    // Allocate company computers
+    if (currentUsage.computers > 0) {
+      allocateEquipmentType(updatedItems, '11', currentUsage.computers, locationId);
+    }
+
+    // Allocate satellite
+    if (currentUsage.satellite > 0) {
+      allocateEquipmentType(updatedItems, '10', currentUsage.satellite, locationId);
     }
 
     updateEquipmentItems(updatedItems);
-    toast.success('Equipment allocated to job successfully');
+    setLastAutoAllocation(usageKey);
+    toast.success('Equipment automatically allocated from diagram');
   };
 
+  const allocateEquipmentType = (updatedItems: any[], typeId: string, quantity: number, locationId: string) => {
+    const availableItem = updatedItems.find(
+      item => item.typeId === typeId && item.locationId === locationId && item.status === 'available'
+    );
+    
+    if (availableItem && availableItem.quantity >= quantity) {
+      availableItem.quantity -= quantity;
+      
+      // Add deployed record
+      updatedItems.push({
+        id: `deployed-${typeId}-${Date.now()}-${Math.random()}`,
+        typeId,
+        locationId,
+        quantity,
+        status: 'deployed',
+        jobId,
+        lastUpdated: new Date(),
+      });
+    } else {
+      const typeName = data.equipmentTypes.find(type => type.id === typeId)?.name || 'Unknown';
+      toast.error(`Insufficient ${typeName} available at selected location`);
+    }
+  };
+
+  const returnAllJobEquipment = () => {
+    const updatedItems = data.equipmentItems.map(item => {
+      if (item.status === 'deployed' && item.jobId === jobId) {
+        // Find the corresponding available item to return quantity to
+        const availableItem = data.equipmentItems.find(
+          availItem => 
+            availItem.typeId === item.typeId && 
+            availItem.locationId === item.locationId && 
+            availItem.status === 'available'
+        );
+        
+        if (availableItem) {
+          availableItem.quantity += item.quantity;
+        } else {
+          // Create new available item if none exists
+          return {
+            id: `available-${item.typeId}-${item.locationId}`,
+            typeId: item.typeId,
+            locationId: item.locationId,
+            quantity: item.quantity,
+            status: 'available' as const,
+            lastUpdated: new Date(),
+          };
+        }
+        return null; // Mark for removal
+      }
+      return item;
+    }).filter(Boolean);
+
+    updateEquipmentItems(updatedItems as any[]);
+  };
+
+  const addExtraEquipment = (equipmentTypeId: string, quantity: number, reason: string, notes?: string) => {
+    const newExtra: ExtrasOnLocation = {
+      id: `extra-${Date.now()}`,
+      equipmentTypeId,
+      quantity,
+      reason,
+      addedDate: new Date(),
+      notes,
+    };
+    setExtrasOnLocation(prev => [...prev, newExtra]);
+    toast.success('Extra equipment added to location');
+  };
+
+  const removeExtraEquipment = (extraId: string) => {
+    setExtrasOnLocation(prev => prev.filter(extra => extra.id !== extraId));
+    toast.success('Extra equipment removed');
+  };
+
+  const transferEquipment = (typeId: string, quantity: number, fromLocationId: string, toLocationId: string, transferDate?: Date) => {
+    const updatedItems = [...data.equipmentItems];
+    
+    // Find source item
+    const sourceItem = updatedItems.find(
+      item => item.typeId === typeId && item.locationId === fromLocationId && item.status === 'available'
+    );
+    
+    if (!sourceItem || sourceItem.quantity < quantity) {
+      toast.error('Insufficient equipment at source location');
+      return;
+    }
+
+    // Deduct from source
+    sourceItem.quantity -= quantity;
+    
+    // Add to destination
+    const destItem = updatedItems.find(
+      item => item.typeId === typeId && item.locationId === toLocationId && item.status === 'available'
+    );
+    
+    if (destItem) {
+      destItem.quantity += quantity;
+    } else {
+      updatedItems.push({
+        id: `transfer-${Date.now()}`,
+        typeId,
+        locationId: toLocationId,
+        quantity,
+        status: 'available',
+        lastUpdated: transferDate || new Date(),
+      });
+    }
+
+    updateEquipmentItems(updatedItems);
+    toast.success('Equipment transferred successfully');
+  };
+
+  // Auto-allocate when diagram changes
   useEffect(() => {
     calculateEquipmentUsage();
   }, [nodes, edges]);
 
-  return { usage, allocateEquipmentToJob, calculateEquipmentUsage };
+  return { 
+    usage, 
+    extrasOnLocation,
+    autoAllocateEquipment,
+    returnAllJobEquipment,
+    addExtraEquipment,
+    removeExtraEquipment,
+    transferEquipment,
+    calculateEquipmentUsage 
+  };
 };

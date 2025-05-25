@@ -49,7 +49,14 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
   const [isInitialized, setIsInitialized] = useState(false);
 
   const { jobData, saveJobData } = useJobPersistence(job.id);
-  const { usage, allocateEquipmentToJob } = useEquipmentTracking(job.id, nodes, edges);
+  const { 
+    usage, 
+    extrasOnLocation,
+    autoAllocateEquipment,
+    addExtraEquipment,
+    removeExtraEquipment,
+    transferEquipment 
+  } = useEquipmentTracking(job.id, nodes, edges);
 
   // Load persisted data on mount
   useEffect(() => {
@@ -388,7 +395,10 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
           jobId={job.id}
           jobName={job.name}
           equipmentUsage={usage}
-          onAllocateEquipment={allocateEquipmentToJob}
+          extrasOnLocation={extrasOnLocation}
+          onAutoAllocate={autoAllocateEquipment}
+          onAddExtra={addExtraEquipment}
+          onRemoveExtra={removeExtraEquipment}
         />
       </div>
 

@@ -2,15 +2,16 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, Package, MapPin, AlertTriangle, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Package, MapPin, AlertTriangle, RefreshCw, ArrowRightLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import InventoryDashboard from '@/components/inventory/InventoryDashboard';
 import EquipmentTypeManager from '@/components/inventory/EquipmentTypeManager';
 import StorageLocationManager from '@/components/inventory/StorageLocationManager';
+import StorageTransferManager from '@/components/inventory/StorageTransferManager';
 import { useInventoryData } from '@/hooks/useInventoryData';
 
-type TabType = 'dashboard' | 'equipment' | 'locations';
+type TabType = 'dashboard' | 'equipment' | 'locations' | 'transfers';
 
 const EquipmentInventory = () => {
   const navigate = useNavigate();
@@ -34,6 +35,8 @@ const EquipmentInventory = () => {
         return <EquipmentTypeManager />;
       case 'locations':
         return <StorageLocationManager />;
+      case 'transfers':
+        return <StorageTransferManager />;
       default:
         return <InventoryDashboard />;
     }
@@ -78,8 +81,8 @@ const EquipmentInventory = () => {
           </p>
         </div>
 
-        {/* Mobile-friendly tab navigation */}
-        <div className="grid grid-cols-3 gap-2 mb-6">
+        {/* Enhanced tab navigation */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 mb-6">
           <Button
             onClick={() => setActiveTab('dashboard')}
             variant={activeTab === 'dashboard' ? 'default' : 'outline'}
@@ -105,6 +108,15 @@ const EquipmentInventory = () => {
           >
             <MapPin className="mr-2 h-5 w-5" />
             <span className="text-sm font-medium">Locations</span>
+          </Button>
+          
+          <Button
+            onClick={() => setActiveTab('transfers')}
+            variant={activeTab === 'transfers' ? 'default' : 'outline'}
+            className="flex items-center justify-center p-4 h-auto"
+          >
+            <ArrowRightLeft className="mr-2 h-5 w-5" />
+            <span className="text-sm font-medium">Transfers</span>
           </Button>
         </div>
 

@@ -1,12 +1,13 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Package, MapPin, Plus, Minus, AlertTriangle, Camera, Activity } from 'lucide-react';
-import { useInventoryData, EquipmentItem, EquipmentType, StorageLocation } from '@/hooks/useInventoryData';
-import RedTagManager from '../inventory/RedTagManager';
+import { Package, MapPin, Activity, AlertCircle, RefreshCw } from 'lucide-react';
+import { useInventoryData } from '@/hooks/useInventoryData';
+import ExtrasOnLocationPanel from './ExtrasOnLocationPanel';
 import { toast } from 'sonner';
 
 interface JobEquipmentPanelProps {
@@ -19,42 +20,31 @@ interface JobEquipmentPanelProps {
     computers: number;
     satellite: number;
   };
-  onAllocateEquipment?: (locationId: string) => void;
-}
-
-interface JobEquipmentAssignment {
-  equipmentTypeId: string;
-  quantity: number;
-  sourceLocationId: string;
-  status: 'assigned' | 'red-tagged';
-  redTagReason?: string;
-  notes?: string;
+  extrasOnLocation?: Array<{
+    id: string;
+    equipmentTypeId: string;
+    quantity: number;
+    reason: string;
+    addedDate: Date;
+    notes?: string;
+  }>;
+  onAutoAllocate?: (locationId: string) => void;
+  onAddExtra?: (equipmentTypeId: string, quantity: number, reason: string, notes?: string) => void;
+  onRemoveExtra?: (extraId: string) => void;
 }
 
 const JobEquipmentPanel: React.FC<JobEquipmentPanelProps> = ({ 
   jobId, 
   jobName, 
   equipmentUsage,
-  onAllocateEquipment 
+  extrasOnLocation = [],
+  onAutoAllocate,
+  onAddExtra,
+  onRemoveExtra
 }) => {
-  const { data, updateEquipmentItems } = useInventoryData();
+  const { data } = useInventoryData();
   const [selectedLocation, setSelectedLocation] = useState<string>(data.storageLocations[0]?.id || '');
-  const [jobEquipment, setJobEquipment] = useState<JobEquipmentAssignment[]>([]);
-  const [redTagItem, setRedTagItem] = useState<EquipmentItem | null>(null);
-
-  const getAvailableEquipment = (locationId: string) => {
-    return data.equipmentItems
-      .filter(item => item.locationId === locationId && item.status === 'available')
-      .reduce((acc, item) => {
-        const existing = acc.find(eq => eq.typeId === item.typeId);
-        if (existing) {
-          existing.quantity += item.quantity;
-        } else {
-          acc.push({ ...item });
-        }
-        return acc;
-      }, [] as EquipmentItem[]);
-  };
+  const [autoAllocationEnabled, setAutoAllocationEnabled] = useState(true);
 
   const getEquipmentTypeName = (typeId: string) => {
     return data.equipmentTypes.find(type => type.id === typeId)?.name || 'Unknown';
@@ -64,116 +54,81 @@ const JobEquipmentPanel: React.FC<JobEquipmentPanelProps> = ({
     return data.storageLocations.find(loc => loc.id === locationId)?.name || 'Unknown';
   };
 
-  const assignEquipmentToJob = (equipmentTypeId: string, quantity: number) => {
-    if (!selectedLocation) {
-      toast.error('Please select a storage location');
-      return;
-    }
+  const getDeployedEquipment = () => {
+    return data.equipmentItems.filter(item => item.status === 'deployed' && item.jobId === jobId);
+  };
 
-    const availableItems = getAvailableEquipment(selectedLocation);
-    const availableItem = availableItems.find(item => item.typeId === equipmentTypeId);
+  const getAvailableQuantity = (typeId: string, locationId: string) => {
+    return data.equipmentItems
+      .filter(item => item.typeId === typeId && item.locationId === locationId && item.status === 'available')
+      .reduce((sum, item) => sum + item.quantity, 0);
+  };
+
+  const checkEquipmentAvailability = () => {
+    if (!equipmentUsage || !selectedLocation) return { hasIssues: false, issues: [] };
     
-    if (!availableItem || availableItem.quantity < quantity) {
-      toast.error('Not enough equipment available at selected location');
-      return;
+    const issues: string[] = [];
+    const typeMapping: { [key: string]: string } = {
+      '100ft': '1',
+      '200ft': '2',  
+      '300ft': '4',
+    };
+
+    // Check cables
+    Object.entries(equipmentUsage.cables).forEach(([cableType, needed]) => {
+      const typeId = typeMapping[cableType];
+      if (typeId) {
+        const available = getAvailableQuantity(typeId, selectedLocation);
+        if (available < needed) {
+          issues.push(`${cableType} cables: need ${needed}, have ${available}`);
+        }
+      }
+    });
+
+    // Check other equipment
+    if (equipmentUsage.gauges > 0) {
+      const available = getAvailableQuantity('7', selectedLocation);
+      if (available < equipmentUsage.gauges) {
+        issues.push(`Pressure gauges: need ${equipmentUsage.gauges}, have ${available}`);
+      }
     }
 
-    // Add to job equipment
-    const existingAssignment = jobEquipment.find(
-      assign => assign.equipmentTypeId === equipmentTypeId && assign.sourceLocationId === selectedLocation
-    );
-
-    if (existingAssignment) {
-      setJobEquipment(prev => prev.map(assign => 
-        assign === existingAssignment 
-          ? { ...assign, quantity: assign.quantity + quantity }
-          : assign
-      ));
-    } else {
-      setJobEquipment(prev => [...prev, {
-        equipmentTypeId,
-        quantity,
-        sourceLocationId: selectedLocation,
-        status: 'assigned'
-      }]);
+    if (equipmentUsage.adapters > 0) {
+      const available = getAvailableQuantity('9', selectedLocation);
+      if (available < equipmentUsage.adapters) {
+        issues.push(`Y adapters: need ${equipmentUsage.adapters}, have ${available}`);
+      }
     }
 
-    // Update inventory to mark as deployed
-    const updatedItems = data.equipmentItems.map(item => {
-      if (item.typeId === equipmentTypeId && item.locationId === selectedLocation && item.status === 'available') {
-        const newQuantity = Math.max(0, item.quantity - quantity);
-        return newQuantity > 0 ? { ...item, quantity: newQuantity } : null;
+    if (equipmentUsage.computers > 0) {
+      const available = getAvailableQuantity('11', selectedLocation);
+      if (available < equipmentUsage.computers) {
+        issues.push(`Company computers: need ${equipmentUsage.computers}, have ${available}`);
       }
-      return item;
-    }).filter(Boolean) as EquipmentItem[];
+    }
 
-    // Add deployed equipment record
-    updatedItems.push({
-      id: `deployed-${Date.now()}`,
-      typeId: equipmentTypeId,
-      locationId: selectedLocation,
-      quantity,
-      status: 'deployed',
-      jobId,
-      lastUpdated: new Date()
-    });
+    if (equipmentUsage.satellite > 0) {
+      const available = getAvailableQuantity('10', selectedLocation);
+      if (available < equipmentUsage.satellite) {
+        issues.push(`Satellite: need ${equipmentUsage.satellite}, have ${available}`);
+      }
+    }
 
-    updateEquipmentItems(updatedItems);
-    toast.success(`${quantity}x ${getEquipmentTypeName(equipmentTypeId)} assigned to job`);
+    return { hasIssues: issues.length > 0, issues };
   };
 
-  const returnEquipmentToStorage = (assignmentIndex: number) => {
-    const assignment = jobEquipment[assignmentIndex];
-    
-    // Remove from job equipment
-    setJobEquipment(prev => prev.filter((_, idx) => idx !== assignmentIndex));
+  // Auto-allocate when location changes and auto-allocation is enabled
+  useEffect(() => {
+    if (autoAllocationEnabled && selectedLocation && onAutoAllocate) {
+      onAutoAllocate(selectedLocation);
+    }
+  }, [selectedLocation, autoAllocationEnabled, onAutoAllocate]);
 
-    // Return to inventory
-    const updatedItems = data.equipmentItems.map(item => {
-      if (item.typeId === assignment.equipmentTypeId && 
-          item.locationId === assignment.sourceLocationId && 
-          item.status === 'available') {
-        return { ...item, quantity: item.quantity + assignment.quantity };
-      }
-      return item;
-    });
-
-    // Remove deployed record
-    const filteredItems = updatedItems.filter(item => 
-      !(item.typeId === assignment.equipmentTypeId && 
-        item.locationId === assignment.sourceLocationId && 
-        item.status === 'deployed' && 
-        item.jobId === jobId)
-    );
-
-    updateEquipmentItems(filteredItems);
-    toast.success(`${assignment.quantity}x ${getEquipmentTypeName(assignment.equipmentTypeId)} returned to storage`);
-  };
-
-  const handleRedTag = (itemId: string, reason: string, photo?: string, location?: string) => {
-    const updatedItems = data.equipmentItems.map(item => {
-      if (item.id === itemId) {
-        return {
-          ...item,
-          status: 'red-tagged' as const,
-          redTagReason: reason,
-          redTagPhoto: photo,
-          notes: location ? `Location: ${location}` : item.notes,
-          lastUpdated: new Date(),
-        };
-      }
-      return item;
-    });
-
-    updateEquipmentItems(updatedItems);
-    setRedTagItem(null);
-    toast.success('Equipment red-tagged successfully');
-  };
-
-  const availableEquipment = selectedLocation ? getAvailableEquipment(selectedLocation) : [];
+  const deployedEquipment = getDeployedEquipment();
+  const availability = checkEquipmentAvailability();
 
   return (
-    <>
+    <div className="space-y-4">
       <Card className="bg-white shadow-lg">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-lg">
@@ -182,12 +137,65 @@ const JobEquipmentPanel: React.FC<JobEquipmentPanelProps> = ({
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* Auto-Allocation Toggle */}
+          <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+            <div className="flex items-center gap-2">
+              <Activity className="h-4 w-4 text-blue-600" />
+              <span className="text-sm font-medium">Auto-Allocation</span>
+              <Badge variant={autoAllocationEnabled ? 'default' : 'secondary'}>
+                {autoAllocationEnabled ? 'ON' : 'OFF'}
+              </Badge>
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setAutoAllocationEnabled(!autoAllocationEnabled)}
+            >
+              {autoAllocationEnabled ? 'Disable' : 'Enable'}
+            </Button>
+          </div>
+
+          {/* Storage Location Selection */}
+          <div>
+            <label className="text-sm font-medium mb-2 block">Equipment Source Location</label>
+            <Select value={selectedLocation} onValueChange={setSelectedLocation}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select storage location" />
+              </SelectTrigger>
+              <SelectContent>
+                {data.storageLocations.map(location => (
+                  <SelectItem key={location.id} value={location.id}>
+                    <div className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4" />
+                      {location.name}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Equipment Availability Check */}
+          {availability.hasIssues && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <AlertCircle className="h-4 w-4 text-red-600" />
+                <span className="text-sm font-medium text-red-800">Equipment Shortage</span>
+              </div>
+              <div className="space-y-1">
+                {availability.issues.map((issue, index) => (
+                  <div key={index} className="text-xs text-red-700">{issue}</div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Equipment Usage Summary */}
           {equipmentUsage && (
             <div>
               <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
                 <Activity className="h-4 w-4" />
-                Current Equipment Usage
+                Required from Diagram
               </h4>
               <div className="space-y-2 p-3 bg-blue-50 rounded-lg">
                 {Object.entries(equipmentUsage.cables).map(([type, count]) => (
@@ -214,13 +222,20 @@ const JobEquipmentPanel: React.FC<JobEquipmentPanelProps> = ({
                     <Badge variant="secondary">{equipmentUsage.computers}</Badge>
                   </div>
                 )}
-                {onAllocateEquipment && selectedLocation && (
+                {equipmentUsage.satellite > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span>Satellite:</span>
+                    <Badge variant="secondary">{equipmentUsage.satellite}</Badge>
+                  </div>
+                )}
+                {!autoAllocationEnabled && onAutoAllocate && selectedLocation && (
                   <Button
-                    onClick={() => onAllocateEquipment(selectedLocation)}
+                    onClick={() => onAutoAllocate(selectedLocation)}
                     size="sm"
                     className="w-full mt-2"
                   >
-                    Allocate Equipment from Diagram
+                    <RefreshCw className="mr-2 h-3 w-3" />
+                    Manually Allocate Equipment
                   </Button>
                 )}
               </div>
@@ -229,117 +244,26 @@ const JobEquipmentPanel: React.FC<JobEquipmentPanelProps> = ({
 
           <Separator />
 
-          {/* Storage Location Selection */}
+          {/* Currently Deployed Equipment */}
           <div>
-            <label className="text-sm font-medium mb-2 block">Equipment Source Location</label>
-            <Select value={selectedLocation} onValueChange={setSelectedLocation}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select storage location" />
-              </SelectTrigger>
-              <SelectContent>
-                {data.storageLocations.map(location => (
-                  <SelectItem key={location.id} value={location.id}>
-                    <div className="flex items-center gap-2">
-                      <MapPin className="h-4 w-4" />
-                      {location.name}
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Available Equipment */}
-          {selectedLocation && (
-            <div>
-              <h4 className="text-sm font-medium mb-2">Available Equipment at {getLocationName(selectedLocation)}</h4>
-              <div className="space-y-2 max-h-48 overflow-y-auto">
-                {availableEquipment.map(item => (
-                  <div key={item.id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm">{getEquipmentTypeName(item.typeId)}</span>
-                      <Badge variant="secondary">{item.quantity} available</Badge>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Button
-                        size="sm"
-                        onClick={() => assignEquipmentToJob(item.typeId, 1)}
-                        className="h-6 w-6 p-0"
-                      >
-                        <Plus className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <Separator />
-
-          {/* Assigned Equipment */}
-          <div>
-            <h4 className="text-sm font-medium mb-2">Equipment Assigned to Job</h4>
-            {jobEquipment.length === 0 ? (
-              <p className="text-sm text-gray-500">No equipment assigned yet</p>
+            <h4 className="text-sm font-medium mb-2">Equipment Deployed to Job</h4>
+            {deployedEquipment.length === 0 ? (
+              <p className="text-sm text-gray-500">No equipment currently deployed</p>
             ) : (
               <div className="space-y-2">
-                {jobEquipment.map((assignment, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                {deployedEquipment.map(item => (
+                  <div key={item.id} className="flex items-center justify-between p-3 border rounded-lg bg-green-50 border-green-200">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="font-medium">{getEquipmentTypeName(assignment.equipmentTypeId)}</span>
-                        <Badge variant="outline">{assignment.quantity}x</Badge>
-                        <Badge 
-                          variant={assignment.status === 'assigned' ? 'default' : 'destructive'}
-                          className="text-xs"
-                        >
-                          {assignment.status}
+                        <span className="font-medium">{getEquipmentTypeName(item.typeId)}</span>
+                        <Badge variant="outline">{item.quantity}x</Badge>
+                        <Badge className="text-xs bg-green-100 text-green-800 border-green-300">
+                          Deployed
                         </Badge>
                       </div>
                       <div className="text-xs text-gray-500">
-                        From: {getLocationName(assignment.sourceLocationId)}
+                        From: {getLocationName(item.locationId)}
                       </div>
-                      {assignment.redTagReason && (
-                        <div className="text-xs text-red-600 mt-1">
-                          Red Tag Reason: {assignment.redTagReason}
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-1">
-                      {assignment.status === 'assigned' && (
-                        <>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              // Create a mock equipment item for red tagging
-                              const mockItem: EquipmentItem = {
-                                id: `assignment-${index}`,
-                                typeId: assignment.equipmentTypeId,
-                                locationId: assignment.sourceLocationId,
-                                quantity: assignment.quantity,
-                                status: 'deployed',
-                                jobId,
-                                lastUpdated: new Date(),
-                              };
-                              setRedTagItem(mockItem);
-                            }}
-                            className="h-7 px-2"
-                          >
-                            <AlertTriangle className="h-3 w-3 mr-1" />
-                            Red Tag
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => returnEquipmentToStorage(index)}
-                            className="h-7 px-2"
-                          >
-                            Return
-                          </Button>
-                        </>
-                      )}
                     </div>
                   </div>
                 ))}
@@ -349,13 +273,13 @@ const JobEquipmentPanel: React.FC<JobEquipmentPanelProps> = ({
         </CardContent>
       </Card>
 
-      <RedTagManager
-        isOpen={!!redTagItem}
-        onClose={() => setRedTagItem(null)}
-        equipmentItem={redTagItem || undefined}
-        onRedTag={handleRedTag}
+      {/* Extras on Location Panel */}
+      <ExtrasOnLocationPanel
+        extrasOnLocation={extrasOnLocation}
+        onAddExtra={onAddExtra || (() => {})}
+        onRemoveExtra={onRemoveExtra || (() => {})}
       />
-    </>
+    </div>
   );
 };
 

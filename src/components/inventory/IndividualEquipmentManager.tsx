@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -36,7 +36,11 @@ const IndividualEquipmentManager: React.FC<IndividualEquipmentManagerProps> = ({
     locationId: ''
   });
 
-  const individualEquipment = data.individualEquipment.filter(eq => eq.typeId === equipmentType.id);
+  // Memoize the individual equipment to prevent re-renders
+  const individualEquipment = useMemo(() => 
+    data.individualEquipment.filter(eq => eq.typeId === equipmentType.id),
+    [data.individualEquipment, equipmentType.id]
+  );
   
   const {
     draftEquipment,
@@ -48,17 +52,21 @@ const IndividualEquipmentManager: React.FC<IndividualEquipmentManagerProps> = ({
     unsavedCount,
   } = useDraftEquipmentManager(individualEquipment, updateIndividualEquipment);
 
-  // Combine saved and draft equipment for display
-  const allEquipment = [
-    ...individualEquipment,
-    ...draftEquipment.map(draft => ({
-      ...draft,
-      id: draft.id || `draft-${Date.now()}`,
-      lastUpdated: new Date(),
-    } as IndividualEquipment))
-  ];
+  // Memoize the combined equipment array with stable IDs
+  const allEquipment = useMemo(() => {
+    console.log('Recalculating allEquipment array');
+    return [
+      ...individualEquipment,
+      ...draftEquipment.map((draft, index) => ({
+        ...draft,
+        id: draft.id || `draft-${equipmentType.id}-${index}`,
+        lastUpdated: draft.lastUpdated || new Date('2024-01-01'), // Use stable date for drafts
+      } as IndividualEquipment))
+    ];
+  }, [individualEquipment, draftEquipment, equipmentType.id]);
 
-  const generateNextEquipmentId = () => {
+  // Memoize the next equipment ID generation
+  const generateNextEquipmentId = useCallback(() => {
     const prefix = equipmentType.defaultIdPrefix || 'EQ-';
     const existingIds = allEquipment.map(eq => eq.equipmentId);
     let counter = 1;
@@ -70,10 +78,10 @@ const IndividualEquipmentManager: React.FC<IndividualEquipmentManagerProps> = ({
     }
     
     return newId;
-  };
+  }, [allEquipment, equipmentType.defaultIdPrefix]);
 
   // Initialize form data when dialog opens for new equipment
-  const handleAddItemClick = () => {
+  const handleAddItemClick = useCallback(() => {
     if (!editingEquipment) {
       setFormData({
         equipmentId: generateNextEquipmentId(),
@@ -84,9 +92,9 @@ const IndividualEquipmentManager: React.FC<IndividualEquipmentManagerProps> = ({
       });
     }
     setIsDialogOpen(true);
-  };
+  }, [editingEquipment, generateNextEquipmentId]);
 
-  const handleSubmit = () => {
+  const handleSubmit = useCallback(() => {
     if (!formData.equipmentId.trim() || !formData.name.trim() || !formData.locationId) {
       toast({
         title: "Validation Error",
@@ -141,9 +149,9 @@ const IndividualEquipmentManager: React.FC<IndividualEquipmentManagerProps> = ({
     }
 
     resetForm();
-  };
+  }, [formData, allEquipment, editingEquipment, data.individualEquipment, updateIndividualEquipment, equipmentType.id, addDraftEquipment]);
 
-  const handleBulkCreate = () => {
+  const handleBulkCreate = useCallback(() => {
     if (!bulkCreateData.locationId || bulkCreateData.count <= 0) {
       toast({
         title: "Validation Error",
@@ -190,9 +198,9 @@ const IndividualEquipmentManager: React.FC<IndividualEquipmentManagerProps> = ({
       startNumber: bulkCreateData.startNumber + bulkCreateData.count,
       locationId: ''
     });
-  };
+  }, [bulkCreateData, allEquipment, equipmentType, addBulkDraftEquipment]);
 
-  const handleEdit = (equipment: IndividualEquipment) => {
+  const handleEdit = useCallback((equipment: IndividualEquipment) => {
     setEditingEquipment(equipment);
     setFormData({
       equipmentId: equipment.equipmentId,
@@ -202,9 +210,9 @@ const IndividualEquipmentManager: React.FC<IndividualEquipmentManagerProps> = ({
       notes: equipment.notes || ''
     });
     setIsDialogOpen(true);
-  };
+  }, []);
 
-  const handleDelete = (equipmentId: string) => {
+  const handleDelete = useCallback((equipmentId: string) => {
     const equipment = individualEquipment.find(eq => eq.id === equipmentId);
     if (equipment?.status === 'deployed') {
       toast({
@@ -221,9 +229,9 @@ const IndividualEquipmentManager: React.FC<IndividualEquipmentManagerProps> = ({
       title: "Equipment Deleted",
       description: "Equipment deleted successfully",
     });
-  };
+  }, [individualEquipment, data.individualEquipment, updateIndividualEquipment]);
 
-  const resetForm = () => {
+  const resetForm = useCallback(() => {
     setFormData({
       equipmentId: '',
       name: '',
@@ -233,9 +241,9 @@ const IndividualEquipmentManager: React.FC<IndividualEquipmentManagerProps> = ({
     });
     setEditingEquipment(null);
     setIsDialogOpen(false);
-  };
+  }, []);
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = useCallback((status: string) => {
     switch (status) {
       case 'available': return 'bg-green-100 text-green-800';
       case 'deployed': return 'bg-blue-100 text-blue-800';
@@ -244,11 +252,11 @@ const IndividualEquipmentManager: React.FC<IndividualEquipmentManagerProps> = ({
       case 'retired': return 'bg-gray-100 text-gray-800';
       default: return 'bg-gray-100 text-gray-800';
     }
-  };
+  }, []);
 
-  const getLocationName = (locationId: string) => {
+  const getLocationName = useCallback((locationId: string) => {
     return data.storageLocations.find(loc => loc.id === locationId)?.name || 'Unknown';
-  };
+  }, [data.storageLocations]);
 
   // Add before-unload warning for unsaved changes
   useEffect(() => {

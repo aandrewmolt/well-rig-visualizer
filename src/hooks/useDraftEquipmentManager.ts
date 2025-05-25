@@ -1,5 +1,5 @@
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useMemo } from 'react';
 import { IndividualEquipment } from '@/hooks/useInventoryData';
 import { useDebouncedSave } from '@/hooks/useDebouncedSave';
 import { toast } from '@/hooks/use-toast';
@@ -8,6 +8,7 @@ export interface DraftEquipment extends Omit<IndividualEquipment, 'id' | 'lastUp
   id?: string;
   isNew?: boolean;
   isDirty?: boolean;
+  lastUpdated?: Date;
 }
 
 export const useDraftEquipmentManager = (
@@ -16,21 +17,16 @@ export const useDraftEquipmentManager = (
 ) => {
   const [draftEquipment, setDraftEquipment] = useState<DraftEquipment[]>([]);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  const originalDataRef = useRef(originalEquipment);
-
-  // Update original data reference when prop changes
-  if (originalDataRef.current !== originalEquipment) {
-    originalDataRef.current = originalEquipment;
-    if (draftEquipment.length === 0) {
-      setDraftEquipment([]);
-    }
-  }
+  
+  // Use a stable reference with useMemo to prevent re-renders
+  const originalDataStable = useMemo(() => originalEquipment, [originalEquipment.length]);
 
   const saveChanges = useCallback(() => {
+    console.log('Saving changes, hasUnsavedChanges:', hasUnsavedChanges);
     if (!hasUnsavedChanges) return;
 
     const finalEquipment: IndividualEquipment[] = [
-      ...originalDataRef.current,
+      ...originalDataStable,
       ...draftEquipment.map(draft => ({
         ...draft,
         id: draft.id || `${Date.now()}-${Math.random()}`,
@@ -45,17 +41,19 @@ export const useDraftEquipmentManager = (
       title: "Changes saved",
       description: `Successfully saved ${draftEquipment.length} equipment items`,
     });
-  }, [draftEquipment, hasUnsavedChanges, onSave]);
+  }, [draftEquipment, hasUnsavedChanges, onSave, originalDataStable]);
 
   const debouncedSave = useDebouncedSave(saveChanges, 3000);
 
   const addDraftEquipment = useCallback((equipment: DraftEquipment) => {
+    console.log('Adding draft equipment:', equipment);
     setDraftEquipment(prev => [...prev, { ...equipment, isNew: true, isDirty: true }]);
     setHasUnsavedChanges(true);
     debouncedSave();
   }, [debouncedSave]);
 
   const updateDraftEquipment = useCallback((id: string, updates: Partial<DraftEquipment>) => {
+    console.log('Updating draft equipment:', id, updates);
     setDraftEquipment(prev => prev.map(eq => 
       eq.id === id ? { ...eq, ...updates, isDirty: true } : eq
     ));
@@ -64,11 +62,16 @@ export const useDraftEquipmentManager = (
   }, [debouncedSave]);
 
   const removeDraftEquipment = useCallback((id: string) => {
-    setDraftEquipment(prev => prev.filter(eq => eq.id !== id));
-    setHasUnsavedChanges(draftEquipment.length > 1);
-  }, [draftEquipment.length]);
+    console.log('Removing draft equipment:', id);
+    setDraftEquipment(prev => {
+      const newDrafts = prev.filter(eq => eq.id !== id);
+      setHasUnsavedChanges(newDrafts.length > 0);
+      return newDrafts;
+    });
+  }, []);
 
   const discardChanges = useCallback(() => {
+    console.log('Discarding changes');
     setDraftEquipment([]);
     setHasUnsavedChanges(false);
     toast({
@@ -78,6 +81,7 @@ export const useDraftEquipmentManager = (
   }, []);
 
   const addBulkDraftEquipment = useCallback((equipmentList: DraftEquipment[]) => {
+    console.log('Adding bulk draft equipment:', equipmentList.length, 'items');
     setDraftEquipment(prev => [...prev, ...equipmentList.map(eq => ({ ...eq, isNew: true, isDirty: true }))]);
     setHasUnsavedChanges(true);
     debouncedSave();

@@ -3,13 +3,16 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Package, MapPin, AlertTriangle, CheckCircle, RotateCcw, Activity, Clock, TrendingUp } from 'lucide-react';
+import { Package, MapPin, AlertTriangle, CheckCircle, RotateCcw, Activity, Clock, TrendingUp, Briefcase } from 'lucide-react';
 import { useInventoryData } from '@/hooks/useInventoryData';
 import { useRealTimeInventory } from '@/hooks/useRealTimeInventory';
 import { useAuditTrail } from '@/hooks/useAuditTrail';
+import { useJobStorage } from '@/hooks/useJobStorage';
+import JobDeploymentsSummary from './JobDeploymentsSummary';
 
 const InventoryDashboard = () => {
   const { data, resetToDefaultInventory } = useInventoryData();
+  const { jobs } = useJobStorage();
   const { alerts, getInventorySnapshot, autoCorrectInventory } = useRealTimeInventory();
   const { getRecentActivity, generateActivitySummary, formatAuditEntry } = useAuditTrail();
 
@@ -27,6 +30,13 @@ const InventoryDashboard = () => {
   const redTaggedEquipment = data.equipmentItems
     .filter(item => item.status === 'red-tagged')
     .reduce((sum, item) => sum + item.quantity, 0);
+
+  // Calculate active jobs with deployed equipment
+  const activeJobsWithEquipment = new Set(
+    data.equipmentItems
+      .filter(item => item.status === 'deployed' && item.jobId)
+      .map(item => item.jobId)
+  ).size;
 
   const getEquipmentTypeName = (typeId: string) => {
     return data.equipmentTypes.find(type => type.id === typeId)?.name || 'Unknown';
@@ -145,7 +155,7 @@ const InventoryDashboard = () => {
               <div>
                 <p className="text-sm font-medium text-gray-600">Deployed</p>
                 <p className="text-2xl font-bold text-orange-600">{deployedEquipment}</p>
-                <p className="text-xs text-gray-500">{activitySummary.deployments} this week</p>
+                <p className="text-xs text-gray-500">{activeJobsWithEquipment} active jobs</p>
               </div>
               <MapPin className="h-8 w-8 text-orange-600" />
             </div>
@@ -165,6 +175,9 @@ const InventoryDashboard = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Job Deployments Summary - NEW SECTION */}
+      <JobDeploymentsSummary />
 
       {/* Activity Summary */}
       <Card>

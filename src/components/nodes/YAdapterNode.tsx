@@ -23,7 +23,7 @@ const YAdapterNode = ({ data }: { data: any }) => {
         <h3 className="font-bold text-sm">{data.label}</h3>
       </div>
       
-      {/* Two output handles for Y functionality */}
+      {/* Output 1 - Primary output for wells */}
       <Handle
         type="source"
         position={Position.Right}
@@ -37,6 +37,20 @@ const YAdapterNode = ({ data }: { data: any }) => {
           height: 10,
         }}
       />
+      <div
+        className="absolute text-xs font-bold"
+        style={{
+          right: -25,
+          top: '25%',
+          transform: 'translateY(-50%)',
+          color: '#374151',
+          fontSize: '8px'
+        }}
+      >
+        1
+      </div>
+      
+      {/* Output 2 - Switchable output */}
       <Handle
         type="source"
         position={Position.Right}
@@ -50,6 +64,23 @@ const YAdapterNode = ({ data }: { data: any }) => {
           height: 10,
         }}
       />
+      <div
+        className="absolute text-xs font-bold"
+        style={{
+          right: -25,
+          top: '65%',
+          transform: 'translateY(-50%)',
+          color: '#374151',
+          fontSize: '8px'
+        }}
+      >
+        2
+      </div>
+      
+      {/* Connection capability indicator */}
+      <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-xs text-gray-600 whitespace-nowrap">
+        <span className="bg-white px-1 rounded text-[8px]">Switch: Direct/100ft</span>
+      </div>
     </div>
   );
 };

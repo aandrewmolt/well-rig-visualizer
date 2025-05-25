@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { BaseEdge, getBezierPath, EdgeLabelRenderer, useReactFlow } from '@xyflow/react';
 import { Edit } from 'lucide-react';
@@ -50,19 +49,56 @@ const CableEdge = ({
     setIsEditDialogOpen(true);
   };
 
-  const handleUpdateConnection = (newSourceId: string, newTargetId: string, newSourceHandle?: string, newTargetHandle?: string) => {
+  const handleUpdateConnection = (
+    newSourceId: string, 
+    newTargetId: string, 
+    newSourceHandle?: string, 
+    newTargetHandle?: string,
+    connectionType?: string,
+    cableTypeId?: string
+  ) => {
     setEdges((edges) => 
-      edges.map((edge) => 
-        edge.id === id 
-          ? {
+      edges.map((edge) => {
+        if (edge.id === id) {
+          if (connectionType === 'direct') {
+            // Convert to direct edge
+            return {
               ...edge,
               source: newSourceId,
               target: newTargetId,
               sourceHandle: newSourceHandle,
               targetHandle: newTargetHandle,
-            }
-          : edge
-      )
+              type: 'direct',
+              data: {
+                ...edge.data,
+                connectionType: 'direct',
+                label: 'Direct',
+                canSwitchType: true
+              },
+              style: {
+                stroke: '#8b5cf6',
+                strokeWidth: 4,
+                strokeDasharray: '5,5',
+              }
+            };
+          } else {
+            // Keep as cable connection, potentially with new cable type
+            return {
+              ...edge,
+              source: newSourceId,
+              target: newTargetId,
+              sourceHandle: newSourceHandle,
+              targetHandle: newTargetHandle,
+              data: {
+                ...edge.data,
+                cableTypeId: cableTypeId || edge.data?.cableTypeId,
+                connectionType: 'cable'
+              }
+            };
+          }
+        }
+        return edge;
+      })
     );
   };
 

@@ -16,12 +16,37 @@ export const useDiagramConnections = (
       const sourceNode = nodes.find(node => node.id === params.source);
       const targetNode = nodes.find(node => node.id === params.target);
       
-      // Check if this is a direct connection (Y adapter to well/wellside gauge)
+      // Enhanced Y adapter connection logic
+      const isYAdapterConnection = sourceNode?.type === 'yAdapter' && 
+        (targetNode?.type === 'well' || targetNode?.type === 'wellsideGauge' || targetNode?.type === 'companyComputer');
+      
+      if (isYAdapterConnection) {
+        // For Y adapter connections, default to direct but allow user to change later
+        const edge: Edge = {
+          ...params,
+          id: `edge-${Date.now()}`,
+          type: 'direct',
+          data: { 
+            connectionType: 'direct',
+            label: 'Direct',
+            canSwitchType: true // Flag to indicate this connection can be switched
+          },
+          style: {
+            stroke: '#8b5cf6',
+            strokeWidth: 4,
+            strokeDasharray: '5,5',
+          },
+        };
+        setEdges((eds) => addEdge(edge, eds));
+        toast.success('Y Adapter connection established! You can switch to 100ft cable in edit mode.');
+        return;
+      }
+      
+      // Original direct connection logic for other Y adapter connections
       const isDirectConnection = sourceNode?.type === 'yAdapter' && 
         (targetNode?.type === 'well' || targetNode?.type === 'wellsideGauge');
       
       if (isDirectConnection) {
-        // Create direct connection without cable type validation
         const edge: Edge = {
           ...params,
           id: `edge-${Date.now()}`,
@@ -48,11 +73,10 @@ export const useDiagramConnections = (
         return;
       }
 
-      // Handle cable connections - for now, we'll use the cable name to determine connection rules
-      // This is a simplified approach - you might want more sophisticated rules based on cable properties
+      // Handle cable connections with enhanced rules
       const cableName = cableType.name.toLowerCase();
       
-      // Simple rule: if cable name contains "300ft" or "reel", it can only connect from main box to Y adapter
+      // Enhanced connection rules
       if (cableName.includes('300ft') || cableName.includes('reel')) {
         if (sourceNode?.type === 'mainBox' && targetNode?.type !== 'yAdapter') {
           toast.error(`${cableType.name} can only connect from Main Box to Y Adapters!`);

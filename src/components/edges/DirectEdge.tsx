@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { BaseEdge, getBezierPath, EdgeLabelRenderer, useReactFlow } from '@xyflow/react';
 import { Edit } from 'lucide-react';
@@ -41,19 +40,55 @@ const DirectEdge = ({
     setIsEditDialogOpen(true);
   };
 
-  const handleUpdateConnection = (newSourceId: string, newTargetId: string, newSourceHandle?: string, newTargetHandle?: string) => {
+  const handleUpdateConnection = (
+    newSourceId: string, 
+    newTargetId: string, 
+    newSourceHandle?: string, 
+    newTargetHandle?: string,
+    connectionType?: string,
+    cableTypeId?: string
+  ) => {
     setEdges((edges) => 
-      edges.map((edge) => 
-        edge.id === id 
-          ? {
+      edges.map((edge) => {
+        if (edge.id === id) {
+          if (connectionType === 'cable' && cableTypeId) {
+            // Convert to cable edge
+            return {
               ...edge,
               source: newSourceId,
               target: newTargetId,
               sourceHandle: newSourceHandle,
               targetHandle: newTargetHandle,
-            }
-          : edge
-      )
+              type: 'cable',
+              data: {
+                ...edge.data,
+                connectionType: 'cable',
+                cableTypeId,
+                label: 'Cable'
+              },
+              style: {
+                stroke: '#ef4444', // Red for 100ft cables
+                strokeWidth: 3,
+                strokeDasharray: undefined,
+              }
+            };
+          } else {
+            // Keep as direct connection
+            return {
+              ...edge,
+              source: newSourceId,
+              target: newTargetId,
+              sourceHandle: newSourceHandle,
+              targetHandle: newTargetHandle,
+              data: {
+                ...edge.data,
+                connectionType: 'direct'
+              }
+            };
+          }
+        }
+        return edge;
+      })
     );
   };
 
@@ -96,6 +131,9 @@ const DirectEdge = ({
         >
           <div className="flex items-center gap-2">
             Direct
+            {data?.canSwitchType && (
+              <span className="text-xs opacity-60">(switchable)</span>
+            )}
             {selected && (
               <div className="flex gap-1">
                 <button

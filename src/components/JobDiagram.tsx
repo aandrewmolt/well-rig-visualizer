@@ -81,8 +81,6 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
     returnAllJobEquipment,
     validateInventoryConsistency,
     analyzeEquipmentUsage,
-    isAutoSyncEnabled,
-    setIsAutoSyncEnabled,
   } = useRobustEquipmentTracking(job.id, nodes, edges);
 
   const { initializeJob } = useJobDiagramInitialization({

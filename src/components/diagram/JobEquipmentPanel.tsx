@@ -1,12 +1,11 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Package, AlertTriangle, CheckCircle } from 'lucide-react';
 import { useInventoryData } from '@/hooks/useInventoryData';
 import { useRobustEquipmentTracking } from '@/hooks/useRobustEquipmentTracking';
 import ExtrasOnLocationPanel from './ExtrasOnLocationPanel';
-import AutoSyncControls from './equipment/AutoSyncControls';
 import EquipmentLocationSelector from './equipment/EquipmentLocationSelector';
 import { Node, Edge } from '@xyflow/react';
 
@@ -45,19 +44,10 @@ const JobEquipmentPanel: React.FC<JobEquipmentPanelProps> = ({
     validateInventoryConsistency,
     analyzeEquipmentUsage,
     generateEquipmentReport,
-    isAutoSyncEnabled,
-    setIsAutoSyncEnabled,
   } = useRobustEquipmentTracking(jobId, nodes, edges);
 
   const usage = analyzeEquipmentUsage();
   const report = generateEquipmentReport(usage);
-
-  // Auto-allocate when auto-sync is enabled and location changes
-  useEffect(() => {
-    if (isAutoSyncEnabled && selectedLocation) {
-      performComprehensiveAllocation(selectedLocation);
-    }
-  }, [selectedLocation, isAutoSyncEnabled]);
 
   const getDeployedEquipment = () => {
     return data.equipmentItems.filter(
@@ -74,7 +64,7 @@ const JobEquipmentPanel: React.FC<JobEquipmentPanelProps> = ({
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-lg">
             <Package className="h-5 w-5" />
-            Enhanced Equipment Tracking - {jobName}
+            Equipment Tracking - {jobName}
             {isConsistent ? (
               <CheckCircle className="h-4 w-4 text-green-500" />
             ) : (
@@ -83,11 +73,6 @@ const JobEquipmentPanel: React.FC<JobEquipmentPanelProps> = ({
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <AutoSyncControls
-            isAutoSyncEnabled={isAutoSyncEnabled}
-            onToggleAutoSync={setIsAutoSyncEnabled}
-          />
-
           <EquipmentLocationSelector
             selectedLocation={selectedLocation}
             setSelectedLocation={setSelectedLocation}
@@ -189,7 +174,7 @@ const JobEquipmentPanel: React.FC<JobEquipmentPanelProps> = ({
               className="flex-1 bg-blue-500 text-white px-3 py-2 rounded text-sm hover:bg-blue-600"
               disabled={!selectedLocation}
             >
-              Manual Sync Equipment
+              Allocate Equipment
             </button>
             <button
               onClick={returnAllJobEquipment}

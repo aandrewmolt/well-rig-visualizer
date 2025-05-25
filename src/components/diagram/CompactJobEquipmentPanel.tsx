@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Package, AlertTriangle, CheckCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import { useInventoryData } from '@/hooks/useInventoryData';
 import { useRobustEquipmentTracking } from '@/hooks/useRobustEquipmentTracking';
-import AutoSyncControls from './equipment/AutoSyncControls';
 import EquipmentLocationSelector from './equipment/EquipmentLocationSelector';
 import { Node, Edge } from '@xyflow/react';
 
@@ -32,20 +31,11 @@ const CompactJobEquipmentPanel: React.FC<CompactJobEquipmentPanelProps> = ({
     validateInventoryConsistency,
     analyzeEquipmentUsage,
     generateEquipmentReport,
-    isAutoSyncEnabled,
-    setIsAutoSyncEnabled,
   } = useRobustEquipmentTracking(jobId, nodes, edges);
 
   const usage = analyzeEquipmentUsage();
   const report = generateEquipmentReport(usage);
   const isConsistent = validateInventoryConsistency();
-
-  // Auto-allocate when auto-sync is enabled and location changes
-  useEffect(() => {
-    if (isAutoSyncEnabled && selectedLocation) {
-      performComprehensiveAllocation(selectedLocation);
-    }
-  }, [selectedLocation, isAutoSyncEnabled]);
 
   const getDeployedEquipment = () => {
     return data.equipmentItems.filter(
@@ -69,11 +59,6 @@ const CompactJobEquipmentPanel: React.FC<CompactJobEquipmentPanelProps> = ({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3 pt-0">
-        <AutoSyncControls
-          isAutoSyncEnabled={isAutoSyncEnabled}
-          onToggleAutoSync={setIsAutoSyncEnabled}
-        />
-
         <EquipmentLocationSelector
           selectedLocation={selectedLocation}
           setSelectedLocation={setSelectedLocation}
@@ -168,14 +153,14 @@ const CompactJobEquipmentPanel: React.FC<CompactJobEquipmentPanelProps> = ({
           </CollapsibleContent>
         </Collapsible>
 
-        {/* Action Buttons - Compact */}
+        {/* Action Buttons - Manual Only */}
         <div className="flex gap-1">
           <button
             onClick={() => performComprehensiveAllocation(selectedLocation)}
             className="flex-1 bg-blue-500 text-white px-2 py-1 rounded text-xs hover:bg-blue-600"
             disabled={!selectedLocation}
           >
-            Sync
+            Allocate Equipment
           </button>
           <button
             onClick={returnAllJobEquipment}

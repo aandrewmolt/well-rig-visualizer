@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Node, Edge } from '@xyflow/react';
 import { useInventoryData } from '@/hooks/useInventoryData';
 import { useComprehensiveEquipmentTracking } from './equipment/useComprehensiveEquipmentTracking';
@@ -8,8 +8,6 @@ import { toast } from 'sonner';
 export const useRobustEquipmentTracking = (jobId: string, nodes: Node[], edges: Edge[]) => {
   const { data, updateEquipmentItems } = useInventoryData();
   const { analyzeEquipmentUsage, validateEquipmentAvailability, generateEquipmentReport } = useComprehensiveEquipmentTracking(nodes, edges);
-  const [lastSyncHash, setLastSyncHash] = useState<string>('');
-  const [isAutoSyncEnabled, setIsAutoSyncEnabled] = useState(true);
 
   const performComprehensiveAllocation = (locationId: string) => {
     if (!locationId) {
@@ -69,10 +67,6 @@ export const useRobustEquipmentTracking = (jobId: string, nodes: Node[], edges: 
     // Update inventory
     updateEquipmentItems(updatedItems);
 
-    // Create sync hash to prevent duplicate allocations
-    const syncHash = JSON.stringify({ nodes: nodes.length, edges: edges.length, locationId, jobId });
-    setLastSyncHash(syncHash);
-
     // Provide detailed feedback
     if (allocatedItems.length > 0) {
       toast.success(`Equipment allocated: ${allocatedItems.join(', ')}`);
@@ -121,7 +115,7 @@ export const useRobustEquipmentTracking = (jobId: string, nodes: Node[], edges: 
       status: 'deployed',
       jobId,
       lastUpdated: new Date(),
-      notes: `Auto-allocated from diagram analysis`,
+      notes: `Manually allocated from diagram analysis`,
     });
 
     return true;
@@ -211,28 +205,11 @@ export const useRobustEquipmentTracking = (jobId: string, nodes: Node[], edges: 
     return true;
   };
 
-  // Auto-sync when diagram changes
-  useEffect(() => {
-    if (!isAutoSyncEnabled) return;
-
-    const currentHash = JSON.stringify({ 
-      nodes: nodes.map(n => ({ id: n.id, type: n.type })), 
-      edges: edges.map(e => ({ id: e.id, source: e.source, target: e.target, type: e.type, data: e.data }))
-    });
-
-    if (currentHash !== lastSyncHash && nodes.length > 0) {
-      console.log('Diagram changed, validating inventory consistency...');
-      validateInventoryConsistency();
-    }
-  }, [nodes, edges, isAutoSyncEnabled, lastSyncHash]);
-
   return {
     performComprehensiveAllocation,
     returnAllJobEquipment,
     validateInventoryConsistency,
     analyzeEquipmentUsage,
     generateEquipmentReport,
-    isAutoSyncEnabled,
-    setIsAutoSyncEnabled,
   };
 };

@@ -9,7 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Plus, Edit2, Trash2, Package, Settings } from 'lucide-react';
-import { useInventoryData, EquipmentType } from '@/hooks/useInventoryData';
+import { useInventoryData } from '@/hooks/useInventoryData';
+import { EquipmentType } from '@/types/inventory';
 import { toast } from 'sonner';
 import EquipmentQuantityEditor from './EquipmentQuantityEditor';
 import IndividualEquipmentManager from './IndividualEquipmentManager';

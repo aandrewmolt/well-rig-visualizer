@@ -8,7 +8,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Edit2, History, MapPin, AlertTriangle, TrendingUp, Package } from 'lucide-react';
-import { useInventoryData, EquipmentItem } from '@/hooks/useInventoryData';
+import { useInventoryData } from '@/hooks/useInventoryData';
+import { EquipmentItem } from '@/types/inventory';
 import { useAuditTrail } from '@/hooks/useAuditTrail';
 import { useEquipmentValidation } from '@/hooks/useEquipmentValidation';
 import { toast } from 'sonner';

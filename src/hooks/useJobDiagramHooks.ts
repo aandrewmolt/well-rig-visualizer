@@ -1,15 +1,9 @@
 
-import React, { useRef, useEffect, useMemo } from 'react';
-import { useJobStorage } from '@/hooks/useJobStorage';
 import { useRobustEquipmentTracking } from '@/hooks/useRobustEquipmentTracking';
-import { useDiagramConnections } from '@/hooks/useDiagramConnections';
-import { useDiagramActions } from '@/hooks/useDiagramActions';
-import { useDebouncedSave } from '@/hooks/useDebouncedSave';
-import { useJobPersistence } from '@/hooks/useJobPersistence';
-import { useJobDiagramState } from '@/hooks/useJobDiagramState';
-import { useJobDiagramInitialization } from '@/hooks/useJobDiagramInitialization';
-import { useJobDiagramEquipment } from '@/hooks/useJobDiagramEquipment';
-import { JobEquipmentAssignment } from '@/types/equipment';
+import { useJobDiagramCore } from '@/hooks/useJobDiagramCore';
+import { useJobDiagramActions } from '@/hooks/useJobDiagramActions';
+import { useJobDiagramEquipmentHandlers } from '@/hooks/useJobDiagramEquipmentHandlers';
+import { useJobDiagramSave } from '@/hooks/useJobDiagramSave';
 
 interface Job {
   id: string;
@@ -20,196 +14,86 @@ interface Job {
 }
 
 export const useJobDiagramHooks = (job: Job) => {
-  const reactFlowWrapper = useRef<HTMLDivElement>(null);
-  const { updateJob } = useJobStorage();
-  const { saveJobData } = useJobPersistence(job.id);
+  // Core state and initialization
+  const coreData = useJobDiagramCore(job);
 
-  // State management
-  const {
-    nodes,
-    setNodes,
-    onNodesChange,
-    edges,
-    setEdges,
-    onEdgesChange,
-    selectedShearstreamBoxes,
-    setSelectedShearstreamBoxes,
-    selectedStarlink,
-    setSelectedStarlink,
-    selectedCompanyComputers,
-    setSelectedCompanyComputers,
-    initializeCableType,
-    selectedCableType,
-    setSelectedCableType,
-    nodeIdCounter,
-    setNodeIdCounter,
-    mainBoxName,
-    setMainBoxName,
-    satelliteName,
-    setSatelliteName,
-    wellsideGaugeName,
-    setWellsideGaugeName,
-    companyComputerNames,
-    setCompanyComputerNames,
-    isInitialized,
-    setIsInitialized,
-    equipmentAssignment,
-    setEquipmentAssignment,
-    updateMainBoxName,
-    updateCompanyComputerName,
-    updateSatelliteName,
-    updateWellsideGaugeName,
-    syncWithLoadedData,
-  } = useJobDiagramState();
-
-  // Initialize cable type
-  React.useEffect(() => {
-    initializeCableType();
-  }, [initializeCableType]);
-
-  // Hooks for functionality
+  // Equipment tracking
   const {
     performComprehensiveAllocation,
     returnAllJobEquipment,
     validateInventoryConsistency,
     analyzeEquipmentUsage,
-  } = useRobustEquipmentTracking(job.id, nodes, edges);
+  } = useRobustEquipmentTracking(job.id, coreData.nodes, coreData.edges);
 
-  const { initializeJob } = useJobDiagramInitialization({
+  // Actions
+  const actions = useJobDiagramActions({
     job,
-    nodes,
-    edges,
-    isInitialized,
-    setNodes,
-    setEdges,
-    setNodeIdCounter,
-    setIsInitialized,
-    setMainBoxName,
-    setSatelliteName,
-    setWellsideGaugeName,
-    setCompanyComputerNames,
-    setSelectedCableType,
-    setSelectedShearstreamBoxes,
-    setSelectedStarlink,
-    setSelectedCompanyComputers,
-    setEquipmentAssignment,
-    syncWithLoadedData,
-    mainBoxName,
-    satelliteName,
-    wellsideGaugeName,
+    nodeIdCounter: coreData.nodeIdCounter,
+    setNodeIdCounter: coreData.setNodeIdCounter,
+    setNodes: coreData.setNodes,
+    setEdges: coreData.setEdges,
+    setIsInitialized: coreData.setIsInitialized,
+    initializeJob: coreData.initializeJob,
+    reactFlowWrapper: coreData.reactFlowWrapper,
   });
 
-  const { onConnect } = useDiagramConnections(selectedCableType, nodes, setEdges);
-
-  const {
-    addYAdapter,
-    addShearstreamBox,
-    removeShearstreamBox,
-    addCompanyComputer,
-    updateWellName,
-    updateWellColor,
-    updateWellsideGaugeColor,
-    clearDiagram,
-    saveDiagram,
-  } = useDiagramActions(
+  // Equipment handlers
+  const equipmentHandlers = useJobDiagramEquipmentHandlers({
     job,
-    nodeIdCounter,
-    setNodeIdCounter,
-    setNodes,
-    setEdges,
-    setIsInitialized,
-    initializeJob,
-    reactFlowWrapper
-  );
-
-  // Equipment handling
-  const {
-    handleEquipmentSelect,
-    handleAddShearstreamBox,
-    handleRemoveShearstreamBox,
-  } = useJobDiagramEquipment({
-    job,
-    selectedShearstreamBoxes,
-    selectedStarlink,
-    selectedCompanyComputers,
-    setSelectedShearstreamBoxes,
-    setSelectedStarlink,
-    setSelectedCompanyComputers,
-    setNodes,
-    updateMainBoxName,
-    updateSatelliteName,
-    updateCompanyComputerName,
-    addShearstreamBox,
-    removeShearstreamBox,
+    selectedShearstreamBoxes: coreData.selectedShearstreamBoxes,
+    selectedStarlink: coreData.selectedStarlink,
+    selectedCompanyComputers: coreData.selectedCompanyComputers,
+    setSelectedShearstreamBoxes: coreData.setSelectedShearstreamBoxes,
+    setSelectedStarlink: coreData.setSelectedStarlink,
+    setSelectedCompanyComputers: coreData.setSelectedCompanyComputers,
+    setNodes: coreData.setNodes,
+    updateMainBoxName: coreData.updateMainBoxName,
+    updateSatelliteName: coreData.updateSatelliteName,
+    updateCompanyComputerName: coreData.updateCompanyComputerName,
+    addShearstreamBox: actions.addShearstreamBox,
+    removeShearstreamBox: actions.removeShearstreamBox,
   });
 
-  // Save data preparation
-  const saveDataMemo = useMemo(() => ({
-    name: job.name,
-    wellCount: job.wellCount,
-    hasWellsideGauge: job.hasWellsideGauge,
-    nodes,
-    edges,
-    mainBoxName,
-    satelliteName,
-    wellsideGaugeName,
-    companyComputerNames,
-    selectedCableType,
-    equipmentAssignment: {
-      shearstreamBoxIds: selectedShearstreamBoxes.filter(Boolean),
-      starlinkId: selectedStarlink || undefined,
-      companyComputerIds: selectedCompanyComputers.filter(Boolean),
-    } as JobEquipmentAssignment,
-  }), [job, nodes, edges, mainBoxName, satelliteName, wellsideGaugeName, companyComputerNames, selectedCableType, selectedShearstreamBoxes, selectedStarlink, selectedCompanyComputers]);
-
-  const performSave = React.useCallback(() => {
-    if (isInitialized && (nodes.length > 0 || edges.length > 0)) {
-      saveJobData(saveDataMemo);
-      updateJob(job.id, { 
-        equipmentAllocated: true,
-        lastUpdated: new Date() 
-      });
-    }
-  }, [isInitialized, nodes.length, edges.length, saveJobData, saveDataMemo, updateJob, job.id]);
-
-  const { debouncedSave, cleanup } = useDebouncedSave(performSave, 300);
-
-  // Trigger debounced save whenever relevant data changes
-  useEffect(() => {
-    if (isInitialized) {
-      debouncedSave();
-    }
-  }, [saveDataMemo, isInitialized, debouncedSave]);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return cleanup;
-  }, [cleanup]);
+  // Save functionality
+  useJobDiagramSave({
+    job,
+    nodes: coreData.nodes,
+    edges: coreData.edges,
+    isInitialized: coreData.isInitialized,
+    mainBoxName: coreData.mainBoxName,
+    satelliteName: coreData.satelliteName,
+    wellsideGaugeName: coreData.wellsideGaugeName,
+    companyComputerNames: coreData.companyComputerNames,
+    selectedCableType: coreData.selectedCableType,
+    selectedShearstreamBoxes: coreData.selectedShearstreamBoxes,
+    selectedStarlink: coreData.selectedStarlink,
+    selectedCompanyComputers: coreData.selectedCompanyComputers,
+  });
 
   return {
-    reactFlowWrapper,
+    reactFlowWrapper: coreData.reactFlowWrapper,
     // State
-    nodes,
-    edges,
-    onNodesChange,
-    onEdgesChange,
-    onConnect,
-    selectedCableType,
-    setSelectedCableType,
-    selectedShearstreamBoxes,
-    selectedStarlink,
-    selectedCompanyComputers,
+    nodes: coreData.nodes,
+    edges: coreData.edges,
+    onNodesChange: coreData.onNodesChange,
+    onEdgesChange: coreData.onEdgesChange,
+    onConnect: coreData.onConnect,
+    selectedCableType: coreData.selectedCableType,
+    setSelectedCableType: coreData.setSelectedCableType,
+    selectedShearstreamBoxes: coreData.selectedShearstreamBoxes,
+    selectedStarlink: coreData.selectedStarlink,
+    selectedCompanyComputers: coreData.selectedCompanyComputers,
     // Actions
-    handleEquipmentSelect,
-    handleAddShearstreamBox,
-    handleRemoveShearstreamBox,
-    addYAdapter,
-    addCompanyComputer,
-    clearDiagram,
-    saveDiagram,
-    updateWellName,
-    updateWellColor,
-    updateWellsideGaugeName: (name: string) => updateWellsideGaugeName(name, setNodes),
-    updateWellsideGaugeColor,
+    handleEquipmentSelect: equipmentHandlers.handleEquipmentSelect,
+    handleAddShearstreamBox: equipmentHandlers.handleAddShearstreamBox,
+    handleRemoveShearstreamBox: equipmentHandlers.handleRemoveShearstreamBox,
+    addYAdapter: actions.addYAdapter,
+    addCompanyComputer: actions.addCompanyComputer,
+    clearDiagram: actions.clearDiagram,
+    saveDiagram: actions.saveDiagram,
+    updateWellName: actions.updateWellName,
+    updateWellColor: actions.updateWellColor,
+    updateWellsideGaugeName: actions.updateWellsideGaugeName,
+    updateWellsideGaugeColor: actions.updateWellsideGaugeColor,
   };
 };

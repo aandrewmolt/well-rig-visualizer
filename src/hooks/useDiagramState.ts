@@ -1,5 +1,5 @@
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Node, Edge } from '@xyflow/react';
 
 export const useDiagramState = () => {
@@ -10,6 +10,16 @@ export const useDiagramState = () => {
   const [wellsideGaugeName, setWellsideGaugeName] = useState('Wellside Gauge');
   const [companyComputerNames, setCompanyComputerNames] = useState<Record<string, string>>({});
   const [isInitialized, setIsInitialized] = useState(false);
+
+  // Sync state with loaded data
+  const syncWithLoadedData = useCallback((jobData: any) => {
+    if (jobData) {
+      setMainBoxName(jobData.mainBoxName || 'ShearStream Box');
+      setSatelliteName(jobData.satelliteName || 'Starlink');
+      setWellsideGaugeName(jobData.wellsideGaugeName || 'Wellside Gauge');
+      setCompanyComputerNames(jobData.companyComputerNames || {});
+    }
+  }, []);
 
   const updateMainBoxName = useCallback((newName: string, setNodes: (updater: (nodes: Node[]) => Node[]) => void) => {
     setMainBoxName(newName);
@@ -74,5 +84,6 @@ export const useDiagramState = () => {
     updateCompanyComputerName,
     updateSatelliteName,
     updateWellsideGaugeName,
+    syncWithLoadedData,
   };
 };

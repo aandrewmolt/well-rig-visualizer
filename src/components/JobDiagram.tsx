@@ -1,5 +1,5 @@
 
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useCallback } from 'react';
 import {
   useNodesState,
   useEdgesState,
@@ -16,6 +16,7 @@ import { useDiagramState } from '@/hooks/useDiagramState';
 import { useDiagramInitialization } from '@/hooks/useDiagramInitialization';
 import { useDiagramConnections } from '@/hooks/useDiagramConnections';
 import { useDiagramActions } from '@/hooks/useDiagramActions';
+import { useDebouncedSave } from '@/hooks/useDebouncedSave';
 
 interface Job {
   id: string;
@@ -53,6 +54,7 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
     updateCompanyComputerName,
     updateSatelliteName,
     updateWellsideGaugeName,
+    syncWithLoadedData,
   } = useDiagramState();
 
   const { jobData, saveJobData } = useJobPersistence(job.id);
@@ -113,14 +115,74 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
     return maxId + 1;
   };
 
+  // Restore edge styling and data
+  const restoreEdgesStyling = useCallback((edgeList: any[]) => {
+    return edgeList.map(edge => ({
+      ...edge,
+      type: edge.type || 'cable',
+      style: edge.style || {
+        stroke: edge.data?.cableType === '100ft' ? '#ef4444' : 
+               edge.data?.cableType === '200ft' ? '#3b82f6' : 
+               edge.data?.cableType === '300ft' ? '#10b981' : '#6b7280',
+        strokeWidth: 3,
+      },
+      data: edge.data || { cableType: '200ft', label: '200ft' }
+    }));
+  }, []);
+
+  // Save function with comprehensive data
+  const performSave = useCallback(() => {
+    if (isInitialized && (nodes.length > 0 || edges.length > 0)) {
+      console.log('Saving comprehensive job data:', {
+        nodes: nodes.length,
+        edges: edges.length,
+        mainBoxName,
+        satelliteName,
+        wellsideGaugeName,
+        companyComputerNames
+      });
+      
+      saveJobData({
+        name: job.name,
+        wellCount: job.wellCount,
+        hasWellsideGauge: job.hasWellsideGauge,
+        nodes,
+        edges,
+        mainBoxName,
+        satelliteName,
+        wellsideGaugeName,
+        companyComputerNames,
+      });
+    }
+  }, [
+    nodes, 
+    edges, 
+    mainBoxName, 
+    satelliteName, 
+    wellsideGaugeName, 
+    companyComputerNames, 
+    isInitialized, 
+    saveJobData, 
+    job
+  ]);
+
+  // Debounced save to prevent excessive saves
+  const debouncedSave = useDebouncedSave(performSave, 300);
+
   // Load persisted data on mount - single effect to prevent conflicts
   useEffect(() => {
     if (jobData && !isInitialized) {
       console.log('Loading persisted job data:', jobData);
       
-      // Restore all persisted data
+      // Sync state with loaded data first
+      syncWithLoadedData(jobData);
+      
+      // Restore nodes and edges with proper styling
+      const restoredEdges = restoreEdgesStyling(jobData.edges || []);
       setNodes(jobData.nodes || []);
-      setEdges(jobData.edges || []);
+      setEdges(restoredEdges);
+      
+      // Update state variables
       setMainBoxName(jobData.mainBoxName || 'ShearStream Box');
       setSatelliteName(jobData.satelliteName || 'Starlink');
       setWellsideGaugeName(jobData.wellsideGaugeName || 'Wellside Gauge');
@@ -135,25 +197,28 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
       console.log('No persisted data found, initializing new job');
       initializeJob();
     }
-  }, [jobData, isInitialized, initializeJob, setNodes, setEdges, setMainBoxName, setSatelliteName, setWellsideGaugeName, setCompanyComputerNames, setNodeIdCounter, setIsInitialized]);
+  }, [
+    jobData, 
+    isInitialized, 
+    initializeJob, 
+    setNodes, 
+    setEdges, 
+    setMainBoxName, 
+    setSatelliteName, 
+    setWellsideGaugeName, 
+    setCompanyComputerNames, 
+    setNodeIdCounter, 
+    setIsInitialized,
+    syncWithLoadedData,
+    restoreEdgesStyling
+  ]);
 
-  // Save data whenever it changes
+  // Trigger debounced save whenever relevant data changes
   useEffect(() => {
-    if (isInitialized && (nodes.length > 0 || edges.length > 0)) {
-      console.log('Saving job data:', { nodes, edges });
-      saveJobData({
-        name: job.name,
-        wellCount: job.wellCount,
-        hasWellsideGauge: job.hasWellsideGauge,
-        nodes,
-        edges,
-        mainBoxName,
-        satelliteName,
-        wellsideGaugeName,
-        companyComputerNames,
-      });
+    if (isInitialized) {
+      debouncedSave();
     }
-  }, [nodes, edges, mainBoxName, satelliteName, wellsideGaugeName, companyComputerNames, isInitialized, saveJobData, job]);
+  }, [nodes, edges, mainBoxName, satelliteName, wellsideGaugeName, companyComputerNames, isInitialized, debouncedSave]);
 
   const wellNodes = nodes.filter(node => node.type === 'well');
   const wellsideGaugeNode = nodes.find(node => node.type === 'wellsideGauge');

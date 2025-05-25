@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Node, Edge } from '@xyflow/react';
 import { JobEquipmentAssignment } from '@/types/equipment';
@@ -13,7 +14,7 @@ export interface JobData {
   satelliteName: string;
   wellsideGaugeName: string;
   companyComputerNames: Record<string, string>;
-  selectedCableType?: string; // Add the missing property
+  selectedCableType?: string;
   equipmentAssignment?: JobEquipmentAssignment;
   lastUpdated: Date;
 }
@@ -57,7 +58,10 @@ export const useJobPersistence = (jobId: string) => {
     updated.satelliteName = updated.satelliteName || 'Starlink';
     updated.wellsideGaugeName = updated.wellsideGaugeName || 'Wellside Gauge';
     updated.companyComputerNames = updated.companyComputerNames || {};
-    updated.equipmentAssignment = updated.equipmentAssignment || { companyComputerIds: [] };
+    updated.equipmentAssignment = updated.equipmentAssignment || { 
+      shearstreamBoxIds: [],
+      companyComputerIds: [] 
+    };
     updated.nodes = updated.nodes || [];
     updated.edges = updated.edges || [];
     
@@ -102,8 +106,22 @@ export const useJobPersistence = (jobId: string) => {
           }));
         }
         
-        // Ensure equipment assignment exists
-        parsed.equipmentAssignment = parsed.equipmentAssignment || { companyComputerIds: [] };
+        // Ensure equipment assignment exists with new structure
+        if (!parsed.equipmentAssignment) {
+          parsed.equipmentAssignment = { 
+            shearstreamBoxIds: [],
+            companyComputerIds: [] 
+          };
+        } else {
+          // Migrate old single shearstreamBoxId to new array format
+          if (parsed.equipmentAssignment.shearstreamBoxId) {
+            parsed.equipmentAssignment.shearstreamBoxIds = [parsed.equipmentAssignment.shearstreamBoxId];
+            delete parsed.equipmentAssignment.shearstreamBoxId;
+          }
+          // Ensure arrays exist
+          parsed.equipmentAssignment.shearstreamBoxIds = parsed.equipmentAssignment.shearstreamBoxIds || [];
+          parsed.equipmentAssignment.companyComputerIds = parsed.equipmentAssignment.companyComputerIds || [];
+        }
         
         console.log('Successfully loaded job data from localStorage with equipment assignment');
         setJobData(parsed);

@@ -1,3 +1,4 @@
+
 import React, { useRef, useEffect, useCallback, useState, useMemo } from 'react';
 import {
   useNodesState,
@@ -42,8 +43,8 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
   const { trackedEquipment, deployEquipment, returnEquipment } = useTrackedEquipment();
   const { data: inventoryData } = useInventoryData();
 
-  // Equipment assignment state
-  const [selectedShearstreamBox, setSelectedShearstreamBox] = useState<string>('');
+  // Equipment assignment state - updated for multiple SS boxes
+  const [selectedShearstreamBoxes, setSelectedShearstreamBoxes] = useState<string[]>([]);
   const [selectedStarlink, setSelectedStarlink] = useState<string>('');
   const [selectedCompanyComputers, setSelectedCompanyComputers] = useState<string[]>([]);
 
@@ -119,6 +120,8 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
 
   const {
     addYAdapter,
+    addShearstreamBox,
+    removeShearstreamBox,
     addCompanyComputer,
     updateWellName,
     updateWellColor,
@@ -136,18 +139,23 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
     reactFlowWrapper
   );
 
-  // Handle equipment selection
+  // Handle equipment selection - updated for multiple SS boxes
   const handleEquipmentSelect = useCallback((type: 'shearstream-box' | 'starlink' | 'company-computer', equipmentId: string, index?: number) => {
     const equipment = trackedEquipment.find(eq => eq.id === equipmentId);
     if (!equipment) return;
 
-    if (type === 'shearstream-box') {
-      if (selectedShearstreamBox) {
-        returnEquipment(selectedShearstreamBox);
+    if (type === 'shearstream-box' && index !== undefined) {
+      const newBoxes = [...selectedShearstreamBoxes];
+      if (newBoxes[index]) {
+        returnEquipment(newBoxes[index]);
       }
-      setSelectedShearstreamBox(equipmentId);
+      newBoxes[index] = equipmentId;
+      setSelectedShearstreamBoxes(newBoxes);
       deployEquipment(equipmentId, job.id, job.name, equipment.name);
-      updateMainBoxName(equipment.equipmentId, setNodes);
+      
+      // Update the specific SS box node
+      const boxNodeId = index === 0 ? 'main-box' : `main-box-${index + 1}`;
+      updateMainBoxName(boxNodeId, equipment.equipmentId, setNodes);
     } else if (type === 'starlink') {
       if (selectedStarlink) {
         returnEquipment(selectedStarlink);
@@ -165,7 +173,27 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
       deployEquipment(equipmentId, job.id, job.name, equipment.name);
       updateCompanyComputerName(`company-computer-${index + 1}`, equipment.equipmentId, setNodes);
     }
-  }, [trackedEquipment, selectedShearstreamBox, selectedStarlink, selectedCompanyComputers, returnEquipment, deployEquipment, job, updateMainBoxName, updateSatelliteName, updateCompanyComputerName, setNodes]);
+  }, [trackedEquipment, selectedShearstreamBoxes, selectedStarlink, selectedCompanyComputers, returnEquipment, deployEquipment, job, updateMainBoxName, updateSatelliteName, updateCompanyComputerName, setNodes]);
+
+  // Handle adding/removing SS boxes
+  const handleAddShearstreamBox = useCallback(() => {
+    addShearstreamBox();
+    setSelectedShearstreamBoxes(prev => [...prev, '']);
+  }, [addShearstreamBox]);
+
+  const handleRemoveShearstreamBox = useCallback((index: number) => {
+    // Return equipment if assigned
+    if (selectedShearstreamBoxes[index]) {
+      returnEquipment(selectedShearstreamBoxes[index]);
+    }
+    
+    // Remove the node
+    const boxNodeId = index === 0 ? 'main-box' : `main-box-${index + 1}`;
+    removeShearstreamBox(boxNodeId);
+    
+    // Update selected boxes array
+    setSelectedShearstreamBoxes(prev => prev.filter((_, i) => i !== index));
+  }, [selectedShearstreamBoxes, returnEquipment, removeShearstreamBox]);
 
   // Calculate proper node ID counter from existing nodes
   const calculateNodeIdCounter = useCallback((nodeList: any[]) => {
@@ -205,7 +233,7 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
     });
   }, [inventoryData.equipmentTypes, selectedCableType]);
 
-  // Memoized save data
+  // Memoized save data - updated for multiple SS boxes
   const saveDataMemo = useMemo(() => ({
     name: job.name,
     wellCount: job.wellCount,
@@ -216,13 +244,13 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
     satelliteName,
     wellsideGaugeName,
     companyComputerNames,
-    selectedCableType, // Save the selected cable type ID
+    selectedCableType,
     equipmentAssignment: {
-      shearstreamBoxId: selectedShearstreamBox || undefined,
+      shearstreamBoxIds: selectedShearstreamBoxes.filter(Boolean),
       starlinkId: selectedStarlink || undefined,
       companyComputerIds: selectedCompanyComputers.filter(Boolean),
     } as JobEquipmentAssignment,
-  }), [job, nodes, edges, mainBoxName, satelliteName, wellsideGaugeName, companyComputerNames, selectedCableType, selectedShearstreamBox, selectedStarlink, selectedCompanyComputers]);
+  }), [job, nodes, edges, mainBoxName, satelliteName, wellsideGaugeName, companyComputerNames, selectedCableType, selectedShearstreamBoxes, selectedStarlink, selectedCompanyComputers]);
 
   // Save function with comprehensive data
   const performSave = useCallback(() => {
@@ -260,9 +288,9 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
         setSelectedCableType(jobData.selectedCableType);
       }
       
-      // Load equipment assignment
+      // Load equipment assignment - updated for multiple SS boxes
       if (jobData.equipmentAssignment) {
-        setSelectedShearstreamBox(jobData.equipmentAssignment.shearstreamBoxId || '');
+        setSelectedShearstreamBoxes(jobData.equipmentAssignment.shearstreamBoxIds || []);
         setSelectedStarlink(jobData.equipmentAssignment.starlinkId || '');
         setSelectedCompanyComputers(jobData.equipmentAssignment.companyComputerIds || []);
         setEquipmentAssignment(jobData.equipmentAssignment);
@@ -311,6 +339,7 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
   const wellNodes = nodes.filter(node => node.type === 'well');
   const wellsideGaugeNode = nodes.find(node => node.type === 'wellsideGauge');
   const companyComputerNodes = nodes.filter(node => node.type === 'companyComputer');
+  const shearstreamBoxNodes = nodes.filter(node => node.type === 'mainBox');
   const equipmentUsage = calculateEquipmentUsage();
 
   return (
@@ -327,11 +356,14 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
         />
 
         <EquipmentSelectionPanel
-          selectedShearstreamBox={selectedShearstreamBox}
+          selectedShearstreamBoxes={selectedShearstreamBoxes}
           selectedStarlink={selectedStarlink}
           selectedCompanyComputers={selectedCompanyComputers}
           companyComputerCount={companyComputerNodes.length}
+          shearstreamBoxCount={shearstreamBoxNodes.length}
           onEquipmentSelect={handleEquipmentSelect}
+          onAddShearstreamBox={handleAddShearstreamBox}
+          onRemoveShearstreamBox={handleRemoveShearstreamBox}
           hasWellsideGauge={job.hasWellsideGauge}
         />
 

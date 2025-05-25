@@ -35,6 +35,45 @@ export const useDiagramActions = (
     toast.success('Y Adapter added!');
   }, [nodeIdCounter, setNodes, setNodeIdCounter]);
 
+  const addShearstreamBox = useCallback(() => {
+    setNodes((nds) => {
+      const existingBoxes = nds.filter(node => node.type === 'mainBox');
+      const newBoxNumber = existingBoxes.length + 1;
+      
+      const newBox: Node = {
+        id: `main-box-${newBoxNumber}`,
+        type: 'mainBox',
+        position: { 
+          x: 50, 
+          y: 100 + (existingBoxes.length * 200) // Stack boxes vertically
+        },
+        data: { 
+          label: `ShearStream Box ${newBoxNumber}`,
+          boxNumber: newBoxNumber
+        },
+        draggable: false,
+      };
+      
+      setNodeIdCounter(nodeIdCounter + 1);
+      toast.success(`ShearStream Box ${newBoxNumber} added!`);
+      return [...nds, newBox];
+    });
+  }, [nodeIdCounter, setNodes, setNodeIdCounter]);
+
+  const removeShearstreamBox = useCallback((boxId: string) => {
+    setNodes((nds) => {
+      const filteredNodes = nds.filter(node => node.id !== boxId);
+      
+      // Remove any edges connected to this box
+      setEdges((edges) => edges.filter(edge => 
+        edge.source !== boxId && edge.target !== boxId
+      ));
+      
+      toast.success('ShearStream Box removed!');
+      return filteredNodes;
+    });
+  }, [setNodes, setEdges]);
+
   const addCompanyComputer = useCallback(() => {
     setNodes((nds) => {
       const existingComputers = nds.filter(node => node.type === 'companyComputer');
@@ -116,6 +155,8 @@ export const useDiagramActions = (
 
   return {
     addYAdapter,
+    addShearstreamBox,
+    removeShearstreamBox,
     addCompanyComputer,
     updateWellName,
     updateWellColor,

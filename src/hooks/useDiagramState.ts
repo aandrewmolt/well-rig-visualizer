@@ -1,8 +1,9 @@
+
 import { useState, useCallback } from 'react';
 import { Node } from '@xyflow/react';
 
 export interface JobEquipmentAssignment {
-  shearstreamBoxId?: string;
+  shearstreamBoxIds: string[]; // Changed to support multiple boxes
   starlinkId?: string;
   companyComputerIds: string[];
 }
@@ -17,14 +18,14 @@ export const useDiagramState = () => {
   const [companyComputerNames, setCompanyComputerNames] = useState<Record<string, string>>({});
   const [isInitialized, setIsInitialized] = useState(false);
   const [equipmentAssignment, setEquipmentAssignment] = useState<JobEquipmentAssignment>({
+    shearstreamBoxIds: [], // Changed to array
     companyComputerIds: [],
   });
 
-  const updateMainBoxName = useCallback((name: string, setNodes: (updater: (nodes: Node[]) => Node[]) => void) => {
-    setMainBoxName(name);
+  const updateMainBoxName = useCallback((nodeId: string, name: string, setNodes: (updater: (nodes: Node[]) => Node[]) => void) => {
     setNodes((nodes) =>
       nodes.map((node) =>
-        node.type === 'mainBox'
+        node.id === nodeId
           ? { ...node, data: { ...node.data, label: name } }
           : node
       )

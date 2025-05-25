@@ -26,7 +26,7 @@ export interface EquipmentDeploymentHistory {
 }
 
 export interface JobEquipmentAssignment {
-  shearstreamBoxId?: string;
+  shearstreamBoxIds: string[]; // Changed from shearstreamBoxId to support multiple boxes
   starlinkId?: string;
   companyComputerIds: string[];
 }

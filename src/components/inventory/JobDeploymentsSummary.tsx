@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Package, Briefcase } from 'lucide-react';
+import { MapPin, Package, Briefcase, Calendar } from 'lucide-react';
 import { useInventoryData } from '@/hooks/useInventoryData';
 import { useJobStorage } from '@/hooks/useJobStorage';
 
@@ -22,9 +22,19 @@ const JobDeploymentsSummary = () => {
       return acc;
     }, {} as Record<string, typeof data.equipmentItems>);
 
-  const getJobName = (jobId: string) => {
+  const getJobDetails = (jobId: string) => {
     const job = jobs.find(j => j.id === jobId);
-    return job ? job.name : `Job ${jobId}`;
+    return job ? {
+      name: job.name,
+      wellCount: job.wellCount,
+      hasWellsideGauge: job.hasWellsideGauge,
+      createdAt: job.createdAt
+    } : {
+      name: `Job ${jobId}`,
+      wellCount: 0,
+      hasWellsideGauge: false,
+      createdAt: new Date()
+    };
   };
 
   const getEquipmentTypeName = (typeId: string) => {
@@ -61,9 +71,9 @@ const JobDeploymentsSummary = () => {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Briefcase className="h-5 w-5" />
-          Job Equipment Deployments
+          Active Job Deployments
           <Badge variant="outline" className="ml-auto">
-            {activeJobsWithEquipment.length} Active Jobs
+            {activeJobsWithEquipment.length} Jobs
           </Badge>
         </CardTitle>
       </CardHeader>
@@ -71,22 +81,30 @@ const JobDeploymentsSummary = () => {
         <div className="space-y-4">
           {activeJobsWithEquipment.map(jobId => {
             const jobEquipment = deployedByJob[jobId];
+            const jobDetails = getJobDetails(jobId);
             const totalPieces = jobEquipment.reduce((sum, item) => sum + item.quantity, 0);
             const uniqueTypes = new Set(jobEquipment.map(item => item.typeId)).size;
             const sourceLocations = new Set(jobEquipment.map(item => item.locationId));
 
             return (
-              <div key={jobId} className="border rounded-lg p-4 bg-gray-50">
+              <div key={jobId} className="border rounded-lg p-4 bg-blue-50 border-blue-200">
                 <div className="flex items-center justify-between mb-3">
                   <div>
-                    <h3 className="font-semibold text-lg">{getJobName(jobId)}</h3>
-                    <p className="text-sm text-gray-600">Job ID: {jobId}</p>
+                    <h3 className="font-semibold text-lg text-blue-900">{jobDetails.name}</h3>
+                    <div className="flex items-center gap-3 text-sm text-blue-700 mt-1">
+                      <span>{jobDetails.wellCount} wells</span>
+                      {jobDetails.hasWellsideGauge && <span>+ wellside gauge</span>}
+                      <div className="flex items-center gap-1">
+                        <Calendar className="h-3 w-3" />
+                        <span>{jobDetails.createdAt.toLocaleDateString()}</span>
+                      </div>
+                    </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Badge variant="default" className="bg-orange-100 text-orange-800">
+                    <Badge variant="default" className="bg-blue-600">
                       {totalPieces} pieces
                     </Badge>
-                    <Badge variant="outline">
+                    <Badge variant="outline" className="border-blue-300">
                       {uniqueTypes} types
                     </Badge>
                   </div>
@@ -94,18 +112,18 @@ const JobDeploymentsSummary = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {jobEquipment.map(item => (
-                    <div key={item.id} className="flex items-center justify-between p-3 bg-white rounded border">
+                    <div key={item.id} className="flex items-center justify-between p-3 bg-white rounded border border-blue-200">
                       <div className="flex-1">
                         <div className="font-medium text-sm">
                           {getEquipmentTypeName(item.typeId)}
                         </div>
-                        <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
+                        <div className="flex items-center gap-2 text-xs text-gray-600 mt-1">
                           <MapPin className="h-3 w-3" />
-                          From: {getLocationName(item.locationId)}
+                          <span>From: {getLocationName(item.locationId)}</span>
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="font-bold text-orange-600">{item.quantity}</div>
+                        <div className="font-bold text-blue-600">{item.quantity}</div>
                         <div className="text-xs text-gray-500">units</div>
                       </div>
                     </div>
@@ -113,9 +131,9 @@ const JobDeploymentsSummary = () => {
                 </div>
 
                 {sourceLocations.size > 1 && (
-                  <div className="mt-3 pt-3 border-t">
-                    <div className="text-sm text-gray-600">
-                      <span className="font-medium">Source locations:</span> {
+                  <div className="mt-3 pt-3 border-t border-blue-200">
+                    <div className="text-sm text-blue-700">
+                      <span className="font-medium">Sources:</span> {
                         Array.from(sourceLocations).map(locId => getLocationName(locId)).join(', ')
                       }
                     </div>

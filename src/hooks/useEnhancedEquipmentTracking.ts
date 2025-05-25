@@ -12,7 +12,6 @@ export const useEnhancedEquipmentTracking = (jobId: string, nodes: Node[], edges
   const { data, updateEquipmentItems } = useInventoryData();
   const [isAutoSyncEnabled, setIsAutoSyncEnabled] = useState(false);
 
-  // Use the smaller, focused hooks
   const { calculateEquipmentUsage } = useEquipmentUsageCalculator(nodes, edges);
   const { ensureEquipmentTypesExist } = useEquipmentTypeManager();
   const { performEquipmentAllocation, createAuditEntries, cleanupDuplicateDeployments } = useEquipmentAllocator(jobId);
@@ -24,43 +23,48 @@ export const useEnhancedEquipmentTracking = (jobId: string, nodes: Node[], edges
       return;
     }
 
-    console.log('Equipment allocation/update requested for job:', jobId);
+    console.log(`Equipment allocation requested for job ${jobId} from location ${locationId}`);
 
     const currentUsage = usage || calculateEquipmentUsage();
+    console.log('Calculated equipment usage:', currentUsage);
     
-    // Ensure all equipment types exist before allocation
     ensureEquipmentTypesExist(currentUsage);
 
-    // Clean up any duplicate deployments first
+    // Start with clean data
     let updatedItems = [...data.equipmentItems];
+    
+    // Remove duplicates first
     updatedItems = cleanupDuplicateDeployments(updatedItems);
 
-    // Check if we have any existing deployments for this job
+    // Check existing deployments
     const existingDeployments = updatedItems.filter(
       item => item.status === 'deployed' && item.jobId === jobId
     );
 
-    const hasExistingDeployments = existingDeployments.length > 0;
+    console.log(`Found ${existingDeployments.length} existing deployments for job ${jobId}`);
 
-    // Perform allocation/update
+    // Perform allocation
     const allocatedItems = performEquipmentAllocation(locationId, currentUsage, updatedItems);
 
+    // Update inventory
     updateEquipmentItems(updatedItems);
     
-    // Create audit entries for changes
+    // Create audit entries
     createAuditEntries(allocatedItems, locationId);
 
-    // Provide better user feedback
+    // Provide user feedback
     const updatedCount = allocatedItems.filter(item => item.updated).length;
     const totalTypes = allocatedItems.length;
 
-    if (hasExistingDeployments && updatedCount > 0) {
-      toast.success(`Equipment allocation updated: ${updatedCount} of ${totalTypes} types modified`);
-    } else if (hasExistingDeployments && updatedCount === 0) {
+    if (existingDeployments.length > 0 && updatedCount > 0) {
+      toast.success(`Equipment updated: ${updatedCount} of ${totalTypes} types modified`);
+    } else if (existingDeployments.length > 0 && updatedCount === 0) {
       toast.info('Equipment allocation unchanged - already up to date');
     } else {
       toast.success(`Equipment allocated: ${totalTypes} types deployed`);
     }
+
+    console.log('Equipment allocation completed successfully');
   };
 
   return {

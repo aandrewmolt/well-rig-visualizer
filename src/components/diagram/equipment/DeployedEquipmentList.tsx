@@ -2,6 +2,8 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { useInventoryData } from '@/hooks/useInventoryData';
+import { useJobStorage } from '@/hooks/useJobStorage';
+import { Briefcase, MapPin } from 'lucide-react';
 
 interface DeployedEquipmentListProps {
   jobId: string;
@@ -9,6 +11,7 @@ interface DeployedEquipmentListProps {
 
 const DeployedEquipmentList: React.FC<DeployedEquipmentListProps> = ({ jobId }) => {
   const { data } = useInventoryData();
+  const { jobs } = useJobStorage();
 
   const getEquipmentTypeName = (typeId: string) => {
     return data.equipmentTypes.find(type => type.id === typeId)?.name || 'Unknown';
@@ -16,6 +19,11 @@ const DeployedEquipmentList: React.FC<DeployedEquipmentListProps> = ({ jobId }) 
 
   const getLocationName = (locationId: string) => {
     return data.storageLocations.find(loc => loc.id === locationId)?.name || 'Unknown';
+  };
+
+  const getJobName = (jobId: string) => {
+    const job = jobs.find(j => j.id === jobId);
+    return job ? job.name : `Job ${jobId}`;
   };
 
   const getDeployedEquipment = () => {
@@ -37,13 +45,19 @@ const DeployedEquipmentList: React.FC<DeployedEquipmentListProps> = ({ jobId }) 
                 <div className="flex items-center gap-2 mb-1">
                   <span className="font-medium">{getEquipmentTypeName(item.typeId)}</span>
                   <Badge variant="outline">{item.quantity}x</Badge>
-                  <Badge className="text-xs bg-green-100 text-green-800 border-green-300">
-                    Active
-                  </Badge>
                 </div>
-                <div className="text-xs text-gray-500 space-y-1">
-                  <div>Source: {getLocationName(item.locationId)}</div>
-                  <div>Deployed: {new Date(item.lastUpdated).toLocaleDateString()}</div>
+                <div className="text-xs text-gray-600 space-y-1">
+                  <div className="flex items-center gap-1">
+                    <Briefcase className="h-3 w-3" />
+                    <span className="font-medium text-blue-700">Job: {getJobName(jobId)}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <MapPin className="h-3 w-3" />
+                    <span>From: {getLocationName(item.locationId)}</span>
+                  </div>
+                  <div className="text-gray-500">
+                    Deployed: {new Date(item.lastUpdated).toLocaleDateString()}
+                  </div>
                 </div>
               </div>
             </div>

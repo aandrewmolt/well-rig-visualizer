@@ -3,13 +3,13 @@ import { useState } from 'react';
 import { Node, Edge } from '@xyflow/react';
 import { useInventoryData } from './useInventoryData';
 import { toast } from 'sonner';
-import { useEquipmentUsageCalculator } from './equipment/useEquipmentUsageCalculator';
+import { useEquipmentUsageCalculator, EquipmentUsage } from './equipment/useEquipmentUsageCalculator';
 import { useEquipmentTypeManager } from './equipment/useEquipmentTypeManager';
 import { useEquipmentAllocator } from './equipment/useEquipmentAllocator';
 import { useEquipmentReturner } from './equipment/useEquipmentReturner';
 
 export const useEnhancedEquipmentTracking = (jobId: string, nodes: Node[], edges: Edge[]) => {
-  const { updateEquipmentItems } = useInventoryData();
+  const { data, updateEquipmentItems } = useInventoryData();
   // Default to false to prevent automatic allocation
   const [isAutoSyncEnabled, setIsAutoSyncEnabled] = useState(false);
 

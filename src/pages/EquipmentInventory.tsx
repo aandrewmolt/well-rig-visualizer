@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, Package, MapPin, AlertTriangle, Sync } from 'lucide-react';
+import { ArrowLeft, Package, MapPin, AlertTriangle, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import InventoryDashboard from '@/components/inventory/InventoryDashboard';
@@ -65,7 +65,7 @@ const EquipmentInventory = () => {
               disabled={isLoading}
               className="bg-white"
             >
-              <Sync className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
               Sync
             </Button>
           </div>

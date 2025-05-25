@@ -38,12 +38,18 @@ export const useInventoryData = () => {
     const initializeData = () => {
       const storedData = loadFromLocalStorage();
       if (storedData) {
-        // Clean up duplicates and ensure minimum inventory
-        storedData.equipmentItems = cleanupDuplicateDeployments(storedData.equipmentItems);
-        storedData.equipmentItems = ensureMinimumInventory(storedData.equipmentItems);
+        // Only run cleanup once during initialization
+        const cleanedItems = cleanupDuplicateDeployments(storedData.equipmentItems);
+        const enhancedItems = ensureMinimumInventory(cleanedItems);
         
-        setData(storedData);
-        saveToLocalStorage(storedData);
+        // Only update if cleanup actually changed something
+        if (cleanedItems !== storedData.equipmentItems || enhancedItems !== cleanedItems) {
+          const updatedData = { ...storedData, equipmentItems: enhancedItems };
+          setData(updatedData);
+          saveToLocalStorage(updatedData);
+        } else {
+          setData(storedData);
+        }
         setSyncStatus('synced');
       } else {
         // Initialize with default inventory
@@ -60,7 +66,7 @@ export const useInventoryData = () => {
     };
 
     initializeData();
-  }, []);
+  }, [cleanupDuplicateDeployments, ensureMinimumInventory, loadFromLocalStorage, saveToLocalStorage, createDefaultInventory, DEFAULT_EQUIPMENT_TYPES, DEFAULT_STORAGE_LOCATIONS]);
 
   const handleResetToDefaultInventory = () => {
     const defaultData = resetToDefaultInventory();

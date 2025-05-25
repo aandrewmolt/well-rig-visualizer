@@ -2,14 +2,12 @@
 import { useState } from 'react';
 import { InventoryData, EquipmentType, StorageLocation, EquipmentItem, IndividualEquipment } from '@/types/inventory';
 import { useInventoryStorage } from './useInventoryStorage';
-import { useInventoryValidation } from './useInventoryValidation';
 
 export const useInventoryOperations = (
   data: InventoryData,
   setData: (data: InventoryData) => void
 ) => {
   const { saveToLocalStorage } = useInventoryStorage();
-  const { cleanupDuplicateDeployments, ensureMinimumInventory } = useInventoryValidation();
 
   const updateEquipmentTypes = (types: EquipmentType[]) => {
     const updatedData = { ...data, equipmentTypes: types, lastSync: new Date() };
@@ -24,12 +22,10 @@ export const useInventoryOperations = (
   };
 
   const updateEquipmentItems = (items: EquipmentItem[]) => {
-    // Clean up duplicates and ensure minimum inventory when updating
-    const cleanedItems = cleanupDuplicateDeployments(items);
-    const enhancedItems = ensureMinimumInventory(cleanedItems);
+    // Removed redundant cleanup calls - these should be handled at initialization only
     const updatedData = { 
       ...data, 
-      equipmentItems: enhancedItems,
+      equipmentItems: items,
       lastSync: new Date()
     };
     setData(updatedData);

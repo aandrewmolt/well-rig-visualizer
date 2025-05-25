@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Node, Edge } from '@xyflow/react';
 import { useInventoryData, EquipmentType, EquipmentItem } from './useInventoryData';
+import { useAuditTrail } from './useAuditTrail';
 import { toast } from 'sonner';
 
 interface EdgeData {
@@ -19,6 +20,7 @@ interface EquipmentUsage {
 
 export const useEnhancedEquipmentTracking = (jobId: string, nodes: Node[], edges: Edge[]) => {
   const { data, updateEquipmentItems, updateEquipmentTypes } = useInventoryData();
+  const { addAuditEntry } = useAuditTrail();
   const [isAutoSyncEnabled, setIsAutoSyncEnabled] = useState(true);
 
   const calculateEquipmentUsage = (): EquipmentUsage => {
@@ -110,6 +112,18 @@ export const useEnhancedEquipmentTracking = (jobId: string, nodes: Node[], edges
     if (missingTypes.length > 0) {
       const updatedTypes = [...data.equipmentTypes, ...missingTypes];
       updateEquipmentTypes(updatedTypes);
+      
+      // Audit trail for equipment type creation
+      missingTypes.forEach(type => {
+        addAuditEntry({
+          action: 'create',
+          entityType: 'type',
+          entityId: type.id,
+          details: { after: type },
+          metadata: { source: 'auto-sync' },
+        });
+      });
+      
       toast.info(`Created ${missingTypes.length} missing equipment types`);
     }
   };
@@ -126,6 +140,7 @@ export const useEnhancedEquipmentTracking = (jobId: string, nodes: Node[], edges
     returnAllJobEquipment();
 
     const updatedItems = [...data.equipmentItems];
+    const allocatedItems: Array<{ typeId: string; quantity: number; typeName: string }> = [];
 
     // Type mapping for allocation
     const typeMapping: { [key: string]: string } = {
@@ -138,7 +153,14 @@ export const useEnhancedEquipmentTracking = (jobId: string, nodes: Node[], edges
     Object.entries(currentUsage.cables).forEach(([cableType, quantity]) => {
       const typeId = typeMapping[cableType];
       if (typeId && quantity > 0) {
-        allocateOrCreateEquipment(updatedItems, typeId, quantity, locationId);
+        const result = allocateOrCreateEquipment(updatedItems, typeId, quantity, locationId);
+        if (result.allocated > 0) {
+          allocatedItems.push({
+            typeId,
+            quantity: result.allocated,
+            typeName: data.equipmentTypes.find(t => t.id === typeId)?.name || 'Unknown',
+          });
+        }
       }
     });
 
@@ -152,23 +174,55 @@ export const useEnhancedEquipmentTracking = (jobId: string, nodes: Node[], edges
 
     allocations.forEach(({ typeId, quantity, name }) => {
       if (quantity > 0) {
-        allocateOrCreateEquipment(updatedItems, typeId, quantity, locationId);
+        const result = allocateOrCreateEquipment(updatedItems, typeId, quantity, locationId);
+        if (result.allocated > 0) {
+          allocatedItems.push({
+            typeId,
+            quantity: result.allocated,
+            typeName: name,
+          });
+        }
       }
     });
 
     updateEquipmentItems(updatedItems);
-    toast.success('Equipment automatically allocated and synced');
+
+    // Create audit entries for all allocations
+    allocatedItems.forEach(item => {
+      addAuditEntry({
+        action: 'deploy',
+        entityType: 'equipment',
+        entityId: item.typeId,
+        details: {
+          quantity: item.quantity,
+          fromLocation: locationId,
+          jobId,
+        },
+        metadata: { source: 'auto-sync' },
+      });
+    });
+
+    toast.success(`Equipment automatically allocated: ${allocatedItems.length} types deployed`);
   };
 
-  const allocateOrCreateEquipment = (updatedItems: EquipmentItem[], typeId: string, quantity: number, locationId: string) => {
+  const allocateOrCreateEquipment = (
+    updatedItems: EquipmentItem[], 
+    typeId: string, 
+    quantity: number, 
+    locationId: string
+  ): { allocated: number; created: number } => {
     const availableItem = updatedItems.find(
       item => item.typeId === typeId && item.locationId === locationId && item.status === 'available'
     );
+
+    let allocated = 0;
+    let created = 0;
 
     if (availableItem && availableItem.quantity >= quantity) {
       // Sufficient equipment available
       availableItem.quantity -= quantity;
       availableItem.lastUpdated = new Date();
+      allocated = quantity;
       
       // Add deployed record
       updatedItems.push({
@@ -189,6 +243,8 @@ export const useEnhancedEquipmentTracking = (jobId: string, nodes: Node[], edges
         // Use what's available
         availableItem.quantity = 0;
         availableItem.lastUpdated = new Date();
+        allocated += currentAvailable;
+        
         updatedItems.push({
           id: `deployed-${typeId}-${jobId}-${Date.now()}-partial`,
           typeId,
@@ -223,10 +279,29 @@ export const useEnhancedEquipmentTracking = (jobId: string, nodes: Node[], edges
           lastUpdated: new Date(),
         });
 
+        allocated += needed;
+        created = needed;
+
         const typeName = data.equipmentTypes.find(t => t.id === typeId)?.name || 'Unknown';
+        
+        // Audit trail for equipment creation
+        addAuditEntry({
+          action: 'create',
+          entityType: 'equipment',
+          entityId: typeId,
+          details: { 
+            quantity: needed,
+            reason: 'Auto-created for job allocation',
+            toLocation: locationId,
+          },
+          metadata: { source: 'auto-sync' },
+        });
+        
         toast.info(`Created ${needed} additional ${typeName} for job allocation`);
       }
     }
+
+    return { allocated, created };
   };
 
   const returnAllJobEquipment = () => {
@@ -263,6 +338,19 @@ export const useEnhancedEquipmentTracking = (jobId: string, nodes: Node[], edges
           lastUpdated: new Date(),
         });
       }
+
+      // Create audit entry for equipment return
+      addAuditEntry({
+        action: 'return',
+        entityType: 'equipment',
+        entityId: deployedItem.typeId,
+        details: {
+          quantity: deployedItem.quantity,
+          toLocation: deployedItem.locationId,
+          jobId,
+        },
+        metadata: { source: 'auto-sync' },
+      });
     });
 
     updateEquipmentItems(updatedItems);
@@ -302,6 +390,20 @@ export const useEnhancedEquipmentTracking = (jobId: string, nodes: Node[], edges
           lastUpdated: new Date(),
         });
       }
+
+      // Create audit entry for equipment return with location transfer
+      addAuditEntry({
+        action: 'return',
+        entityType: 'equipment',
+        entityId: deployedItem.typeId,
+        details: {
+          quantity: deployedItem.quantity,
+          fromLocation: deployedItem.locationId,
+          toLocation: targetLocationId,
+          jobId,
+        },
+        metadata: { source: 'manual' },
+      });
     });
 
     updateEquipmentItems(updatedItems);

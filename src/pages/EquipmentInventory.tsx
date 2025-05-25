@@ -2,21 +2,25 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, Package, MapPin, AlertTriangle, RefreshCw, ArrowRightLeft } from 'lucide-react';
+import { ArrowLeft, Package, MapPin, AlertTriangle, RefreshCw, ArrowRightLeft, Shield } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import InventoryDashboard from '@/components/inventory/InventoryDashboard';
 import EquipmentTypeManager from '@/components/inventory/EquipmentTypeManager';
 import StorageLocationManager from '@/components/inventory/StorageLocationManager';
 import StorageTransferManager from '@/components/inventory/StorageTransferManager';
+import ValidationDialog from '@/components/inventory/ValidationDialog';
 import { useInventoryData } from '@/hooks/useInventoryData';
+import { useEquipmentValidation } from '@/hooks/useEquipmentValidation';
 
 type TabType = 'dashboard' | 'equipment' | 'locations' | 'transfers';
 
 const EquipmentInventory = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
+  const [showValidationDialog, setShowValidationDialog] = useState(false);
   const { isLoading, syncStatus, syncData } = useInventoryData();
+  const { lastValidation, runFullValidation } = useEquipmentValidation();
 
   const handleSync = async () => {
     try {
@@ -25,6 +29,10 @@ const EquipmentInventory = () => {
     } catch (error) {
       toast.error('Failed to sync data');
     }
+  };
+
+  const handleValidation = () => {
+    setShowValidationDialog(true);
   };
 
   const renderContent = () => {
@@ -61,6 +69,15 @@ const EquipmentInventory = () => {
             <div className="text-sm text-gray-600">
               Status: {syncStatus}
             </div>
+            <Button 
+              onClick={handleValidation}
+              variant="outline"
+              size="sm"
+              className="bg-white"
+            >
+              <Shield className="mr-2 h-4 w-4" />
+              Validate Data
+            </Button>
             <Button 
               onClick={handleSync}
               variant="outline"
@@ -124,6 +141,15 @@ const EquipmentInventory = () => {
         <div className="bg-white rounded-lg shadow-lg p-6">
           {renderContent()}
         </div>
+
+        {/* Validation Dialog */}
+        <ValidationDialog
+          isOpen={showValidationDialog}
+          onClose={() => setShowValidationDialog(false)}
+          onAutoFix={(issues) => {
+            console.log('Auto-fixed issues:', issues);
+          }}
+        />
       </div>
     </div>
   );

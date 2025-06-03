@@ -1,12 +1,9 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Checkbox } from '@/components/ui/checkbox';
 import JobDiagram from '@/components/JobDiagram';
+import JobCreationDialog from '@/components/jobs/JobCreationDialog';
 import { toast } from 'sonner';
 import { Plus, FileText } from 'lucide-react';
 
@@ -21,34 +18,23 @@ interface Job {
 const Index = () => {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
-  const [newJobName, setNewJobName] = useState('');
-  const [newJobWells, setNewJobWells] = useState(1);
-  const [hasWellsideGauge, setHasWellsideGauge] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const createJob = () => {
-    if (!newJobName.trim()) {
-      toast.error('Please enter a job name');
-      return;
-    }
-
-    if (newJobWells < 1 || newJobWells > 8) {
-      toast.error('Wells must be between 1 and 8');
+  const handleCreateJob = (jobData: { name: string; wellCount: number; hasWellsideGauge: boolean }) => {
+    if (jobData.wellCount < 0 || jobData.wellCount > 10) {
+      toast.error('Wells must be between 0 and 10');
       return;
     }
 
     const newJob: Job = {
       id: Date.now().toString(),
-      name: newJobName.trim(),
-      wellCount: newJobWells,
-      hasWellsideGauge,
+      name: jobData.name,
+      wellCount: jobData.wellCount,
+      hasWellsideGauge: jobData.hasWellsideGauge,
       createdAt: new Date()
     };
 
     setJobs(prev => [...prev, newJob]);
-    setNewJobName('');
-    setNewJobWells(1);
-    setHasWellsideGauge(false);
     setIsDialogOpen(false);
     setSelectedJob(newJob);
     toast.success(`Job "${newJob.name}" created successfully!`);
@@ -86,54 +72,10 @@ const Index = () => {
             Create visual diagrams for your cable and well configurations
           </p>
           
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button size="lg" className="bg-blue-600 hover:bg-blue-700">
-                <Plus className="mr-2 h-5 w-5" />
-                Create New Job
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
-              <DialogHeader>
-                <DialogTitle>Create New Job</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="jobName">Job Name</Label>
-                  <Input
-                    id="jobName"
-                    value={newJobName}
-                    onChange={(e) => setNewJobName(e.target.value)}
-                    placeholder="Enter job name..."
-                    className="mt-1"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="wellCount">Number of Wells (1-8)</Label>
-                  <Input
-                    id="wellCount"
-                    type="number"
-                    min="1"
-                    max="8"
-                    value={newJobWells}
-                    onChange={(e) => setNewJobWells(parseInt(e.target.value) || 1)}
-                    className="mt-1"
-                  />
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="wellsideGauge"
-                    checked={hasWellsideGauge}
-                    onCheckedChange={(checked) => setHasWellsideGauge(checked as boolean)}
-                  />
-                  <Label htmlFor="wellsideGauge">Include Wellside Gauge</Label>
-                </div>
-                <Button onClick={createJob} className="w-full">
-                  Create Job
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
+          <Button size="lg" className="bg-blue-600 hover:bg-blue-700" onClick={() => setIsDialogOpen(true)}>
+            <Plus className="mr-2 h-5 w-5" />
+            Create New Job
+          </Button>
         </div>
 
         {jobs.length === 0 ? (
@@ -165,6 +107,12 @@ const Index = () => {
           </div>
         )}
       </div>
+
+      <JobCreationDialog
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+        onCreateJob={handleCreateJob}
+      />
     </div>
   );
 };

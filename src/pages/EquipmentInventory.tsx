@@ -6,7 +6,19 @@ import { useSupabaseInventory } from '@/hooks/useSupabaseInventory';
 
 const EquipmentInventory = () => {
   // Use the new Supabase-based inventory hook
-  const inventoryData = useSupabaseInventory();
+  const {
+    data,
+    isLoading,
+    syncStatus,
+    updateSingleEquipmentItem,
+    updateSingleIndividualEquipment,
+    addEquipmentItem,
+    addIndividualEquipment,
+    getEquipmentByType,
+    getIndividualEquipmentByType,
+    getEquipmentByLocation,
+    getIndividualEquipmentByLocation,
+  } = useSupabaseInventory();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -20,7 +32,22 @@ const EquipmentInventory = () => {
             </p>
           </div>
           
-          <InventoryDashboard {...inventoryData} />
+          <InventoryDashboard 
+            data={data}
+            isLoading={isLoading}
+            syncStatus={syncStatus}
+            updateSingleEquipmentItem={updateSingleEquipmentItem}
+            updateSingleIndividualEquipment={updateSingleIndividualEquipment}
+            addEquipmentItem={addEquipmentItem}
+            addIndividualEquipment={addIndividualEquipment}
+            getEquipmentByType={getEquipmentByType}
+            getIndividualEquipmentByType={getIndividualEquipmentByType}
+            getEquipmentByLocation={getEquipmentByLocation}
+            getIndividualEquipmentByLocation={getIndividualEquipmentByLocation}
+            syncData={async () => data}
+            resetToDefaultInventory={() => {}}
+            cleanupDuplicateDeployments={() => data.equipmentItems}
+          />
         </div>
       </div>
     </div>

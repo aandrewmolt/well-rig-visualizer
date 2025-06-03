@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Trash2 } from 'lucide-react';
-import { StoredJob } from '@/hooks/useJobStorage';
+import { JobDiagram } from '@/hooks/useSupabaseJobs';
 
 interface DeployedEquipment {
   id: string;
@@ -14,10 +14,10 @@ interface DeployedEquipment {
 }
 
 interface JobCardProps {
-  job: StoredJob;
+  job: JobDiagram;
   deployedEquipment: DeployedEquipment[];
-  onSelectJob: (job: StoredJob) => void;
-  onDeleteJob: (job: StoredJob) => void;
+  onSelectJob: (job: JobDiagram) => void;
+  onDeleteJob: (job: JobDiagram) => void;
 }
 
 const JobCard: React.FC<JobCardProps> = ({
@@ -58,8 +58,8 @@ const JobCard: React.FC<JobCardProps> = ({
             <span>Created: {job.createdAt.toLocaleDateString()}</span>
           </div>
           <div className="flex items-center gap-2">
-            <Badge variant={job.status === 'active' ? 'default' : 'secondary'}>
-              {job.status}
+            <Badge variant={job.equipmentAllocated ? 'default' : 'secondary'}>
+              {job.equipmentAllocated ? 'Equipment Allocated' : 'Draft'}
             </Badge>
             {hasEquipment && (
               <Badge variant="outline" className="text-green-600">

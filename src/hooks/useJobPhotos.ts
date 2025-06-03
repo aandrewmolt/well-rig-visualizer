@@ -163,14 +163,27 @@ export const useJobPhotos = (jobId: string) => {
 
   const sections = Object.keys(photosBySection).sort();
 
+  // Wrapper functions to match component interface expectations
+  const uploadPhoto = (file: File, sectionLabel: string, caption?: string) => {
+    uploadPhotoMutation.mutate({ file, sectionLabel, caption });
+  };
+
+  const deletePhoto = (photoId: string) => {
+    deletePhotoMutation.mutate(photoId);
+  };
+
+  const updateCaption = (photoId: string, caption: string) => {
+    updateCaptionMutation.mutate({ photoId, caption });
+  };
+
   return {
     photos,
     photosBySection,
     sections,
     isLoading,
-    uploadPhoto: uploadPhotoMutation.mutate,
-    deletePhoto: deletePhotoMutation.mutate,
-    updateCaption: updateCaptionMutation.mutate,
+    uploadPhoto,
+    deletePhoto,
+    updateCaption,
     isUploading: uploadPhotoMutation.isPending,
     isDeleting: deletePhotoMutation.isPending,
   };

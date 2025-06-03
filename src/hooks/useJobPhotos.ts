@@ -1,8 +1,8 @@
-
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { optimizeImage } from '@/utils/imageOptimizer';
 
 export interface JobPhoto {
   id: string;
@@ -49,14 +49,27 @@ export const useJobPhotos = (jobId: string) => {
       sectionLabel: string; 
       caption?: string; 
     }) => {
-      // Generate unique filename
-      const fileExt = file.name.split('.').pop();
+      // Optimize image before upload
+      console.log('Original file size:', (file.size / 1024 / 1024).toFixed(2), 'MB');
+      
+      const optimizedFile = await optimizeImage(file, {
+        maxWidth: 1920,
+        maxHeight: 1080,
+        quality: 0.8,
+        format: 'webp'
+      });
+      
+      console.log('Optimized file size:', (optimizedFile.size / 1024 / 1024).toFixed(2), 'MB');
+      console.log('Size reduction:', (((file.size - optimizedFile.size) / file.size) * 100).toFixed(1), '%');
+      
+      // Generate unique filename with webp extension
+      const fileExt = 'webp';
       const fileName = `${jobId}/${sectionLabel}/${Date.now()}.${fileExt}`;
       
-      // Upload to storage
+      // Upload optimized file to storage
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('job-photos')
-        .upload(fileName, file);
+        .upload(fileName, optimizedFile);
       
       if (uploadError) throw uploadError;
       
@@ -89,7 +102,7 @@ export const useJobPhotos = (jobId: string) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['job-photos', jobId] });
-      toast.success('Photo uploaded successfully');
+      toast.success('Photo uploaded and optimized successfully');
     },
     onError: (error) => {
       console.error('Failed to upload photo:', error);

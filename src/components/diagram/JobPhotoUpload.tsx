@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Upload, Camera } from 'lucide-react';
+import { Upload, Camera, Zap } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface JobPhotoUploadProps {
@@ -54,7 +54,11 @@ const JobPhotoUpload: React.FC<JobPhotoUploadProps> = ({
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle className="text-sm">Add Photo to {sectionLabel}</CardTitle>
+        <CardTitle className="text-sm flex items-center gap-2">
+          <Zap className="h-4 w-4 text-green-500" />
+          Add Photo to {sectionLabel}
+          <span className="text-xs text-green-600 font-normal">(Auto-optimized)</span>
+        </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="space-y-2">
@@ -82,6 +86,9 @@ const JobPhotoUpload: React.FC<JobPhotoUploadProps> = ({
             </div>
             <p className="text-xs text-gray-600">
               Drag & drop an image here, or click to select
+            </p>
+            <p className="text-xs text-green-600">
+              Images will be automatically compressed and optimized for web
             </p>
             <div className="flex gap-2 justify-center">
               <Button
@@ -122,7 +129,12 @@ const JobPhotoUpload: React.FC<JobPhotoUploadProps> = ({
         />
         
         {isUploading && (
-          <p className="text-xs text-blue-600 text-center">Uploading...</p>
+          <div className="text-xs text-blue-600 text-center space-y-1">
+            <p>Optimizing and uploading...</p>
+            <div className="w-full bg-gray-200 rounded-full h-1">
+              <div className="bg-blue-600 h-1 rounded-full animate-pulse w-3/4"></div>
+            </div>
+          </div>
         )}
       </CardContent>
     </Card>

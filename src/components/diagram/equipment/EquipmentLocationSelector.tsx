@@ -3,7 +3,7 @@ import React from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { MapPin } from 'lucide-react';
-import { useInventoryData } from '@/hooks/useInventoryData';
+import { useSupabaseInventory } from '@/hooks/useSupabaseInventory';
 
 interface EquipmentLocationSelectorProps {
   selectedLocation: string;
@@ -14,7 +14,7 @@ const EquipmentLocationSelector: React.FC<EquipmentLocationSelectorProps> = ({
   selectedLocation,
   setSelectedLocation
 }) => {
-  const { data } = useInventoryData();
+  const { data } = useSupabaseInventory();
 
   return (
     <div>

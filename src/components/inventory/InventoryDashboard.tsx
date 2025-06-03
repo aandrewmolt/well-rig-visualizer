@@ -1,20 +1,27 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Package, MapPin, AlertTriangle, CheckCircle, RotateCcw, Activity, Clock, TrendingUp, Briefcase } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Package, MapPin, AlertTriangle, CheckCircle, RotateCcw, Activity, Clock, Search, Filter, Wrench } from 'lucide-react';
 import { useSupabaseInventory } from '@/hooks/useSupabaseInventory';
 import { useSupabaseJobs } from '@/hooks/useSupabaseJobs';
-import { useRealTimeInventory } from '@/hooks/useRealTimeInventory';
+import { useMaintenanceTracking } from '@/hooks/inventory/useMaintenanceTracking';
 import JobDeploymentsSummary from './JobDeploymentsSummary';
+import MaintenanceAlertPanel from './MaintenanceAlertPanel';
 
 const InventoryDashboard = () => {
   const { data, isLoading } = useSupabaseInventory();
   const { jobs } = useSupabaseJobs();
-  const { alerts, getInventorySnapshot, autoCorrectInventory } = useRealTimeInventory();
-
-  const snapshot = getInventorySnapshot();
+  const { maintenanceAlerts, criticalCount, totalAlertsCount } = useMaintenanceTracking(data.individualEquipment);
+  
+  // Advanced search and filtering state
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [filterLocation, setFilterLocation] = useState<string>('all');
+  const [filterCategory, setFilterCategory] = useState<string>('all');
 
   const totalEquipment = data.equipmentItems.reduce((sum, item) => sum + item.quantity, 0);
   const availableEquipment = data.equipmentItems
@@ -42,42 +49,64 @@ const InventoryDashboard = () => {
     return data.storageLocations.find(loc => loc.id === locationId)?.name || 'Unknown';
   };
 
-  const criticalAlerts = alerts.filter(alert => alert.severity === 'error');
-  const warningAlerts = alerts.filter(alert => alert.severity === 'warning');
+  // Advanced filtering function
+  const filteredEquipmentItems = data.equipmentItems.filter(item => {
+    const equipmentType = data.equipmentTypes.find(type => type.id === item.typeId);
+    const location = data.storageLocations.find(loc => loc.id === item.locationId);
+    
+    // Search term filter
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
+      const matchesName = equipmentType?.name.toLowerCase().includes(searchLower);
+      const matchesLocation = location?.name.toLowerCase().includes(searchLower);
+      const matchesNotes = item.notes?.toLowerCase().includes(searchLower);
+      
+      if (!matchesName && !matchesLocation && !matchesNotes) return false;
+    }
+    
+    // Status filter
+    if (filterStatus !== 'all' && item.status !== filterStatus) return false;
+    
+    // Location filter
+    if (filterLocation !== 'all' && item.locationId !== filterLocation) return false;
+    
+    // Category filter
+    if (filterCategory !== 'all' && equipmentType?.category !== filterCategory) return false;
+    
+    return true;
+  });
 
   // Simple reset function for demo purposes
   const resetToDefaultInventory = () => {
     console.log('Reset to default inventory - functionality to be implemented');
   };
 
+  const clearFilters = () => {
+    setSearchTerm('');
+    setFilterStatus('all');
+    setFilterLocation('all');
+    setFilterCategory('all');
+  };
+
   return (
     <div className="space-y-6">
       {/* Header with Controls */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold">Real-Time Inventory Dashboard</h2>
+          <h2 className="text-2xl font-bold">ShearFrac Equipment Inventory</h2>
           <div className="flex items-center gap-2 mt-1">
             <Badge variant="outline" className="text-xs">
               <Clock className="h-3 w-3 mr-1" />
-              Last updated: {snapshot.lastValidation.toLocaleTimeString()}
+              Real-time sync enabled
             </Badge>
-            {snapshot.criticalAlerts > 0 && (
+            {criticalCount > 0 && (
               <Badge variant="destructive" className="text-xs">
-                {snapshot.criticalAlerts} Critical Issues
+                {criticalCount} Critical Issues
               </Badge>
             )}
           </div>
         </div>
         <div className="flex gap-2">
-          <Button 
-            onClick={autoCorrectInventory}
-            variant="outline"
-            size="sm"
-            className="flex items-center gap-2"
-          >
-            <CheckCircle className="h-4 w-4" />
-            Auto-Correct
-          </Button>
           <Button 
             onClick={resetToDefaultInventory}
             variant="outline"
@@ -89,38 +118,77 @@ const InventoryDashboard = () => {
         </div>
       </div>
 
-      {/* System Alerts */}
-      {(criticalAlerts.length > 0 || warningAlerts.length > 0) && (
-        <Card className="border-orange-200 bg-orange-50">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-orange-800 flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5" />
-              System Alerts
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {criticalAlerts.slice(0, 3).map(alert => (
-                <div key={alert.id} className="flex items-center justify-between p-2 bg-red-100 rounded text-sm">
-                  <span className="text-red-800">{alert.message}</span>
-                  <Badge variant="destructive" className="text-xs">Critical</Badge>
-                </div>
-              ))}
-              {warningAlerts.slice(0, 3).map(alert => (
-                <div key={alert.id} className="flex items-center justify-between p-2 bg-yellow-100 rounded text-sm">
-                  <span className="text-yellow-800">{alert.message}</span>
-                  <Badge variant="outline" className="text-xs border-yellow-400">Warning</Badge>
-                </div>
-              ))}
-              {alerts.length > 6 && (
-                <div className="text-center text-sm text-gray-600 pt-2">
-                  ...and {alerts.length - 6} more alerts
-                </div>
-              )}
+      {/* Advanced Search and Filters */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Search className="h-5 w-5" />
+            Advanced Equipment Search
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div className="lg:col-span-2">
+              <Input
+                placeholder="Search equipment, locations, notes..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full"
+              />
             </div>
-          </CardContent>
-        </Card>
-      )}
+            
+            <Select value={filterStatus} onValueChange={setFilterStatus}>
+              <SelectTrigger>
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="available">Available</SelectItem>
+                <SelectItem value="deployed">Deployed</SelectItem>
+                <SelectItem value="red-tagged">Red Tagged</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={filterLocation} onValueChange={setFilterLocation}>
+              <SelectTrigger>
+                <SelectValue placeholder="Filter by location" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Locations</SelectItem>
+                {data.storageLocations.map(location => (
+                  <SelectItem key={location.id} value={location.id}>
+                    {location.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={filterCategory} onValueChange={setFilterCategory}>
+              <SelectTrigger>
+                <SelectValue placeholder="Filter by category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                <SelectItem value="cables">Cables</SelectItem>
+                <SelectItem value="gauges">Gauges</SelectItem>
+                <SelectItem value="adapters">Adapters</SelectItem>
+                <SelectItem value="communication">Communication</SelectItem>
+                <SelectItem value="other">Other</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="flex items-center justify-between mt-4">
+            <div className="text-sm text-gray-600">
+              Showing {filteredEquipmentItems.length} of {data.equipmentItems.length} equipment items
+            </div>
+            <Button onClick={clearFilters} variant="outline" size="sm">
+              <Filter className="h-4 w-4 mr-1" />
+              Clear Filters
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Enhanced Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -167,28 +235,42 @@ const InventoryDashboard = () => {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Red Tagged</p>
-                <p className="text-2xl font-bold text-red-600">{redTaggedEquipment}</p>
-                <p className="text-xs text-gray-500">{alerts.filter(a => a.type === 'validation-error').length} validation errors</p>
+                <p className="text-sm font-medium text-gray-600">Maintenance</p>
+                <p className="text-2xl font-bold text-red-600">{totalAlertsCount}</p>
+                <p className="text-xs text-gray-500">{criticalCount} critical alerts</p>
               </div>
-              <AlertTriangle className="h-8 w-8 text-red-600" />
+              <Wrench className="h-8 w-8 text-red-600" />
             </div>
           </CardContent>
         </Card>
       </div>
 
+      {/* Maintenance Alerts */}
+      {totalAlertsCount > 0 && (
+        <MaintenanceAlertPanel
+          alerts={maintenanceAlerts}
+          maxDisplay={5}
+          compact={false}
+        />
+      )}
+
       {/* Job Deployments Summary */}
       <JobDeploymentsSummary />
 
-      {/* Equipment by Location */}
+      {/* Enhanced Equipment by Location with Search Results */}
       <Card>
         <CardHeader>
-          <CardTitle>Equipment by Location</CardTitle>
+          <CardTitle>Equipment by Location {searchTerm && `(Filtered)`}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             {data.storageLocations.map(location => {
-              const locationItems = data.equipmentItems.filter(item => item.locationId === location.id);
+              const locationItems = filteredEquipmentItems.filter(item => item.locationId === location.id);
+              
+              if (locationItems.length === 0 && (searchTerm || filterStatus !== 'all' || filterCategory !== 'all')) {
+                return null; // Hide empty locations when filtering
+              }
+              
               const locationTotal = locationItems.reduce((sum, item) => sum + item.quantity, 0);
               const locationAvailable = locationItems
                 .filter(item => item.status === 'available')
@@ -240,7 +322,7 @@ const InventoryDashboard = () => {
         </CardContent>
       </Card>
 
-      {/* Recent Activity - Simplified for now */}
+      {/* Recent Activity */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -249,8 +331,30 @@ const InventoryDashboard = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-4 text-gray-500">
-            Activity tracking will be implemented with full audit trail functionality
+          <div className="space-y-2">
+            {data.equipmentItems
+              .sort((a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime())
+              .slice(0, 5)
+              .map(item => {
+                const equipmentType = data.equipmentTypes.find(type => type.id === item.typeId);
+                const location = data.storageLocations.find(loc => loc.id === item.locationId);
+                return (
+                  <div key={item.id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                    <div>
+                      <span className="font-medium">{equipmentType?.name}</span>
+                      <span className="text-sm text-gray-500 ml-2">at {location?.name}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="text-xs">
+                        {item.status}
+                      </Badge>
+                      <span className="text-xs text-gray-500">
+                        {new Date(item.lastUpdated).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
           </div>
         </CardContent>
       </Card>

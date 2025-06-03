@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Package, Save } from 'lucide-react';
 import { EquipmentType } from '@/types/inventory';
-import { useInventoryData } from '@/hooks/useInventoryData';
+import { useSupabaseInventory } from '@/hooks/useSupabaseInventory';
 import { useIndividualEquipmentManager } from '@/hooks/inventory/useIndividualEquipmentManager';
 import IndividualEquipmentForm from './IndividualEquipmentForm';
 import BulkEquipmentForm from './BulkEquipmentForm';
@@ -21,7 +21,7 @@ const IndividualEquipmentManager: React.FC<IndividualEquipmentManagerProps> = ({
   equipmentType, 
   onDraftCountChange 
 }) => {
-  const { data } = useInventoryData();
+  const { data } = useSupabaseInventory();
   const {
     isDialogOpen,
     setIsDialogOpen,

@@ -1,6 +1,6 @@
 
 import React, { useState, createContext } from 'react';
-import { useInventoryData } from '@/hooks/useInventoryData';
+import { useSupabaseInventory } from '@/hooks/useSupabaseInventory';
 import { EquipmentType } from '@/types/inventory';
 import { useEquipmentTypeForm } from '@/hooks/inventory/useEquipmentTypeForm';
 import EquipmentTypeForm from './EquipmentTypeForm';
@@ -10,7 +10,7 @@ import EquipmentTypeCategorySection from './EquipmentTypeCategorySection';
 const DraftCountContext = createContext<{ [typeId: string]: number }>({});
 
 const EquipmentTypeManager = () => {
-  const { data } = useInventoryData();
+  const { data } = useSupabaseInventory();
   const [selectedTypeForDetails, setSelectedTypeForDetails] = useState<EquipmentType | null>(null);
   const [draftCounts, setDraftCounts] = useState<{ [typeId: string]: number }>({});
 

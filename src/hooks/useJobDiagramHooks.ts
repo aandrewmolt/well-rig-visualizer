@@ -17,7 +17,7 @@ export const useJobDiagramHooks = (job: Job) => {
   // Core state and initialization
   const coreData = useJobDiagramCore(job);
 
-  // Equipment tracking
+  // Equipment tracking using Supabase data
   const {
     performComprehensiveAllocation,
     returnAllJobEquipment,
@@ -95,5 +95,11 @@ export const useJobDiagramHooks = (job: Job) => {
     updateWellColor: actions.updateWellColor,
     updateWellsideGaugeName: actions.updateWellsideGaugeName,
     updateWellsideGaugeColor: actions.updateWellsideGaugeColor,
+    
+    // Equipment tracking functions
+    performComprehensiveAllocation,
+    returnAllJobEquipment,
+    validateInventoryConsistency,
+    analyzeEquipmentUsage,
   };
 };

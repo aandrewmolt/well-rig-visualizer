@@ -1,8 +1,7 @@
 
 import React, { useEffect, useMemo } from 'react';
 import { useDebouncedSave } from '@/hooks/useDebouncedSave';
-import { useJobPersistence } from '@/hooks/useJobPersistence';
-import { useJobStorage } from '@/hooks/useJobStorage';
+import { useSupabaseJobs } from '@/hooks/useSupabaseJobs';
 import { JobEquipmentAssignment } from '@/types/equipment';
 
 interface Job {
@@ -42,11 +41,11 @@ export const useJobDiagramSave = ({
   selectedStarlink,
   selectedCompanyComputers,
 }: UseJobDiagramSaveProps) => {
-  const { updateJob } = useJobStorage();
-  const { saveJobData } = useJobPersistence(job.id);
+  const { saveJob } = useSupabaseJobs();
 
   // Save data preparation
   const saveDataMemo = useMemo(() => ({
+    id: job.id,
     name: job.name,
     wellCount: job.wellCount,
     hasWellsideGauge: job.hasWellsideGauge,
@@ -62,6 +61,7 @@ export const useJobDiagramSave = ({
       starlinkId: selectedStarlink || undefined,
       companyComputerIds: selectedCompanyComputers.filter(Boolean),
     } as JobEquipmentAssignment,
+    equipmentAllocated: true,
   }), [
     job,
     nodes,
@@ -78,13 +78,10 @@ export const useJobDiagramSave = ({
 
   const performSave = React.useCallback(() => {
     if (isInitialized && (nodes.length > 0 || edges.length > 0)) {
-      saveJobData(saveDataMemo);
-      updateJob(job.id, { 
-        equipmentAllocated: true,
-        lastUpdated: new Date() 
-      });
+      console.log('Saving job data to Supabase:', saveDataMemo);
+      saveJob(saveDataMemo);
     }
-  }, [isInitialized, nodes.length, edges.length, saveJobData, saveDataMemo, updateJob, job.id]);
+  }, [isInitialized, nodes.length, edges.length, saveJob, saveDataMemo]);
 
   const { debouncedSave, cleanup } = useDebouncedSave(performSave, 300);
 

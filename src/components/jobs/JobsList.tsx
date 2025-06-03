@@ -1,18 +1,19 @@
 
 import React from 'react';
-import { StoredJob } from '@/hooks/useJobStorage';
-import { useInventoryData } from '@/hooks/useInventoryData';
+import { JobDiagram } from '@/hooks/useSupabaseJobs';
+import { useSupabaseInventory } from '@/hooks/useSupabaseInventory';
 import JobCard from './JobCard';
 import EmptyJobsState from './EmptyJobsState';
 
 interface JobsListProps {
-  jobs: StoredJob[];
-  onSelectJob: (job: StoredJob) => void;
-  onDeleteJob: (job: StoredJob) => void;
+  jobs: JobDiagram[];
+  isLoading: boolean;
+  onSelectJob: (job: JobDiagram) => void;
+  onDeleteJob: (job: JobDiagram) => void;
 }
 
-const JobsList: React.FC<JobsListProps> = ({ jobs, onSelectJob, onDeleteJob }) => {
-  const { data } = useInventoryData();
+const JobsList: React.FC<JobsListProps> = ({ jobs, isLoading, onSelectJob, onDeleteJob }) => {
+  const { data } = useSupabaseInventory();
 
   const getDeployedEquipmentForJob = (jobId: string) => {
     return data.equipmentItems
@@ -24,6 +25,20 @@ const JobsList: React.FC<JobsListProps> = ({ jobs, onSelectJob, onDeleteJob }) =
         typeName: data.equipmentTypes.find(type => type.id === item.typeId)?.name || 'Unknown',
       }));
   };
+
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {[1, 2, 3].map(i => (
+          <div key={i} className="bg-white rounded-lg shadow-sm border p-6 animate-pulse">
+            <div className="h-6 bg-gray-200 rounded mb-4"></div>
+            <div className="h-4 bg-gray-200 rounded mb-2"></div>
+            <div className="h-4 bg-gray-200 rounded mb-4"></div>
+          </div>
+        ))}
+      </div>
+    );
+  }
 
   if (jobs.length === 0) {
     return <EmptyJobsState />;

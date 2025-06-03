@@ -3,20 +3,24 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Plus } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface JobCreationDialogProps {
-  onCreateJob: (name: string, wellCount: number, hasWellsideGauge: boolean) => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onCreateJob: (jobData: { name: string; wellCount: number; hasWellsideGauge: boolean }) => void;
 }
 
-const JobCreationDialog: React.FC<JobCreationDialogProps> = ({ onCreateJob }) => {
+const JobCreationDialog: React.FC<JobCreationDialogProps> = ({ 
+  open, 
+  onOpenChange, 
+  onCreateJob 
+}) => {
   const [newJobName, setNewJobName] = useState('');
   const [newJobWells, setNewJobWells] = useState(1);
   const [hasWellsideGauge, setHasWellsideGauge] = useState(false);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const createJob = () => {
     if (!newJobName.trim()) {
@@ -29,22 +33,19 @@ const JobCreationDialog: React.FC<JobCreationDialogProps> = ({ onCreateJob }) =>
       return;
     }
 
-    onCreateJob(newJobName.trim(), newJobWells, hasWellsideGauge);
+    onCreateJob({
+      name: newJobName.trim(),
+      wellCount: newJobWells,
+      hasWellsideGauge,
+    });
     
     setNewJobName('');
     setNewJobWells(1);
     setHasWellsideGauge(false);
-    setIsDialogOpen(false);
   };
 
   return (
-    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-      <DialogTrigger asChild>
-        <Button size="lg" className="bg-blue-600 hover:bg-blue-700">
-          <Plus className="mr-2 h-5 w-5" />
-          Create New Job
-        </Button>
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Create New Job</DialogTitle>

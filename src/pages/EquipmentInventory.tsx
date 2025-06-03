@@ -1,7 +1,7 @@
 
 import React from 'react';
 import AppHeader from '@/components/AppHeader';
-import { InventoryDashboard } from '@/components/inventory/InventoryDashboard';
+import InventoryDashboard from '@/components/inventory/InventoryDashboard';
 import { useSupabaseInventory } from '@/hooks/useSupabaseInventory';
 
 const EquipmentInventory = () => {

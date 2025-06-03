@@ -3,8 +3,8 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import AppHeader from '@/components/AppHeader';
-import { JobsList } from '@/components/jobs/JobsList';
-import { JobCreationDialog } from '@/components/jobs/JobCreationDialog';
+import JobsList from '@/components/jobs/JobsList';
+import JobCreationDialog from '@/components/jobs/JobCreationDialog';
 import { useSupabaseJobs } from '@/hooks/useSupabaseJobs';
 import { useSupabaseInventory } from '@/hooks/useSupabaseInventory';
 import JobDiagram from '@/components/JobDiagram';
@@ -38,12 +38,25 @@ const CableJobs = () => {
 
   if (selectedJob) {
     return (
-      <JobDiagram
-        job={selectedJob}
-        onBack={handleBackToList}
-        onSave={(jobData) => saveJob({ ...jobData, id: selectedJob.id })}
-        inventoryData={inventoryData}
-      />
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+        <AppHeader />
+        <div className="p-4">
+          <div className="max-w-6xl mx-auto">
+            <div className="flex items-center justify-between mb-6">
+              <Button onClick={handleBackToList} variant="outline">
+                ← Back to Jobs
+              </Button>
+              <Button 
+                onClick={() => saveJob({ ...selectedJob })}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                Save Job
+              </Button>
+            </div>
+            <JobDiagram job={selectedJob} />
+          </div>
+        </div>
+      </div>
     );
   }
 
@@ -72,8 +85,8 @@ const CableJobs = () => {
           <JobsList
             jobs={jobs}
             isLoading={isLoading}
-            onEditJob={handleEditJob}
-            onDeleteJob={deleteJob}
+            onSelectJob={(job) => handleEditJob(job.id)}
+            onDeleteJob={(job) => deleteJob(job.id)}
           />
 
           <JobCreationDialog

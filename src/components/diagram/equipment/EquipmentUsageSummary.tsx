@@ -4,16 +4,24 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Activity, RefreshCw } from 'lucide-react';
 
-interface EquipmentUsage {
-  cables: { [key: string]: number };
+interface DetailedEquipmentUsage {
+  cables: {
+    [typeId: string]: {
+      typeName: string;
+      quantity: number;
+      category: string;
+    };
+  };
   gauges: number;
   adapters: number;
   computers: number;
   satellite: number;
+  directConnections: number;
+  totalConnections: number;
 }
 
 interface EquipmentUsageSummaryProps {
-  equipmentUsage?: EquipmentUsage;
+  equipmentUsage?: DetailedEquipmentUsage;
   isAutoSyncEnabled: boolean;
   onAutoAllocate?: (locationId: string) => void;
   selectedLocation: string;
@@ -34,10 +42,10 @@ const EquipmentUsageSummary: React.FC<EquipmentUsageSummaryProps> = ({
         Equipment Required from Diagram
       </h4>
       <div className="space-y-2 p-3 bg-blue-50 rounded-lg">
-        {Object.entries(equipmentUsage.cables).map(([type, count]) => (
-          <div key={type} className="flex justify-between text-sm">
-            <span>{type} Cables:</span>
-            <Badge variant="secondary">{count}</Badge>
+        {Object.entries(equipmentUsage.cables).map(([typeId, details]) => (
+          <div key={typeId} className="flex justify-between text-sm">
+            <span className="truncate">{details.typeName}:</span>
+            <Badge variant="secondary">{details.quantity}</Badge>
           </div>
         ))}
         {equipmentUsage.gauges > 0 && (
@@ -64,6 +72,20 @@ const EquipmentUsageSummary: React.FC<EquipmentUsageSummaryProps> = ({
             <Badge variant="secondary">{equipmentUsage.satellite}</Badge>
           </div>
         )}
+        {equipmentUsage.directConnections > 0 && (
+          <div className="flex justify-between text-sm">
+            <span>Direct Connections:</span>
+            <Badge variant="outline">{equipmentUsage.directConnections}</Badge>
+          </div>
+        )}
+        
+        <div className="pt-2 border-t">
+          <div className="flex justify-between text-sm font-medium">
+            <span>Total Connections:</span>
+            <Badge>{equipmentUsage.totalConnections}</Badge>
+          </div>
+        </div>
+
         {!isAutoSyncEnabled && onAutoAllocate && selectedLocation && (
           <Button
             onClick={() => onAutoAllocate(selectedLocation)}

@@ -1,21 +1,26 @@
 
 import { Node, Edge } from '@xyflow/react';
-import { useComprehensiveEquipmentTracking } from './equipment/useComprehensiveEquipmentTracking';
-import { useEquipmentAllocation } from './equipment/useEquipmentAllocation';
-import { useEquipmentReturn } from './equipment/useEquipmentReturn';
-import { useEquipmentValidation } from './equipment/useEquipmentValidation';
+import { useSupabaseEquipmentTracking } from './equipment/useSupabaseEquipmentTracking';
 
 export const useRobustEquipmentTracking = (jobId: string, nodes: Node[], edges: Edge[]) => {
-  const { analyzeEquipmentUsage, generateEquipmentReport } = useComprehensiveEquipmentTracking(nodes, edges);
-  const { performComprehensiveAllocation } = useEquipmentAllocation(jobId);
-  const { returnAllJobEquipment } = useEquipmentReturn(jobId);
-  const { validateInventoryConsistency } = useEquipmentValidation(jobId, nodes, edges);
+  const {
+    analyzeEquipmentUsage,
+    performComprehensiveAllocation,
+    returnAllJobEquipment,
+    validateInventoryConsistency,
+  } = useSupabaseEquipmentTracking(jobId, nodes, edges);
 
   return {
-    performComprehensiveAllocation: (locationId: string) => performComprehensiveAllocation(locationId, nodes, edges),
+    performComprehensiveAllocation: (locationId: string) => performComprehensiveAllocation(locationId),
     returnAllJobEquipment,
     validateInventoryConsistency,
     analyzeEquipmentUsage,
-    generateEquipmentReport,
+    generateEquipmentReport: () => {
+      const usage = analyzeEquipmentUsage();
+      return {
+        summary: `${usage.totalConnections} connections, ${Object.keys(usage.cables).length} cable types`,
+        details: usage,
+      };
+    },
   };
 };

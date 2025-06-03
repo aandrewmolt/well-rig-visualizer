@@ -4,21 +4,17 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Package, MapPin, AlertTriangle, CheckCircle, RotateCcw, Activity, Clock, TrendingUp, Briefcase } from 'lucide-react';
-import { useInventoryData } from '@/hooks/useInventoryData';
+import { useSupabaseInventory } from '@/hooks/useSupabaseInventory';
+import { useSupabaseJobs } from '@/hooks/useSupabaseJobs';
 import { useRealTimeInventory } from '@/hooks/useRealTimeInventory';
-import { useAuditTrail } from '@/hooks/useAuditTrail';
-import { useJobStorage } from '@/hooks/useJobStorage';
 import JobDeploymentsSummary from './JobDeploymentsSummary';
 
 const InventoryDashboard = () => {
-  const { data, resetToDefaultInventory } = useInventoryData();
-  const { jobs } = useJobStorage();
+  const { data, isLoading } = useSupabaseInventory();
+  const { jobs } = useSupabaseJobs();
   const { alerts, getInventorySnapshot, autoCorrectInventory } = useRealTimeInventory();
-  const { getRecentActivity, generateActivitySummary, formatAuditEntry } = useAuditTrail();
 
   const snapshot = getInventorySnapshot();
-  const recentActivity = getRecentActivity(5);
-  const activitySummary = generateActivitySummary('week');
 
   const totalEquipment = data.equipmentItems.reduce((sum, item) => sum + item.quantity, 0);
   const availableEquipment = data.equipmentItems
@@ -48,6 +44,11 @@ const InventoryDashboard = () => {
 
   const criticalAlerts = alerts.filter(alert => alert.severity === 'error');
   const warningAlerts = alerts.filter(alert => alert.severity === 'warning');
+
+  // Simple reset function for demo purposes
+  const resetToDefaultInventory = () => {
+    console.log('Reset to default inventory - functionality to be implemented');
+  };
 
   return (
     <div className="space-y-6">
@@ -176,38 +177,8 @@ const InventoryDashboard = () => {
         </Card>
       </div>
 
-      {/* Job Deployments Summary - NEW SECTION */}
+      {/* Job Deployments Summary */}
       <JobDeploymentsSummary />
-
-      {/* Activity Summary */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5" />
-            Weekly Activity Summary
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">{activitySummary.totalActivities}</div>
-              <div className="text-sm text-gray-600">Total Actions</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">{activitySummary.deployments}</div>
-              <div className="text-sm text-gray-600">Deployments</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-orange-600">{activitySummary.returns}</div>
-              <div className="text-sm text-gray-600">Returns</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-purple-600">{activitySummary.autoActions}</div>
-              <div className="text-sm text-gray-600">Auto Actions</div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Equipment by Location */}
       <Card>
@@ -269,7 +240,7 @@ const InventoryDashboard = () => {
         </CardContent>
       </Card>
 
-      {/* Recent Activity with Enhanced Details */}
+      {/* Recent Activity - Simplified for now */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -278,42 +249,8 @@ const InventoryDashboard = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-2">
-            {recentActivity.length === 0 ? (
-              <div className="text-center py-4 text-gray-500">No recent activity</div>
-            ) : (
-              recentActivity.map(entry => {
-                const formatted = formatAuditEntry(entry);
-                return (
-                  <div key={entry.id} className="flex items-center justify-between p-3 border-b last:border-b-0">
-                    <div>
-                      <p className="text-sm font-medium">{formatted.formattedAction}</p>
-                      <div className="flex items-center gap-2 text-xs text-gray-500">
-                        <span>{entry.timestamp.toLocaleString()}</span>
-                        <Badge variant="outline" className="text-xs">
-                          {entry.metadata.source}
-                        </Badge>
-                        {entry.details.jobId && (
-                          <Badge variant="outline" className="text-xs">
-                            Job: {entry.details.jobId}
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                    <Badge 
-                      variant={
-                        entry.action === 'deploy' ? 'default' :
-                        entry.action === 'return' ? 'secondary' :
-                        entry.action === 'create' ? 'default' : 'outline'
-                      }
-                      className="text-xs"
-                    >
-                      {entry.action}
-                    </Badge>
-                  </div>
-                );
-              })
-            )}
+          <div className="text-center py-4 text-gray-500">
+            Activity tracking will be implemented with full audit trail functionality
           </div>
         </CardContent>
       </Card>

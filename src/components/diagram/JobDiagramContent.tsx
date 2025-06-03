@@ -1,9 +1,12 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import { Node } from '@xyflow/react';
+import { Button } from '@/components/ui/button';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Camera } from 'lucide-react';
 import DiagramCanvas from './DiagramCanvas';
 import ConnectionGuide from './ConnectionGuide';
 import JobDiagramPanels from './JobDiagramPanels';
+import JobPhotoPanel from './JobPhotoPanel';
 
 interface Job {
   id: string;
@@ -64,6 +67,8 @@ const JobDiagramContent: React.FC<JobDiagramContentProps> = ({
   updateWellsideGaugeName,
   updateWellsideGaugeColor,
 }) => {
+  const [isPhotosPanelOpen, setIsPhotosPanelOpen] = useState(false);
+
   return (
     <div className="max-w-7xl mx-auto space-y-2">
       {/* Compact Configuration Grid */}
@@ -88,6 +93,25 @@ const JobDiagramContent: React.FC<JobDiagramContentProps> = ({
         updateWellsideGaugeName={updateWellsideGaugeName}
         updateWellsideGaugeColor={updateWellsideGaugeColor}
       />
+
+      {/* Photo Panel Button - positioned in top right */}
+      <div className="absolute top-4 right-4 z-10">
+        <Sheet open={isPhotosPanelOpen} onOpenChange={setIsPhotosPanelOpen}>
+          <SheetTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className="bg-white shadow-md hover:bg-gray-50"
+            >
+              <Camera className="h-4 w-4 mr-2" />
+              Photos
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="right" className="w-96 p-0">
+            <JobPhotoPanel jobId={job.id} jobName={job.name} />
+          </SheetContent>
+        </Sheet>
+      </div>
 
       {/* Diagram Section */}
       <DiagramCanvas

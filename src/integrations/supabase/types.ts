@@ -245,6 +245,47 @@ export type Database = {
           },
         ]
       }
+      job_photos: {
+        Row: {
+          caption: string | null
+          created_at: string
+          id: string
+          job_id: string
+          photo_url: string
+          section_label: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string
+          id?: string
+          job_id: string
+          photo_url: string
+          section_label: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string
+          id?: string
+          job_id?: string
+          photo_url?: string
+          section_label?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_photos_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       jobs: {
         Row: {
           company_computer_names: Json | null

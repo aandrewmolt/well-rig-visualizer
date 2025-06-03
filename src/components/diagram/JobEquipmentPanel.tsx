@@ -47,7 +47,7 @@ const JobEquipmentPanel: React.FC<JobEquipmentPanelProps> = ({
   } = useRobustEquipmentTracking(jobId, nodes, edges);
 
   const usage = analyzeEquipmentUsage();
-  const report = generateEquipmentReport(usage);
+  const report = generateEquipmentReport();
 
   const getDeployedEquipment = () => {
     return data.equipmentItems.filter(
@@ -82,10 +82,10 @@ const JobEquipmentPanel: React.FC<JobEquipmentPanelProps> = ({
           <div className="bg-blue-50 p-3 rounded-lg">
             <h4 className="font-medium mb-2">Connection Analysis Summary</h4>
             <div className="grid grid-cols-2 gap-2 text-sm">
-              <div>Total Connections: {report.summary.totalConnections}</div>
-              <div>Direct Connections: {report.summary.directConnections}</div>
-              <div>Cable Types Used: {report.summary.cableTypes}</div>
-              <div>Total Cables: {report.summary.totalCables}</div>
+              <div>Total Connections: {usage.totalConnections}</div>
+              <div>Direct Connections: {usage.directConnections}</div>
+              <div>Cable Types Used: {Object.keys(usage.cables).length}</div>
+              <div>Total Cables: {Object.values(usage.cables).reduce((sum, cable) => sum + cable.quantity, 0)}</div>
             </div>
           </div>
 

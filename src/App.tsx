@@ -1,49 +1,33 @@
 
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
+import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "@/contexts/AuthContext";
-import ProtectedRoute from "@/components/ProtectedRoute";
-import MainDashboard from "./pages/MainDashboard";
+import { ThemeProvider } from "next-themes";
+import Index from "./pages/Index";
+import Contacts from "./pages/Contacts";
 import CableJobs from "./pages/CableJobs";
-import EquipmentInventory from "./pages/EquipmentInventory";
-import Auth from "./pages/Auth";
-import NotFound from "./pages/NotFound";
+import Inventory from "./pages/Inventory";
+import InventorySettings from "./pages/InventorySettings";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <AuthProvider>
+    <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
       <TooltipProvider>
         <Toaster />
-        <Sonner />
         <BrowserRouter>
           <Routes>
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/" element={
-              <ProtectedRoute>
-                <MainDashboard />
-              </ProtectedRoute>
-            } />
-            <Route path="/cable-jobs" element={
-              <ProtectedRoute>
-                <CableJobs />
-              </ProtectedRoute>
-            } />
-            <Route path="/equipment-inventory" element={
-              <ProtectedRoute>
-                <EquipmentInventory />
-              </ProtectedRoute>
-            } />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
+            <Route path="/" element={<Index />} />
+            <Route path="/contacts" element={<Contacts />} />
+            <Route path="/cable-jobs" element={<CableJobs />} />
+            <Route path="/inventory" element={<Inventory />} />
+            <Route path="/inventory/settings" element={<InventorySettings />} />
           </Routes>
         </BrowserRouter>
       </TooltipProvider>
-    </AuthProvider>
+    </ThemeProvider>
   </QueryClientProvider>
 );
 

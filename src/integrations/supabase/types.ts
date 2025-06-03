@@ -72,12 +72,70 @@ export type Database = {
         }
         Relationships: []
       }
+      equipment_history: {
+        Row: {
+          action: string
+          created_at: string | null
+          equipment_item_id: string | null
+          from_location_id: string | null
+          from_location_type: string | null
+          id: string
+          individual_equipment_id: string | null
+          notes: string | null
+          quantity: number | null
+          to_location_id: string | null
+          to_location_type: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          equipment_item_id?: string | null
+          from_location_id?: string | null
+          from_location_type?: string | null
+          id?: string
+          individual_equipment_id?: string | null
+          notes?: string | null
+          quantity?: number | null
+          to_location_id?: string | null
+          to_location_type?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          equipment_item_id?: string | null
+          from_location_id?: string | null
+          from_location_type?: string | null
+          id?: string
+          individual_equipment_id?: string | null
+          notes?: string | null
+          quantity?: number | null
+          to_location_id?: string | null
+          to_location_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equipment_history_equipment_item_id_fkey"
+            columns: ["equipment_item_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipment_history_individual_equipment_id_fkey"
+            columns: ["individual_equipment_id"]
+            isOneToOne: false
+            referencedRelation: "individual_equipment"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       equipment_items: {
         Row: {
           created_at: string
           id: string
           job_id: string | null
           location_id: string
+          location_type: string | null
           notes: string | null
           quantity: number
           red_tag_photo: string | null
@@ -91,6 +149,7 @@ export type Database = {
           id?: string
           job_id?: string | null
           location_id: string
+          location_type?: string | null
           notes?: string | null
           quantity?: number
           red_tag_photo?: string | null
@@ -104,6 +163,7 @@ export type Database = {
           id?: string
           job_id?: string | null
           location_id?: string
+          location_type?: string | null
           notes?: string | null
           quantity?: number
           red_tag_photo?: string | null
@@ -132,6 +192,63 @@ export type Database = {
             columns: ["type_id"]
             isOneToOne: false
             referencedRelation: "equipment_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      equipment_transfers: {
+        Row: {
+          created_at: string | null
+          equipment_type_id: string | null
+          from_location_id: string
+          from_location_type: string
+          id: string
+          individual_equipment_id: string | null
+          quantity: number | null
+          to_location_id: string
+          to_location_type: string
+          transfer_reason: string | null
+          transferred_by: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          equipment_type_id?: string | null
+          from_location_id: string
+          from_location_type: string
+          id?: string
+          individual_equipment_id?: string | null
+          quantity?: number | null
+          to_location_id: string
+          to_location_type: string
+          transfer_reason?: string | null
+          transferred_by?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          equipment_type_id?: string | null
+          from_location_id?: string
+          from_location_type?: string
+          id?: string
+          individual_equipment_id?: string | null
+          quantity?: number | null
+          to_location_id?: string
+          to_location_type?: string
+          transfer_reason?: string | null
+          transferred_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equipment_transfers_equipment_type_id_fkey"
+            columns: ["equipment_type_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipment_transfers_individual_equipment_id_fkey"
+            columns: ["individual_equipment_id"]
+            isOneToOne: false
+            referencedRelation: "individual_equipment"
             referencedColumns: ["id"]
           },
         ]
@@ -176,6 +293,7 @@ export type Database = {
           id: string
           job_id: string | null
           location_id: string
+          location_type: string | null
           name: string
           notes: string | null
           purchase_date: string | null
@@ -193,6 +311,7 @@ export type Database = {
           id?: string
           job_id?: string | null
           location_id: string
+          location_type?: string | null
           name: string
           notes?: string | null
           purchase_date?: string | null
@@ -210,6 +329,7 @@ export type Database = {
           id?: string
           job_id?: string | null
           location_id?: string
+          location_type?: string | null
           name?: string
           notes?: string | null
           purchase_date?: string | null
@@ -393,6 +513,48 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      red_tag_photos: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          equipment_item_id: string | null
+          id: string
+          individual_equipment_id: string | null
+          photo_url: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          equipment_item_id?: string | null
+          id?: string
+          individual_equipment_id?: string | null
+          photo_url: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          equipment_item_id?: string | null
+          id?: string
+          individual_equipment_id?: string | null
+          photo_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "red_tag_photos_equipment_item_id_fkey"
+            columns: ["equipment_item_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "red_tag_photos_individual_equipment_id_fkey"
+            columns: ["individual_equipment_id"]
+            isOneToOne: false
+            referencedRelation: "individual_equipment"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       storage_locations: {
         Row: {

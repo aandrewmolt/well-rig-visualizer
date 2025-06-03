@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Node } from '@xyflow/react';
 import { Button } from '@/components/ui/button';
@@ -7,6 +8,7 @@ import DiagramCanvas from './DiagramCanvas';
 import ConnectionGuide from './ConnectionGuide';
 import JobDiagramPanels from './JobDiagramPanels';
 import JobPhotoPanel from './JobPhotoPanel';
+import FloatingDiagramControls from './FloatingDiagramControls';
 
 interface Job {
   id: string;
@@ -94,34 +96,46 @@ const JobDiagramContent: React.FC<JobDiagramContentProps> = ({
         updateWellsideGaugeColor={updateWellsideGaugeColor}
       />
 
-      {/* Photo Panel Button - positioned in top right */}
-      <div className="absolute top-4 right-4 z-10">
-        <Sheet open={isPhotosPanelOpen} onOpenChange={setIsPhotosPanelOpen}>
-          <SheetTrigger asChild>
-            <Button
-              variant="outline"
-              size="sm"
-              className="bg-white shadow-md hover:bg-gray-50"
-            >
-              <Camera className="h-4 w-4 mr-2" />
-              Photos
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="right" className="w-96 p-0">
-            <JobPhotoPanel jobId={job.id} jobName={job.name} />
-          </SheetContent>
-        </Sheet>
-      </div>
+      {/* Diagram Section with Floating Controls */}
+      <div className="relative">
+        {/* Photo Panel Button - positioned in top left */}
+        <div className="absolute top-4 left-4 z-10">
+          <Sheet open={isPhotosPanelOpen} onOpenChange={setIsPhotosPanelOpen}>
+            <SheetTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="bg-white/95 backdrop-blur-sm shadow-md hover:bg-gray-50"
+              >
+                <Camera className="h-4 w-4 mr-2" />
+                Photos
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-96 p-0">
+              <JobPhotoPanel jobId={job.id} jobName={job.name} />
+            </SheetContent>
+          </Sheet>
+        </div>
 
-      {/* Diagram Section */}
-      <DiagramCanvas
-        nodes={nodes}
-        edges={edges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
-        reactFlowWrapper={reactFlowWrapper}
-      />
+        {/* Floating Diagram Controls */}
+        <FloatingDiagramControls
+          selectedCableType={selectedCableType}
+          setSelectedCableType={setSelectedCableType}
+          addYAdapter={addYAdapter}
+          onAddShearstreamBox={onAddShearstreamBox}
+          addCompanyComputer={addCompanyComputer}
+        />
+
+        {/* Diagram Canvas */}
+        <DiagramCanvas
+          nodes={nodes}
+          edges={edges}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onConnect={onConnect}
+          reactFlowWrapper={reactFlowWrapper}
+        />
+      </div>
 
       {/* Connection Guide */}
       <ConnectionGuide />

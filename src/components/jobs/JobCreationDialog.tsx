@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 
@@ -19,7 +20,7 @@ const JobCreationDialog: React.FC<JobCreationDialogProps> = ({
   onCreateJob 
 }) => {
   const [newJobName, setNewJobName] = useState('');
-  const [newJobWells, setNewJobWells] = useState(1);
+  const [newJobWells, setNewJobWells] = useState('1');
   const [hasWellsideGauge, setHasWellsideGauge] = useState(false);
 
   const createJob = () => {
@@ -28,19 +29,20 @@ const JobCreationDialog: React.FC<JobCreationDialogProps> = ({
       return;
     }
 
-    if (newJobWells < 1 || newJobWells > 8) {
-      toast.error('Wells must be between 1 and 8');
+    const wellCount = parseInt(newJobWells);
+    if (wellCount < 0 || wellCount > 10) {
+      toast.error('Wells must be between 0 and 10');
       return;
     }
 
     onCreateJob({
       name: newJobName.trim(),
-      wellCount: newJobWells,
+      wellCount: wellCount,
       hasWellsideGauge,
     });
     
     setNewJobName('');
-    setNewJobWells(1);
+    setNewJobWells('1');
     setHasWellsideGauge(false);
   };
 
@@ -62,16 +64,19 @@ const JobCreationDialog: React.FC<JobCreationDialogProps> = ({
             />
           </div>
           <div>
-            <Label htmlFor="wellCount">Number of Wells (1-8)</Label>
-            <Input
-              id="wellCount"
-              type="number"
-              min="1"
-              max="8"
-              value={newJobWells}
-              onChange={(e) => setNewJobWells(parseInt(e.target.value) || 1)}
-              className="mt-1"
-            />
+            <Label htmlFor="wellCount">Number of Wells</Label>
+            <Select value={newJobWells} onValueChange={setNewJobWells}>
+              <SelectTrigger className="mt-1">
+                <SelectValue placeholder="Select number of wells" />
+              </SelectTrigger>
+              <SelectContent>
+                {Array.from({ length: 11 }, (_, i) => (
+                  <SelectItem key={i} value={i.toString()}>
+                    {i} {i === 1 ? 'Well' : 'Wells'}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="flex items-center space-x-2">
             <Checkbox

@@ -51,7 +51,15 @@ export const useJobDiagramActions = ({
     reactFlowWrapper
   );
 
-  const updateWellsideGaugeName = (name: string) => updateWellsideGaugeName(name, setNodes);
+  const updateWellsideGaugeName = (name: string) => {
+    setNodes((nds) => 
+      nds.map((node) => 
+        node.id === 'wellside-gauge' 
+          ? { ...node, data: { ...node.data, label: name } }
+          : node
+      )
+    );
+  };
 
   return {
     addYAdapter,

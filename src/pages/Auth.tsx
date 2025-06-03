@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Auth = () => {
   const [loading, setLoading] = useState(false);
@@ -18,17 +19,14 @@ const Auth = () => {
   const [lastName, setLastName] = useState('');
   const [company, setCompany] = useState('');
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   useEffect(() => {
-    // Check if user is already logged in
-    const checkUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        navigate('/');
-      }
-    };
-    checkUser();
-  }, [navigate]);
+    // Redirect to dashboard if already logged in
+    if (user) {
+      navigate('/');
+    }
+  }, [user, navigate]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -109,8 +109,8 @@ export const useEquipmentUsageAnalyzer = (nodes: Node[], edges: Edge[]) => {
             name: fallback.name,
             category: fallback.category,
             description: null,
-            requires_individual_tracking: false,
-            default_id_prefix: null,
+            requiresIndividualTracking: false,
+            defaultIdPrefix: null,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           };
@@ -178,8 +178,8 @@ export const useEquipmentUsageAnalyzer = (nodes: Node[], edges: Edge[]) => {
               name: fallback.name,
               category: fallback.category,
               description: null,
-              requires_individual_tracking: false,
-              default_id_prefix: null,
+              requiresIndividualTracking: false,
+              defaultIdPrefix: null,
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
             };

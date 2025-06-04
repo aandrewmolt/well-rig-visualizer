@@ -38,7 +38,7 @@ const InteractiveCableEdge: React.FC<InteractiveCableEdgeProps> = ({
   markerEnd,
   data,
 }) => {
-  const { setEdges, getNodes } = useReactFlow();
+  const { setEdges, getNodes, getEdges } = useReactFlow();
   
   const [edgePath, labelX, labelY] = getBezierPath({
     sourceX,
@@ -49,19 +49,42 @@ const InteractiveCableEdge: React.FC<InteractiveCableEdgeProps> = ({
     targetPosition,
   });
 
+  // Get the actual edge to find source and target
+  const edges = getEdges();
+  const currentEdge = edges.find(edge => edge.id === id);
+  
+  if (!currentEdge) return null;
+
   const nodes = getNodes();
-  const sourceNode = nodes.find(n => n.id === id.split('-')[1]);
-  const targetNode = nodes.find(n => n.id === id.split('-')[2]);
+  const sourceNode = nodes.find(n => n.id === currentEdge.source);
+  const targetNode = nodes.find(n => n.id === currentEdge.target);
+
+  console.log('InteractiveCableEdge - Edge info:', {
+    id,
+    sourceId: currentEdge.source,
+    targetId: currentEdge.target,
+    sourceNodeType: sourceNode?.type,
+    targetNodeType: targetNode?.type,
+    edgeType: currentEdge.type,
+    connectionType: data?.connectionType,
+    label: data?.label
+  });
 
   // Check if this is a Y to Well connection (can toggle between 100ft and direct)
   const isYToWellConnection = 
     (sourceNode?.type === 'yAdapter' && targetNode?.type === 'well') ||
     (sourceNode?.type === 'well' && targetNode?.type === 'yAdapter');
 
+  console.log('InteractiveCableEdge - Is Y to Well connection:', isYToWellConnection);
+
   const handleEdgeClick = () => {
+    console.log('InteractiveCableEdge - Edge clicked:', { id, isYToWellConnection });
+    
     if (isYToWellConnection) {
       const currentType = data?.connectionType || 'cable';
       const newType = currentType === 'direct' ? 'cable' : 'direct';
+      
+      console.log('InteractiveCableEdge - Toggling connection type from', currentType, 'to', newType);
       
       setEdges((edges: Edge[]) => 
         edges.map((edge: Edge) => {
@@ -70,11 +93,11 @@ const InteractiveCableEdge: React.FC<InteractiveCableEdgeProps> = ({
               return {
                 ...edge,
                 type: 'direct',
-                label: 'Direct',
+                label: 'Direct Connection',
                 data: {
                   ...edge.data,
                   connectionType: 'direct',
-                  label: 'Direct',
+                  label: 'Direct Connection',
                 },
                 style: {
                   stroke: '#8b5cf6',
@@ -92,7 +115,7 @@ const InteractiveCableEdge: React.FC<InteractiveCableEdgeProps> = ({
                   ...edge.data,
                   connectionType: 'cable',
                   label: '100ft Cable',
-                  cableTypeId: '100ft-cable',
+                  cableTypeId: '1', // 100ft cable type ID
                 },
                 style: {
                   stroke: '#3b82f6',

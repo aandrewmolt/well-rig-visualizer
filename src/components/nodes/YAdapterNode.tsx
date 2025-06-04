@@ -149,11 +149,6 @@ const YAdapterNode = ({ id, data }: { id: string; data: any }) => {
       >
         {bottomPortNumber}
       </div>
-      
-      {/* Connection capability indicator */}
-      <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-xs text-gray-600 whitespace-nowrap">
-        <span className="bg-white px-1 rounded text-[8px]">Switch: Direct/100ft</span>
-      </div>
     </div>
   );
 };

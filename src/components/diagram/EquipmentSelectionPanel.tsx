@@ -18,6 +18,10 @@ interface EquipmentSelectionPanelProps {
   onEquipmentSelect: (type: 'shearstream-box' | 'starlink' | 'customer-computer', equipmentId: string, index?: number) => void;
   onAddShearstreamBox: () => void;
   onRemoveShearstreamBox: (index: number) => void;
+  onAddStarlink?: () => void;
+  onRemoveStarlink?: (index: number) => void;
+  onAddCustomerComputer?: () => void;
+  onRemoveCustomerComputer?: (index: number) => void;
   hasWellsideGauge: boolean;
 }
 
@@ -30,6 +34,10 @@ const EquipmentSelectionPanel: React.FC<EquipmentSelectionPanelProps> = ({
   onEquipmentSelect,
   onAddShearstreamBox,
   onRemoveShearstreamBox,
+  onAddStarlink,
+  onRemoveStarlink,
+  onAddCustomerComputer,
+  onRemoveCustomerComputer,
   hasWellsideGauge,
 }) => {
   const { data } = useInventory();
@@ -57,6 +65,10 @@ const EquipmentSelectionPanel: React.FC<EquipmentSelectionPanelProps> = ({
   const getSelectedEquipment = (equipmentId: string) => {
     return data.individualEquipment.find(eq => eq.id === equipmentId);
   };
+
+  // Convert selectedStarlink to array for consistent handling
+  const selectedStarlinks = selectedStarlink ? [selectedStarlink] : [];
+  const starlinkCount = selectedStarlinks.length;
 
   return (
     <Card className="bg-white shadow-lg">
@@ -133,50 +145,113 @@ const EquipmentSelectionPanel: React.FC<EquipmentSelectionPanelProps> = ({
           ))}
         </div>
 
-        {/* Starlink Selection */}
+        {/* Starlink Selection - Enhanced to support multiple */}
         {hasWellsideGauge && (
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <Satellite className="h-3 w-3" />
-              <Label className="text-sm font-medium">Starlink ({availableEquipment.starlinks.length} available)</Label>
-            </div>
-            <Select
-              value={selectedStarlink || ''}
-              onValueChange={(value) => onEquipmentSelect('starlink', value)}
-            >
-              <SelectTrigger className="h-8">
-                <SelectValue placeholder="Select Starlink..." />
-              </SelectTrigger>
-              <SelectContent>
-                {availableEquipment.starlinks.length === 0 ? (
-                  <SelectItem value="none" disabled>No Starlinks available</SelectItem>
-                ) : (
-                  availableEquipment.starlinks.map(equipment => (
-                    <SelectItem key={equipment.id} value={equipment.id}>
-                      {getEquipmentDisplay(equipment)}
-                    </SelectItem>
-                  ))
-                )}
-              </SelectContent>
-            </Select>
-            {selectedStarlink && (
-              <div className="text-xs text-gray-600">
-                Selected: {getSelectedEquipment(selectedStarlink)?.equipmentId}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Satellite className="h-3 w-3" />
+                <Label className="text-sm font-medium">
+                  Starlinks ({availableEquipment.starlinks.length} available, {starlinkCount} in use)
+                </Label>
               </div>
-            )}
+              {onAddStarlink && (
+                <Button
+                  onClick={onAddStarlink}
+                  size="sm"
+                  variant="outline"
+                  className="h-6 px-2"
+                >
+                  <Plus className="h-3 w-3" />
+                </Button>
+              )}
+            </div>
+            
+            {Array.from({ length: Math.max(1, starlinkCount) }, (_, index) => (
+              <div key={index} className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs">Starlink {index + 1}</Label>
+                  {starlinkCount > 1 && onRemoveStarlink && (
+                    <Button
+                      onClick={() => onRemoveStarlink(index)}
+                      size="sm"
+                      variant="ghost"
+                      className="h-5 w-5 p-0"
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  )}
+                </div>
+                <Select
+                  value={selectedStarlinks[index] || ''}
+                  onValueChange={(value) => onEquipmentSelect('starlink', value, index)}
+                >
+                  <SelectTrigger className="h-8">
+                    <SelectValue placeholder="Select Starlink..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableEquipment.starlinks
+                      .filter(eq => !selectedStarlinks.includes(eq.id) || selectedStarlinks[index] === eq.id)
+                      .length === 0 ? (
+                      <SelectItem value="none" disabled>No Starlinks available</SelectItem>
+                    ) : (
+                      availableEquipment.starlinks
+                        .filter(eq => !selectedStarlinks.includes(eq.id) || selectedStarlinks[index] === eq.id)
+                        .map(equipment => (
+                          <SelectItem key={equipment.id} value={equipment.id}>
+                            {getEquipmentDisplay(equipment)}
+                          </SelectItem>
+                        ))
+                    )}
+                  </SelectContent>
+                </Select>
+                {selectedStarlinks[index] && (
+                  <div className="text-xs text-gray-600">
+                    Selected: {getSelectedEquipment(selectedStarlinks[index])?.equipmentId}
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         )}
 
-        {/* Customer Computers Selection */}
+        {/* Customer Computers Selection - Enhanced to support adding/removing */}
         {customerComputerCount > 0 && (
           <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Monitor className="h-3 w-3" />
-              <Label className="text-sm font-medium">Customer Computers ({availableEquipment.computers.length} available, {customerComputerCount} needed)</Label>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Monitor className="h-3 w-3" />
+                <Label className="text-sm font-medium">
+                  Customer Computers ({availableEquipment.computers.length} available, {customerComputerCount} needed)
+                </Label>
+              </div>
+              {onAddCustomerComputer && (
+                <Button
+                  onClick={onAddCustomerComputer}
+                  size="sm"
+                  variant="outline"
+                  className="h-6 px-2"
+                >
+                  <Plus className="h-3 w-3" />
+                </Button>
+              )}
             </div>
+            
             {Array.from({ length: customerComputerCount }, (_, index) => (
               <div key={index} className="space-y-2">
-                <Label className="text-xs">Computer {index + 1}</Label>
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs">Computer {index + 1}</Label>
+                  {customerComputerCount > 1 && onRemoveCustomerComputer && (
+                    <Button
+                      onClick={() => onRemoveCustomerComputer(index)}
+                      size="sm"
+                      variant="ghost"
+                      className="h-5 w-5 p-0"
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  )}
+                </div>
                 <Select
                   value={selectedCustomerComputers[index] || ''}
                   onValueChange={(value) => onEquipmentSelect('customer-computer', value, index)}

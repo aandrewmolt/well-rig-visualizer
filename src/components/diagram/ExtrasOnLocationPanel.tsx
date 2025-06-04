@@ -43,7 +43,7 @@ const ExtrasOnLocationPanel: React.FC<ExtrasOnLocationPanelProps> = ({
   };
 
   const getIndividualEquipmentName = (equipmentId: string) => {
-    return data.individualEquipment.find(eq => eq.id === equipmentId)?.name || 'Unknown';
+    return data.individualEquipment.find(eq => eq.id === equipmentId)?.equipmentId || 'Unknown';
   };
 
   const selectedType = data.equipmentTypes.find(type => type.id === selectedEquipmentType);
@@ -125,7 +125,7 @@ const ExtrasOnLocationPanel: React.FC<ExtrasOnLocationPanelProps> = ({
                     <SelectTrigger>
                       <SelectValue placeholder="Select equipment type" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-white">
                       {data.equipmentTypes.map(type => (
                         <SelectItem key={type.id} value={type.id}>
                           <div className="flex items-center gap-2">
@@ -151,7 +151,7 @@ const ExtrasOnLocationPanel: React.FC<ExtrasOnLocationPanelProps> = ({
                         <SelectTrigger>
                           <SelectValue placeholder="Select specific equipment" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="bg-white">
                           {availableIndividualEquipment.map(equipment => (
                             <SelectItem key={equipment.id} value={equipment.id}>
                               <div className="flex flex-col">
@@ -188,7 +188,7 @@ const ExtrasOnLocationPanel: React.FC<ExtrasOnLocationPanelProps> = ({
                     <SelectTrigger>
                       <SelectValue placeholder="Select reason or type custom" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-white">
                       {commonReasons.map(reasonOption => (
                         <SelectItem key={reasonOption} value={reasonOption}>
                           {reasonOption}

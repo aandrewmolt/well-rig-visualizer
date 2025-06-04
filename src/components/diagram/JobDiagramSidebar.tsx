@@ -36,6 +36,27 @@ const JobDiagramSidebar: React.FC<JobDiagramSidebarProps> = ({
   // Get well and wellside gauge nodes for configuration
   const wellNodes = nodes.filter(node => node.type === 'well');
   const wellsideGaugeNode = nodes.find(node => node.type === 'wellsideGauge');
+  
+  // Calculate counts from nodes
+  const shearstreamBoxCount = nodes.filter(node => node.type === 'mainBox').length;
+  const customerComputerCount = nodes.filter(node => node.type === 'customerComputer').length;
+  const hasWellsideGauge = !!wellsideGaugeNode;
+
+  // Placeholder handlers - these would need to be passed down from parent or implemented
+  const handleEquipmentSelect = (type: 'shearstream-box' | 'starlink' | 'customer-computer', equipmentId: string, index?: number) => {
+    console.log('Equipment select:', type, equipmentId, index);
+    // This functionality would need to be implemented in the parent component
+  };
+
+  const handleAddShearstreamBox = () => {
+    console.log('Add shearstream box');
+    // This functionality would need to be implemented in the parent component
+  };
+
+  const handleRemoveShearstreamBox = (index: number) => {
+    console.log('Remove shearstream box:', index);
+    // This functionality would need to be implemented in the parent component
+  };
 
   return (
     <div className="w-80 space-y-4 p-4 bg-gray-50 overflow-y-auto">
@@ -43,6 +64,12 @@ const JobDiagramSidebar: React.FC<JobDiagramSidebarProps> = ({
         selectedShearstreamBoxes={selectedShearstreamBoxes}
         selectedStarlink={selectedStarlink}
         selectedCustomerComputers={selectedCustomerComputers}
+        customerComputerCount={customerComputerCount}
+        shearstreamBoxCount={shearstreamBoxCount}
+        onEquipmentSelect={handleEquipmentSelect}
+        onAddShearstreamBox={handleAddShearstreamBox}
+        onRemoveShearstreamBox={handleRemoveShearstreamBox}
+        hasWellsideGauge={hasWellsideGauge}
       />
 
       <WellConfigurationPanel

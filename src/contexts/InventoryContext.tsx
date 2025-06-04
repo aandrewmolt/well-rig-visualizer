@@ -5,7 +5,6 @@ import { useSupabaseEquipmentQueries } from '@/hooks/supabase/useSupabaseEquipme
 import { useSupabaseEquipmentUtils } from '@/hooks/supabase/useSupabaseEquipmentUtils';
 import { InventoryContextType } from './inventory/InventoryContextTypes';
 import { useInventoryMutations } from './inventory/useInventoryMutations';
-import { useInventoryUtils } from './inventory/useInventoryUtils';
 import { useInventoryRealtime } from './inventory/useInventoryRealtime';
 
 const InventoryContext = createContext<InventoryContextType | undefined>(undefined);
@@ -24,7 +23,6 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const supabaseUtils = useSupabaseEquipmentUtils(equipmentItems, individualEquipment);
   const mutations = useInventoryMutations(storageLocations);
-  const utils = useInventoryUtils(equipmentTypes, storageLocations, equipmentItems);
   
   // Set up real-time subscriptions with optimistic delete handling
   const { optimisticDeletes } = useInventoryRealtime(refetch);
@@ -34,7 +32,7 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     item => !optimisticDeletes.has(item.id)
   );
 
-  // Combined data object with filtered equipment
+  // Combined data object with filtered equipment - NO LOCAL STORAGE
   const data: InventoryData = {
     equipmentTypes,
     storageLocations,
@@ -74,9 +72,8 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
     // Utilities - combine both utils
     ...supabaseUtils,
-    ...utils,
 
-    // Legacy compatibility methods
+    // Legacy compatibility methods - NO LOCAL STORAGE
     updateEquipmentTypes: mutations.updateEquipmentTypeWrapper,
     updateStorageLocations: mutations.updateStorageLocationWithDefault,
     updateEquipmentItems: mutations.updateEquipmentItemWrapper,

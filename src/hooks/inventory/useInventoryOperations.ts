@@ -1,35 +1,28 @@
 
-import { useState } from 'react';
 import { InventoryData, EquipmentType, StorageLocation, EquipmentItem, IndividualEquipment } from '@/types/inventory';
-import { useInventoryStorage } from './useInventoryStorage';
 
 export const useInventoryOperations = (
   data: InventoryData,
   setData: (data: InventoryData) => void
 ) => {
-  const { saveToLocalStorage } = useInventoryStorage();
-
+  // These methods now only update local state, no localStorage
   const updateEquipmentTypes = (types: EquipmentType[]) => {
     const updatedData = { ...data, equipmentTypes: types, lastSync: new Date() };
     setData(updatedData);
-    saveToLocalStorage(updatedData);
   };
 
   const updateStorageLocations = (locations: StorageLocation[]) => {
     const updatedData = { ...data, storageLocations: locations, lastSync: new Date() };
     setData(updatedData);
-    saveToLocalStorage(updatedData);
   };
 
   const updateEquipmentItems = (items: EquipmentItem[]) => {
-    // Removed redundant cleanup calls - these should be handled at initialization only
     const updatedData = { 
       ...data, 
       equipmentItems: items,
       lastSync: new Date()
     };
     setData(updatedData);
-    saveToLocalStorage(updatedData);
   };
 
   const updateIndividualEquipment = (equipment: IndividualEquipment[]) => {
@@ -39,7 +32,6 @@ export const useInventoryOperations = (
       lastSync: new Date()
     };
     setData(updatedData);
-    saveToLocalStorage(updatedData);
   };
 
   const updateSingleEquipmentItem = (itemId: string, updates: Partial<EquipmentItem>) => {

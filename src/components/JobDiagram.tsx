@@ -23,13 +23,11 @@ import WellNode from '@/components/nodes/WellNode';
 import WellsideGaugeNode from '@/components/nodes/WellsideGaugeNode';
 import YAdapterNode from '@/components/nodes/YAdapterNode';
 import CustomerComputerNode from '@/components/nodes/CustomerComputerNode';
-import ShearstreamBoxNode from '@/components/nodes/ShearstreamBoxNode';
 
 // Import components
 import DiagramControls from '@/components/diagram/DiagramControls';
 import WellConfigurationPanel from '@/components/diagram/WellConfigurationPanel';
 import EquipmentSelectionPanel from '@/components/diagram/EquipmentSelectionPanel';
-import CableSelectionPanel from '@/components/diagram/CableSelectionPanel';
 
 const nodeTypes = {
   mainBox: MainBoxNode,
@@ -38,7 +36,6 @@ const nodeTypes = {
   wellsideGauge: WellsideGaugeNode,
   yAdapter: YAdapterNode,
   customerComputer: CustomerComputerNode,
-  shearstreamBox: ShearstreamBoxNode,
 };
 
 interface JobDiagramProps {
@@ -161,13 +158,7 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
       <div className="flex-1 flex gap-4">
         {/* Left sidebar with controls */}
         <div className="w-80 space-y-4 p-4 bg-gray-50 overflow-y-auto">
-          <CableSelectionPanel
-            selectedCableType={selectedCableType}
-            onCableTypeChange={setSelectedCableType}
-          />
-          
           <EquipmentSelectionPanel
-            job={job}
             selectedShearstreamBoxes={selectedShearstreamBoxes}
             selectedStarlink={selectedStarlink}
             selectedCustomerComputers={selectedCustomerComputers}

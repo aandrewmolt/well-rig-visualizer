@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -173,7 +173,7 @@ const EquipmentTransferSystem: React.FC = () => {
                         ...prev, 
                         equipmentId: value,
                         fromLocationId: equipment?.locationId || '',
-                        quantity: 'equipmentId' in equipment ? 1 : equipment?.quantity || 1
+                        quantity: 'equipmentId' in equipment ? 1 : (equipment as any)?.quantity || 1
                       }));
                     }}
                   >
@@ -187,7 +187,7 @@ const EquipmentTransferSystem: React.FC = () => {
                           <SelectItem key={equipment.id} value={equipment.id}>
                             {isIndividual 
                               ? `${equipment.equipmentId} - ${equipment.name}`
-                              : `${getTypeName(equipment.typeId)} (Qty: ${equipment.quantity})`
+                              : `${getTypeName(equipment.typeId)} (Qty: ${(equipment as any).quantity})`
                             }
                           </SelectItem>
                         );
@@ -238,13 +238,13 @@ const EquipmentTransferSystem: React.FC = () => {
                 </div>
               </div>
 
-              {transferData.equipmentId && !('equipmentId' in filteredEquipment.find(eq => eq.id === transferData.equipmentId)) && (
+              {transferData.equipmentId && !('equipmentId' in filteredEquipment.find(eq => eq.id === transferData.equipmentId)!) && (
                 <div>
                   <Label>Quantity to Transfer</Label>
                   <Input
                     type="number"
                     min="1"
-                    max={filteredEquipment.find(eq => eq.id === transferData.equipmentId)?.quantity || 1}
+                    max={(filteredEquipment.find(eq => eq.id === transferData.equipmentId) as any)?.quantity || 1}
                     value={transferData.quantity}
                     onChange={(e) => setTransferData(prev => ({ ...prev, quantity: parseInt(e.target.value) || 1 }))}
                   />

@@ -44,10 +44,11 @@ const JobEquipmentPanel: React.FC<JobEquipmentPanelProps> = ({
     validateInventoryConsistency,
     analyzeEquipmentUsage,
     generateEquipmentReport,
+    isProcessing
   } = useRobustEquipmentTracking(jobId, nodes, edges);
 
   const usage = analyzeEquipmentUsage();
-  const report = generateEquipmentReport();
+  const report = generateEquipmentReport(usage);
 
   const getDeployedEquipment = () => {
     return data.equipmentItems.filter(
@@ -171,14 +172,15 @@ const JobEquipmentPanel: React.FC<JobEquipmentPanelProps> = ({
           <div className="flex gap-2">
             <button
               onClick={() => performComprehensiveAllocation(selectedLocation)}
-              className="flex-1 bg-blue-500 text-white px-3 py-2 rounded text-sm hover:bg-blue-600"
-              disabled={!selectedLocation}
+              className="flex-1 bg-blue-500 text-white px-3 py-2 rounded text-sm hover:bg-blue-600 disabled:opacity-50"
+              disabled={!selectedLocation || isProcessing}
             >
-              Allocate Equipment
+              {isProcessing ? 'Allocating...' : 'Allocate Equipment'}
             </button>
             <button
               onClick={returnAllJobEquipment}
-              className="flex-1 bg-red-500 text-white px-3 py-2 rounded text-sm hover:bg-red-600"
+              className="flex-1 bg-red-500 text-white px-3 py-2 rounded text-sm hover:bg-red-600 disabled:opacity-50"
+              disabled={isProcessing}
             >
               Return All Equipment
             </button>

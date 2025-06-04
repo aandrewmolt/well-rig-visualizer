@@ -34,7 +34,7 @@ const RedTagManager: React.FC = () => {
 
     try {
       const updates = {
-        status: 'red-tagged',
+        status: 'red-tagged' as const,
         redTagReason: redTagData.reason,
         redTagPhoto: redTagData.photo,
         notes: redTagData.notes
@@ -58,7 +58,7 @@ const RedTagManager: React.FC = () => {
   const handleRemoveRedTag = async (item: any, isIndividual: boolean) => {
     try {
       const updates = {
-        status: 'available',
+        status: 'available' as const,
         redTagReason: null,
         redTagPhoto: null
       };
@@ -117,7 +117,7 @@ const RedTagManager: React.FC = () => {
                     <CardTitle className="text-lg text-red-800">
                       <div className="flex items-center gap-2">
                         <AlertTriangle className="h-5 w-5" />
-                        {isIndividual ? item.equipmentId : `${typeName} (Qty: ${item.quantity})`}
+                        {isIndividual ? item.equipmentId : `${typeName} (Qty: ${(item as any).quantity})`}
                       </div>
                     </CardTitle>
                     <Badge variant="destructive">
@@ -134,7 +134,7 @@ const RedTagManager: React.FC = () => {
                     </div>
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4 text-gray-500" />
-                      <span>{new Date(item.lastUpdated || item.created_at).toLocaleDateString()}</span>
+                      <span>{new Date(item.lastUpdated || item.updated_at || item.created_at || Date.now()).toLocaleDateString()}</span>
                     </div>
                   </div>
 

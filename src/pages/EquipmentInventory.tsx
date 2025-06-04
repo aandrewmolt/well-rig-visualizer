@@ -8,6 +8,7 @@ import EquipmentListView from '@/components/inventory/EquipmentListView';
 import EquipmentTransferSystem from '@/components/inventory/EquipmentTransferSystem';
 import RedTagManager from '@/components/inventory/RedTagManager';
 import AdvancedSearchPanel from '@/components/inventory/AdvancedSearchPanel';
+import InventoryStatusIndicator from '@/components/inventory/InventoryStatusIndicator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Package, Settings, MapPin, List, ArrowRightLeft, AlertTriangle, Search } from 'lucide-react';
 
@@ -24,7 +25,10 @@ const EquipmentInventory = () => {
       <div className="p-4">
         <div className="max-w-7xl mx-auto">
           <div className="mb-6">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Equipment Inventory</h1>
+            <div className="flex items-center justify-between mb-2">
+              <h1 className="text-3xl font-bold text-gray-900">Equipment Inventory</h1>
+              <InventoryStatusIndicator />
+            </div>
             <p className="text-gray-600">
               Manage your equipment inventory across all storage locations. All team members can view and update inventory in real-time.
             </p>

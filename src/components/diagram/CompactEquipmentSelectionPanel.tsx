@@ -1,4 +1,3 @@
-
 import React, { useMemo } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
@@ -12,10 +11,10 @@ import { TrackedEquipment } from '@/types/equipment';
 interface CompactEquipmentSelectionPanelProps {
   selectedShearstreamBoxes: string[];
   selectedStarlink?: string;
-  selectedCompanyComputers: string[];
-  companyComputerCount: number;
+  selectedCustomerComputers: string[];
+  customerComputerCount: number;
   shearstreamBoxCount: number;
-  onEquipmentSelect: (type: 'shearstream-box' | 'starlink' | 'company-computer', equipmentId: string, index?: number) => void;
+  onEquipmentSelect: (type: 'shearstream-box' | 'starlink' | 'customer-computer', equipmentId: string, index?: number) => void;
   onAddShearstreamBox: () => void;
   onRemoveShearstreamBox: (index: number) => void;
   hasWellsideGauge: boolean;
@@ -24,8 +23,8 @@ interface CompactEquipmentSelectionPanelProps {
 const CompactEquipmentSelectionPanel: React.FC<CompactEquipmentSelectionPanelProps> = ({
   selectedShearstreamBoxes,
   selectedStarlink,
-  selectedCompanyComputers,
-  companyComputerCount,
+  selectedCustomerComputers,
+  customerComputerCount,
   shearstreamBoxCount,
   onEquipmentSelect,
   onAddShearstreamBox,
@@ -38,7 +37,7 @@ const CompactEquipmentSelectionPanel: React.FC<CompactEquipmentSelectionPanelPro
     return {
       ssBoxes: getAvailableEquipment('shearstream-box'),
       starlinks: getAvailableEquipment('starlink'),
-      computers: getAvailableEquipment('company-computer'),
+      computers: getAvailableEquipment('customer-computer'),
     };
   }, [getAvailableEquipment]);
 
@@ -77,7 +76,7 @@ const CompactEquipmentSelectionPanel: React.FC<CompactEquipmentSelectionPanelPro
           </div>
           Equipment Assignment
           <Badge variant="secondary" className="ml-auto bg-white/20 text-white border-white/30">
-            {shearstreamBoxCount + companyComputerCount + (hasWellsideGauge ? 1 : 0)} total
+            {shearstreamBoxCount + customerComputerCount + (hasWellsideGauge ? 1 : 0)} total
           </Badge>
         </CardTitle>
       </CardHeader>
@@ -197,36 +196,36 @@ const CompactEquipmentSelectionPanel: React.FC<CompactEquipmentSelectionPanelPro
           </div>
         )}
 
-        {/* Company Computers - Enhanced */}
-        {companyComputerCount > 0 && (
+        {/* Customer Computers - Enhanced */}
+        {customerComputerCount > 0 && (
           <div className="space-y-3">
             <div className="flex items-center gap-2 p-2 bg-gradient-to-r from-purple-50 to-violet-50 rounded-lg border border-purple-200">
               <div className="p-1 bg-purple-100 rounded">
                 <Monitor className="h-3 w-3 text-purple-600" />
               </div>
               <Label className="text-xs font-semibold text-purple-800">
-                Company Computers ({availableEquipment.computers.length} available)
+                Customer Computers ({availableEquipment.computers.length} available)
               </Label>
             </div>
-            {Array.from({ length: companyComputerCount }, (_, index) => (
+            {Array.from({ length: customerComputerCount }, (_, index) => (
               <div key={index} className="space-y-2 p-3 bg-white rounded-lg border border-gray-200 hover:border-purple-300 transition-all duration-200">
                 <div className="flex items-center gap-2">
-                  <div className={`w-2 h-2 rounded-full ${selectedCompanyComputers[index] ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                  <div className={`w-2 h-2 rounded-full ${selectedCustomerComputers[index] ? 'bg-green-500' : 'bg-gray-300'}`}></div>
                   <Label className="text-xs font-medium text-gray-700">CC-{(index + 1).toString().padStart(3, '0')}</Label>
-                  {selectedCompanyComputers[index] && (
+                  {selectedCustomerComputers[index] && (
                     <CheckCircle className="h-3 w-3 text-green-500 ml-auto" />
                   )}
                 </div>
                 <Select
-                  value={selectedCompanyComputers[index] || ''}
-                  onValueChange={(value) => onEquipmentSelect('company-computer', value, index)}
+                  value={selectedCustomerComputers[index] || ''}
+                  onValueChange={(value) => onEquipmentSelect('customer-computer', value, index)}
                 >
                   <SelectTrigger className="h-8 text-xs border-2 border-gray-200 hover:border-purple-300 focus:border-purple-400 transition-all duration-200">
                     <SelectValue placeholder="Select Computer..." />
                   </SelectTrigger>
                   <SelectContent className="bg-white border-2 border-gray-100 shadow-xl">
                     {availableEquipment.computers
-                      .filter(eq => !selectedCompanyComputers.includes(eq.id) || selectedCompanyComputers[index] === eq.id)
+                      .filter(eq => !selectedCustomerComputers.includes(eq.id) || selectedCustomerComputers[index] === eq.id)
                       .length === 0 ? (
                       <SelectItem value="none" disabled className="text-gray-400">
                         <div className="flex items-center gap-2">
@@ -236,7 +235,7 @@ const CompactEquipmentSelectionPanel: React.FC<CompactEquipmentSelectionPanelPro
                       </SelectItem>
                     ) : (
                       availableEquipment.computers
-                        .filter(eq => !selectedCompanyComputers.includes(eq.id) || selectedCompanyComputers[index] === eq.id)
+                        .filter(eq => !selectedCustomerComputers.includes(eq.id) || selectedCustomerComputers[index] === eq.id)
                         .map(equipment => (
                           <SelectItem key={equipment.id} value={equipment.id} className="hover:bg-purple-50">
                             {getEquipmentDisplay(equipment)}

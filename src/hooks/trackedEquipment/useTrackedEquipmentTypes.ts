@@ -13,7 +13,7 @@ export const useTrackedEquipmentTypes = () => {
     const typeName = equipmentType.name.toLowerCase();
     if (typeName.includes('shearstream') || typeName.includes('ss') || equipmentType.id === '12') return 'shearstream-box';
     if (typeName.includes('starlink') || typeName.includes('sl') || equipmentType.id === '10') return 'starlink';
-    if (typeName.includes('computer') || typeName.includes('cc') || equipmentType.id === '11') return 'company-computer';
+    if (typeName.includes('computer') || typeName.includes('cc') || equipmentType.id === '11') return 'customer-computer';
     
     return null;
   };
@@ -38,16 +38,16 @@ export const useTrackedEquipmentTypes = () => {
     {
       id: 'cc-001',
       equipmentId: 'CC-001',
-      type: 'company-computer',
-      name: 'Company Computer #1',
+      type: 'customer-computer',
+      name: 'Customer Computer #1',
       status: 'available',
       lastUpdated: new Date(),
     },
     {
       id: 'cc-002',
       equipmentId: 'CC-002',
-      type: 'company-computer',
-      name: 'Company Computer #2',
+      type: 'customer-computer',
+      name: 'Customer Computer #2',
       status: 'available',
       lastUpdated: new Date(),
     },

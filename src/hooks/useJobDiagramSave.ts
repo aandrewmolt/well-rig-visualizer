@@ -20,11 +20,11 @@ interface UseJobDiagramSaveProps {
   mainBoxName: string;
   satelliteName: string;
   wellsideGaugeName: string;
-  companyComputerNames: Record<string, string>;
+  customerComputerNames: Record<string, string>;
   selectedCableType: string;
   selectedShearstreamBoxes: string[];
   selectedStarlink: string;
-  selectedCompanyComputers: string[];
+  selectedCustomerComputers: string[];
 }
 
 export const useJobDiagramSave = ({
@@ -35,11 +35,11 @@ export const useJobDiagramSave = ({
   mainBoxName,
   satelliteName,
   wellsideGaugeName,
-  companyComputerNames,
+  customerComputerNames,
   selectedCableType,
   selectedShearstreamBoxes,
   selectedStarlink,
-  selectedCompanyComputers,
+  selectedCustomerComputers,
 }: UseJobDiagramSaveProps) => {
   const { saveJob } = useSupabaseJobs();
 
@@ -77,12 +77,12 @@ export const useJobDiagramSave = ({
       mainBoxName,
       satelliteName,
       wellsideGaugeName,
-      companyComputerNames,
+      customerComputerNames,
       selectedCableType,
       equipmentAssignment: {
         shearstreamBoxIds: selectedShearstreamBoxes.filter(Boolean),
         starlinkId: selectedStarlink || undefined,
-        companyComputerIds: selectedCompanyComputers.filter(Boolean),
+        customerComputerIds: selectedCustomerComputers.filter(Boolean),
       } as JobEquipmentAssignment,
       equipmentAllocated: true,
     };
@@ -93,11 +93,11 @@ export const useJobDiagramSave = ({
     mainBoxName,
     satelliteName,
     wellsideGaugeName,
-    companyComputerNames,
+    customerComputerNames,
     selectedCableType,
     selectedShearstreamBoxes,
     selectedStarlink,
-    selectedCompanyComputers
+    selectedCustomerComputers
   ]);
 
   const performSave = React.useCallback(() => {

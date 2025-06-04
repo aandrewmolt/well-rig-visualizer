@@ -15,12 +15,12 @@ interface EquipmentSelectionDialogProps {
   onConfirm: (assignment: JobEquipmentAssignment, customNames: {
     shearstreamBox?: string;
     starlink?: string;
-    companyComputers: Record<string, string>;
+    customerComputers: Record<string, string>;
   }) => void;
   jobId: string;
   jobName: string;
   hasWellsideGauge: boolean;
-  companyComputerCount: number;
+  customerComputerCount: number;
 }
 
 const EquipmentSelectionDialog: React.FC<EquipmentSelectionDialogProps> = ({
@@ -30,32 +30,32 @@ const EquipmentSelectionDialog: React.FC<EquipmentSelectionDialogProps> = ({
   jobId,
   jobName,
   hasWellsideGauge,
-  companyComputerCount
+  customerComputerCount
 }) => {
   const { getAvailableEquipment, getEquipmentHistory } = useTrackedEquipment();
   
   const [selectedShearstreamBox, setSelectedShearstreamBox] = useState<string>('');
   const [selectedStarlink, setSelectedStarlink] = useState<string>('');
-  const [selectedCompanyComputers, setSelectedCompanyComputers] = useState<string[]>([]);
+  const [selectedCustomerComputers, setSelectedCustomerComputers] = useState<string[]>([]);
   
   const [shearstreamBoxName, setShearstreamBoxName] = useState('ShearStream Box');
   const [starlinkName, setStarlinkName] = useState('Starlink');
-  const [companyComputerNames, setCompanyComputerNames] = useState<Record<string, string>>({});
+  const [customerComputerNames, setCustomerComputerNames] = useState<Record<string, string>>({});
 
   const availableSSBoxes = getAvailableEquipment('shearstream-box');
   const availableStarlinks = getAvailableEquipment('starlink');
-  const availableComputers = getAvailableEquipment('company-computer');
+  const availableComputers = getAvailableEquipment('customer-computer');
 
-  const handleCompanyComputerSelect = (index: number, equipmentId: string) => {
-    const newSelection = [...selectedCompanyComputers];
+  const handleCustomerComputerSelect = (index: number, equipmentId: string) => {
+    const newSelection = [...selectedCustomerComputers];
     newSelection[index] = equipmentId;
-    setSelectedCompanyComputers(newSelection);
+    setSelectedCustomerComputers(newSelection);
     
     // Set default name if not already set
-    if (!companyComputerNames[equipmentId]) {
+    if (!customerComputerNames[equipmentId]) {
       const equipment = availableComputers.find(eq => eq.id === equipmentId);
       if (equipment) {
-        setCompanyComputerNames(prev => ({
+        setCustomerComputerNames(prev => ({
           ...prev,
           [equipmentId]: equipment.name
         }));
@@ -67,13 +67,13 @@ const EquipmentSelectionDialog: React.FC<EquipmentSelectionDialogProps> = ({
     const assignment: JobEquipmentAssignment = {
       shearstreamBoxIds: selectedShearstreamBox ? [selectedShearstreamBox] : [],
       starlinkId: selectedStarlink || undefined,
-      companyComputerIds: selectedCompanyComputers.filter(Boolean),
+      customerComputerIds: selectedCustomerComputers.filter(Boolean),
     };
 
     const customNames = {
       shearstreamBox: shearstreamBoxName,
       starlink: starlinkName,
-      companyComputers: companyComputerNames,
+      customerComputers: customerComputerNames,
     };
 
     onConfirm(assignment, customNames);
@@ -174,26 +174,26 @@ const EquipmentSelectionDialog: React.FC<EquipmentSelectionDialogProps> = ({
             </div>
           )}
 
-          {/* Company Computers Selection */}
-          {companyComputerCount > 0 && (
+          {/* Customer Computers Selection */}
+          {customerComputerCount > 0 && (
             <div className="space-y-3">
               <div className="flex items-center gap-2">
                 <Monitor className="h-4 w-4" />
-                <Label className="font-semibold">Company Computers ({companyComputerCount} needed)</Label>
+                <Label className="font-semibold">Customer Computers ({customerComputerCount} needed)</Label>
               </div>
-              {Array.from({ length: companyComputerCount }, (_, index) => (
+              {Array.from({ length: customerComputerCount }, (_, index) => (
                 <div key={index} className="space-y-2 p-3 border rounded-lg">
                   <Label>Computer {index + 1}</Label>
                   <Select 
-                    value={selectedCompanyComputers[index] || ''} 
-                    onValueChange={(value) => handleCompanyComputerSelect(index, value)}
+                    value={selectedCustomerComputers[index] || ''} 
+                    onValueChange={(value) => handleCustomerComputerSelect(index, value)}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select Company Computer" />
+                      <SelectValue placeholder="Select Customer Computer" />
                     </SelectTrigger>
                     <SelectContent>
                       {availableComputers
-                        .filter(eq => !selectedCompanyComputers.includes(eq.id) || selectedCompanyComputers[index] === eq.id)
+                        .filter(eq => !selectedCustomerComputers.includes(eq.id) || selectedCustomerComputers[index] === eq.id)
                         .map(equipment => {
                           const lastDeployment = getLastDeployment(equipment.id);
                           return (
@@ -211,16 +211,16 @@ const EquipmentSelectionDialog: React.FC<EquipmentSelectionDialogProps> = ({
                         })}
                     </SelectContent>
                   </Select>
-                  {selectedCompanyComputers[index] && (
+                  {selectedCustomerComputers[index] && (
                     <div>
                       <Label>Custom Name for Job</Label>
                       <Input
-                        value={companyComputerNames[selectedCompanyComputers[index]] || ''}
-                        onChange={(e) => setCompanyComputerNames(prev => ({
+                        value={customerComputerNames[selectedCustomerComputers[index]] || ''}
+                        onChange={(e) => setCustomerComputerNames(prev => ({
                           ...prev,
-                          [selectedCompanyComputers[index]]: e.target.value
+                          [selectedCustomerComputers[index]]: e.target.value
                         }))}
-                        placeholder={`Company Computer ${index + 1}`}
+                        placeholder={`Customer Computer ${index + 1}`}
                       />
                     </div>
                   )}

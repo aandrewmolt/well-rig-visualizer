@@ -1,4 +1,3 @@
-
 import React, { useMemo } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
@@ -12,10 +11,10 @@ import { TrackedEquipment } from '@/types/equipment';
 interface EquipmentSelectionPanelProps {
   selectedShearstreamBoxes: string[];
   selectedStarlink?: string;
-  selectedCompanyComputers: string[];
-  companyComputerCount: number;
+  selectedCustomerComputers: string[];
+  customerComputerCount: number;
   shearstreamBoxCount: number;
-  onEquipmentSelect: (type: 'shearstream-box' | 'starlink' | 'company-computer', equipmentId: string, index?: number) => void;
+  onEquipmentSelect: (type: 'shearstream-box' | 'starlink' | 'customer-computer', equipmentId: string, index?: number) => void;
   onAddShearstreamBox: () => void;
   onRemoveShearstreamBox: (index: number) => void;
   hasWellsideGauge: boolean;
@@ -24,8 +23,8 @@ interface EquipmentSelectionPanelProps {
 const EquipmentSelectionPanel: React.FC<EquipmentSelectionPanelProps> = ({
   selectedShearstreamBoxes,
   selectedStarlink,
-  selectedCompanyComputers,
-  companyComputerCount,
+  selectedCustomerComputers,
+  customerComputerCount,
   shearstreamBoxCount,
   onEquipmentSelect,
   onAddShearstreamBox,
@@ -39,7 +38,7 @@ const EquipmentSelectionPanel: React.FC<EquipmentSelectionPanelProps> = ({
     return {
       ssBoxes: getAvailableEquipment('shearstream-box'),
       starlinks: getAvailableEquipment('starlink'),
-      computers: getAvailableEquipment('company-computer'),
+      computers: getAvailableEquipment('customer-computer'),
     };
   }, [getAvailableEquipment]);
 
@@ -165,31 +164,31 @@ const EquipmentSelectionPanel: React.FC<EquipmentSelectionPanelProps> = ({
           </div>
         )}
 
-        {/* Company Computers Selection */}
-        {companyComputerCount > 0 && (
+        {/* Customer Computers Selection */}
+        {customerComputerCount > 0 && (
           <div className="space-y-3">
             <div className="flex items-center gap-2">
               <Monitor className="h-3 w-3" />
-              <Label className="text-sm font-medium">Company Computers ({availableEquipment.computers.length} available, {companyComputerCount} needed)</Label>
+              <Label className="text-sm font-medium">Customer Computers ({availableEquipment.computers.length} available, {customerComputerCount} needed)</Label>
             </div>
-            {Array.from({ length: companyComputerCount }, (_, index) => (
+            {Array.from({ length: customerComputerCount }, (_, index) => (
               <div key={index} className="space-y-2">
                 <Label className="text-xs">Computer {index + 1}</Label>
                 <Select
-                  value={selectedCompanyComputers[index] || ''}
-                  onValueChange={(value) => onEquipmentSelect('company-computer', value, index)}
+                  value={selectedCustomerComputers[index] || ''}
+                  onValueChange={(value) => onEquipmentSelect('customer-computer', value, index)}
                 >
                   <SelectTrigger className="h-8">
                     <SelectValue placeholder="Select Computer..." />
                   </SelectTrigger>
                   <SelectContent>
                     {availableEquipment.computers
-                      .filter(eq => !selectedCompanyComputers.includes(eq.id) || selectedCompanyComputers[index] === eq.id)
+                      .filter(eq => !selectedCustomerComputers.includes(eq.id) || selectedCustomerComputers[index] === eq.id)
                       .length === 0 ? (
                       <SelectItem value="none" disabled>No computers available</SelectItem>
                     ) : (
                       availableEquipment.computers
-                        .filter(eq => !selectedCompanyComputers.includes(eq.id) || selectedCompanyComputers[index] === eq.id)
+                        .filter(eq => !selectedCustomerComputers.includes(eq.id) || selectedCustomerComputers[index] === eq.id)
                         .map(equipment => (
                           <SelectItem key={equipment.id} value={equipment.id}>
                             {getEquipmentDisplay(equipment)}
@@ -198,9 +197,9 @@ const EquipmentSelectionPanel: React.FC<EquipmentSelectionPanelProps> = ({
                     )}
                   </SelectContent>
                 </Select>
-                {selectedCompanyComputers[index] && (
+                {selectedCustomerComputers[index] && (
                   <div className="text-xs text-gray-600">
-                    Selected: {getSelectedEquipment(selectedCompanyComputers[index])?.equipmentId}
+                    Selected: {getSelectedEquipment(selectedCustomerComputers[index])?.equipmentId}
                   </div>
                 )}
               </div>

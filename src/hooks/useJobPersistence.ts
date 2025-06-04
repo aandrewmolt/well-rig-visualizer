@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Node, Edge } from '@xyflow/react';
 import { JobEquipmentAssignment } from '@/types/equipment';
@@ -13,7 +12,7 @@ export interface JobData {
   mainBoxName: string;
   satelliteName: string;
   wellsideGaugeName: string;
-  companyComputerNames: Record<string, string>;
+  customerComputerNames: Record<string, string>;
   selectedCableType?: string;
   equipmentAssignment?: JobEquipmentAssignment;
   lastUpdated: Date;
@@ -106,10 +105,10 @@ export const useJobPersistence = (jobId: string) => {
     updated.mainBoxName = updated.mainBoxName || 'ShearStream Box';
     updated.satelliteName = updated.satelliteName || 'Starlink';
     updated.wellsideGaugeName = updated.wellsideGaugeName || 'Wellside Gauge';
-    updated.companyComputerNames = updated.companyComputerNames || {};
+    updated.customerComputerNames = updated.customerComputerNames || {};
     updated.equipmentAssignment = updated.equipmentAssignment || { 
       shearstreamBoxIds: [],
-      companyComputerIds: [] 
+      customerComputerIds: [] 
     };
     updated.nodes = updated.nodes || [];
     updated.edges = sanitizeEdgeData(updated.edges || []);
@@ -177,7 +176,7 @@ export const useJobPersistence = (jobId: string) => {
         if (!parsed.equipmentAssignment) {
           parsed.equipmentAssignment = { 
             shearstreamBoxIds: [],
-            companyComputerIds: [] 
+            customerComputerIds: [] 
           };
         } else {
           // Migrate old single shearstreamBoxId to new array format
@@ -185,10 +184,22 @@ export const useJobPersistence = (jobId: string) => {
             parsed.equipmentAssignment.shearstreamBoxIds = [parsed.equipmentAssignment.shearstreamBoxId];
             delete parsed.equipmentAssignment.shearstreamBoxId;
           }
+          // Migrate old companyComputerIds to customerComputerIds
+          if (parsed.equipmentAssignment.companyComputerIds) {
+            parsed.equipmentAssignment.customerComputerIds = parsed.equipmentAssignment.companyComputerIds;
+            delete parsed.equipmentAssignment.companyComputerIds;
+          }
           // Ensure arrays exist
           parsed.equipmentAssignment.shearstreamBoxIds = parsed.equipmentAssignment.shearstreamBoxIds || [];
-          parsed.equipmentAssignment.companyComputerIds = parsed.equipmentAssignment.companyComputerIds || [];
+          parsed.equipmentAssignment.customerComputerIds = parsed.equipmentAssignment.customerComputerIds || [];
         }
+        
+        // Migrate old companyComputerNames to customerComputerNames
+        if (parsed.companyComputerNames && !parsed.customerComputerNames) {
+          parsed.customerComputerNames = parsed.companyComputerNames;
+          delete parsed.companyComputerNames;
+        }
+        parsed.customerComputerNames = parsed.customerComputerNames || {};
         
         console.log(`Successfully loaded job data from ${isBackup ? 'backup' : 'primary'} storage with ${parsed.edges.length} edges`);
         setJobData(parsed);

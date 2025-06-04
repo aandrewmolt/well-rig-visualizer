@@ -2,7 +2,6 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { DialogTrigger } from '@/components/ui/dialog';
 import { Package, Plus } from 'lucide-react';
 import { useSupabaseInventory } from '@/hooks/useSupabaseInventory';
 import { toast } from 'sonner';
@@ -162,23 +161,15 @@ const EquipmentListView = () => {
             Equipment List ({filteredEquipment.length} items)
           </CardTitle>
           
-          <EquipmentFormDialog
-            isOpen={isAddDialogOpen}
-            onOpenChange={setIsAddDialogOpen}
-            editingItem={editingItem}
-            formData={formData}
-            setFormData={setFormData}
-            data={data}
-            onSubmit={handleSubmit}
-            onCancel={resetForm}
-            getCategoryColor={getCategoryColor}
-          />
-          <DialogTrigger asChild>
-            <Button onClick={() => setEditingItem(null)}>
+          <div className="flex gap-2">
+            <Button onClick={() => {
+              setEditingItem(null);
+              setIsAddDialogOpen(true);
+            }}>
               <Plus className="mr-2 h-4 w-4" />
               Add Equipment
             </Button>
-          </DialogTrigger>
+          </div>
         </div>
         
         <EquipmentListFilters
@@ -209,6 +200,18 @@ const EquipmentListView = () => {
           getStatusColor={getStatusColor}
           getCategoryColor={getCategoryColor}
           onClearFilters={clearFilters}
+        />
+        
+        <EquipmentFormDialog
+          isOpen={isAddDialogOpen}
+          onOpenChange={setIsAddDialogOpen}
+          editingItem={editingItem}
+          formData={formData}
+          setFormData={setFormData}
+          data={data}
+          onSubmit={handleSubmit}
+          onCancel={resetForm}
+          getCategoryColor={getCategoryColor}
         />
       </CardContent>
     </Card>

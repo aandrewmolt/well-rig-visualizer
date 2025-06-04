@@ -1,223 +1,178 @@
-
 import { EquipmentType, StorageLocation, EquipmentItem } from '@/types/inventory';
 
 export const useInventoryDefaults = () => {
-  // Equipment types that match the application's expectations
+  // Updated equipment types with separate 300ft cable variants
   const DEFAULT_EQUIPMENT_TYPES: EquipmentType[] = [
-    // Communication Equipment (SS, SL, CC)
+    // Cables
     {
-      id: 'ss-box-type',
-      name: 'ShearStream Box',
+      id: '1',
+      name: '100ft Cable',
+      category: 'cables',
+      requiresIndividualTracking: false,
+      description: '100 foot cable reel'
+    },
+    {
+      id: '2',
+      name: '200ft Cable',
+      category: 'cables',
+      requiresIndividualTracking: false,
+      description: '200 foot cable reel'
+    },
+    {
+      id: '3',
+      name: '300ft Cable (Old)',
+      category: 'cables',
+      requiresIndividualTracking: false,
+      description: '300 foot cable reel - older version'
+    },
+    {
+      id: '4',
+      name: '300ft Cable (New)',
+      category: 'cables',
+      requiresIndividualTracking: false,
+      description: '300 foot cable reel - newer version'
+    },
+    
+    // Gauges
+    {
+      id: '7',
+      name: '1502 Pressure Gauge',
+      category: 'gauges',
+      requiresIndividualTracking: true,
+      defaultIdPrefix: 'PG-',
+      description: 'Precision pressure measurement gauge'
+    },
+    
+    // Adapters
+    {
+      id: '9',
+      name: 'Y Adapter Cable',
+      category: 'adapters',
+      requiresIndividualTracking: false,
+      description: 'Y-shaped adapter cable for connections'
+    },
+    
+    // Communication Equipment
+    {
+      id: '10',
+      name: 'Starlink',
       category: 'communication',
-      description: 'Main data acquisition box',
       requiresIndividualTracking: true,
-      defaultIdPrefix: 'SS'
+      defaultIdPrefix: 'SL-',
+      description: 'Satellite internet communication device'
     },
     {
-      id: 'starlink-type',
-      name: 'Starlink Satellite',
-      category: 'communication', 
-      description: 'Satellite communication device',
-      requiresIndividualTracking: true,
-      defaultIdPrefix: 'SL'
-    },
-    {
-      id: 'customer-computer-type',
+      id: '11',
       name: 'Customer Computer',
       category: 'communication',
-      description: 'Customer provided computer system',
       requiresIndividualTracking: true,
-      defaultIdPrefix: 'CC'
-    },
-    
-    // Cable Types
-    {
-      id: 'cable-100ft-type',
-      name: '100ft Pressure Cable',
-      category: 'cables',
-      description: '100 foot pressure monitoring cable',
-      requiresIndividualTracking: false,
-      defaultIdPrefix: 'C100'
-    },
-    {
-      id: 'cable-200ft-type', 
-      name: '200ft Pressure Cable',
-      category: 'cables',
-      description: '200 foot pressure monitoring cable',
-      requiresIndividualTracking: false,
-      defaultIdPrefix: 'C200'
-    },
-    {
-      id: 'cable-300ft-old-type',
-      name: '300ft Pressure Cable (Old - Y adapter only)',
-      category: 'cables',
-      description: '300 foot cable requiring Y adapter connection',
-      requiresIndividualTracking: false,
-      defaultIdPrefix: 'C300O'
-    },
-    {
-      id: 'cable-300ft-new-type',
-      name: '300ft Pressure Cable (New - Direct to wells)',
-      category: 'cables',
-      description: '300 foot cable with direct well connection',
-      requiresIndividualTracking: false,
-      defaultIdPrefix: 'C300N'
-    },
-    
-    // Gauges and Adapters
-    {
-      id: 'pressure-gauge-type',
-      name: 'Pressure Gauge',
-      category: 'gauges',
-      description: 'Downhole pressure monitoring gauge',
-      requiresIndividualTracking: false,
-      defaultIdPrefix: 'PG'
-    },
-    {
-      id: 'y-adapter-type',
-      name: 'Y Adapter',
-      category: 'adapters',
-      description: 'Cable splitting adapter',
-      requiresIndividualTracking: false,
-      defaultIdPrefix: 'YA'
+      defaultIdPrefix: 'CC-',
+      description: 'Customer-provided computer equipment'
     },
     
     // Power Equipment
     {
-      id: 'power-supply-type',
+      id: '12',
       name: 'Power Supply Unit',
       category: 'power',
-      description: 'Main power supply for equipment',
       requiresIndividualTracking: false,
-      defaultIdPrefix: 'PS'
+      description: 'Electrical power supply unit'
+    },
+    {
+      id: '13',
+      name: 'Battery Pack',
+      category: 'power',
+      requiresIndividualTracking: true,
+      defaultIdPrefix: 'BP-',
+      description: 'Rechargeable battery pack'
     }
   ];
 
   const DEFAULT_STORAGE_LOCATIONS: StorageLocation[] = [
     {
-      id: 'main-warehouse',
-      name: 'Main Warehouse',
-      address: '123 Industrial Blvd, Houston, TX',
-      isDefault: true
+      id: '101',
+      name: 'Main Storage',
+      address: '123 Highland Rd, Storage Unit A',
+      isDefault: true,
     },
     {
-      id: 'field-office-midland',
-      name: 'Field Office - Midland',
-      address: 'Midland, TX',
-      isDefault: false
+      id: '102',
+      name: 'Mobile Van',
+      address: 'In Transit',
+      isDefault: false,
     },
     {
-      id: 'mobile-unit-1',
-      name: 'Mobile Unit #1',
-      address: 'Field Deployment',
-      isDefault: false
-    }
+      id: '103',
+      name: 'Red Tag Area',
+      address: 'Quarantine Zone',
+      isDefault: false,
+    },
   ];
 
   const createDefaultInventory = (): EquipmentItem[] => {
-    const defaultLocation = DEFAULT_STORAGE_LOCATIONS.find(loc => loc.isDefault)?.id || 'main-warehouse';
+    const defaultLocationId = DEFAULT_STORAGE_LOCATIONS[0].id;
     
     return [
-      // Communication Equipment Stock
+      // Updated cable inventory with separate 300ft variants
       {
-        id: 'ss-stock-1',
-        typeId: 'ss-box-type',
-        locationId: defaultLocation,
-        quantity: 5,
-        status: 'available',
-        lastUpdated: new Date()
-      },
-      {
-        id: 'sl-stock-1',
-        typeId: 'starlink-type', 
-        locationId: defaultLocation,
-        quantity: 3,
-        status: 'available',
-        lastUpdated: new Date()
-      },
-      {
-        id: 'cc-stock-1',
-        typeId: 'customer-computer-type',
-        locationId: defaultLocation,
+        id: 'item-1',
+        typeId: '1', // 100ft Cable
+        locationId: defaultLocationId,
         quantity: 8,
         status: 'available',
-        lastUpdated: new Date()
+        notes: '100ft cable reels in good condition'
       },
-      
-      // Cable Stock
       {
-        id: 'cable-100-stock',
-        typeId: 'cable-100ft-type',
-        locationId: defaultLocation,
-        quantity: 25,
+        id: 'item-2',
+        typeId: '2', // 200ft Cable
+        locationId: defaultLocationId,
+        quantity: 6,
         status: 'available',
-        lastUpdated: new Date()
+        notes: '200ft cable reels'
       },
       {
-        id: 'cable-200-stock',
-        typeId: 'cable-200ft-type',
-        locationId: defaultLocation,
-        quantity: 20,
+        id: 'item-3',
+        typeId: '3', // 300ft Cable (Old)
+        locationId: defaultLocationId,
+        quantity: 3,
         status: 'available',
-        lastUpdated: new Date()
+        notes: '300ft cable reels - older version'
       },
       {
-        id: 'cable-300-old-stock',
-        typeId: 'cable-300ft-old-type',
-        locationId: defaultLocation,
-        quantity: 15,
+        id: 'item-4',
+        typeId: '4', // 300ft Cable (New)
+        locationId: defaultLocationId,
+        quantity: 5,
         status: 'available',
-        lastUpdated: new Date()
+        notes: '300ft cable reels - newer improved version'
       },
       {
-        id: 'cable-300-new-stock',
-        typeId: 'cable-300ft-new-type',
-        locationId: defaultLocation,
-        quantity: 10,
-        status: 'available',
-        lastUpdated: new Date()
-      },
-      
-      // Gauges and Adapters
-      {
-        id: 'gauge-stock',
-        typeId: 'pressure-gauge-type',
-        locationId: defaultLocation,
-        quantity: 50,
-        status: 'available',
-        lastUpdated: new Date()
-      },
-      {
-        id: 'adapter-stock',
-        typeId: 'y-adapter-type',
-        locationId: defaultLocation,
-        quantity: 30,
-        status: 'available',
-        lastUpdated: new Date()
-      },
-      
-      // Power Equipment
-      {
-        id: 'power-stock',
-        typeId: 'power-supply-type',
-        locationId: defaultLocation,
+        id: 'item-5',
+        typeId: '9', // Y Adapter Cable
+        locationId: defaultLocationId,
         quantity: 12,
         status: 'available',
-        lastUpdated: new Date()
+        notes: 'Y adapter cables for connections'
+      },
+      {
+        id: 'item-6',
+        typeId: '12', // Power Supply Unit
+        locationId: defaultLocationId,
+        quantity: 4,
+        status: 'available',
+        notes: 'Power supply units'
       }
     ];
   };
 
-  const resetToDefaultInventory = () => {
-    const defaultData = {
+  const resetToDefaultInventory = (): any => {
+    return {
       equipmentTypes: DEFAULT_EQUIPMENT_TYPES,
       storageLocations: DEFAULT_STORAGE_LOCATIONS,
       equipmentItems: createDefaultInventory(),
       individualEquipment: [],
       lastSync: new Date(),
     };
-    
-    return defaultData;
   };
 
   return {

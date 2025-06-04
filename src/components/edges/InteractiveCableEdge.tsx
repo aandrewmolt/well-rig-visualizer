@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useCallback, useEffect } from 'react';
 import {
   BaseEdge,
   EdgeLabelRenderer,
@@ -9,6 +9,7 @@ import {
 import { useEdgeToggleLogic } from '@/hooks/edges/useEdgeToggleLogic';
 import { getCurrentLabel, checkIsYToWellConnection, logEdgeDebugging } from '@/utils/edgeUtils';
 import EdgeLabel from './EdgeLabel';
+import EdgeContextMenu from './EdgeContextMenu';
 
 interface InteractiveCableEdgeProps {
   id: string;
@@ -97,7 +98,7 @@ const InteractiveCableEdge: React.FC<InteractiveCableEdgeProps> = ({
   const { handleEdgeToggle } = useEdgeToggleLogic({ id, data, currentEdge });
 
   // Handle edge deletion
-  const handleEdgeDelete = () => {
+  const handleEdgeDelete = useCallback(() => {
     console.log('Deleting edge:', id);
     setEdges((edges) => edges.filter(edge => edge.id !== id));
     
@@ -106,7 +107,27 @@ const InteractiveCableEdge: React.FC<InteractiveCableEdgeProps> = ({
       console.log('Triggering immediate save after edge deletion');
       setTimeout(() => data.immediateSave!(), 50);
     }
-  };
+  }, [id, setEdges, data]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    if (!selected) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Delete' || event.key === 'Backspace') {
+        event.preventDefault();
+        handleEdgeDelete();
+      } else if (event.key === 't' || event.key === 'T') {
+        event.preventDefault();
+        if (isYToWellConnection) {
+          handleEdgeToggle();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [selected, handleEdgeDelete, handleEdgeToggle, isYToWellConnection]);
 
   // Enhanced styling based on connection type and selection state
   const getEdgeStyle = () => {
@@ -122,12 +143,14 @@ const InteractiveCableEdge: React.FC<InteractiveCableEdgeProps> = ({
       baseStyle.strokeDasharray = undefined;
     }
     
-    // Apply selection styling
+    // Apply selection styling with enhanced effects
     if (selected) {
       baseStyle.strokeWidth = 5;
-      baseStyle.filter = 'drop-shadow(0px 2px 4px rgba(0, 0, 0, 0.2))';
+      baseStyle.filter = 'drop-shadow(0px 3px 6px rgba(59, 130, 246, 0.4))';
+      baseStyle.opacity = 1;
     } else {
       baseStyle.strokeWidth = 3;
+      baseStyle.opacity = 0.8;
     }
     
     return baseStyle;
@@ -139,7 +162,11 @@ const InteractiveCableEdge: React.FC<InteractiveCableEdgeProps> = ({
         path={edgePath} 
         markerEnd={markerEnd} 
         style={getEdgeStyle()}
-        className={selected ? 'react-flow__edge-selected' : ''}
+        className={`
+          ${selected ? 'react-flow__edge-selected' : ''}
+          transition-all duration-200 ease-in-out
+          hover:drop-shadow-md
+        `}
       />
       <EdgeLabelRenderer>
         <EdgeLabel
@@ -149,7 +176,18 @@ const InteractiveCableEdge: React.FC<InteractiveCableEdgeProps> = ({
           onDelete={handleEdgeDelete}
           labelX={labelX}
           labelY={labelY}
+          selected={selected}
         />
+        {selected && (
+          <EdgeContextMenu
+            edgeId={id}
+            isYToWellConnection={isYToWellConnection}
+            onToggle={handleEdgeToggle}
+            onDelete={handleEdgeDelete}
+            labelX={labelX}
+            labelY={labelY}
+          />
+        )}
       </EdgeLabelRenderer>
     </>
   );

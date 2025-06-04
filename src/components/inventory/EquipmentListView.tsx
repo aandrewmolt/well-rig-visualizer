@@ -8,6 +8,7 @@ import EquipmentListFilters from './EquipmentListFilters';
 import EquipmentFormDialog from './EquipmentFormDialog';
 import EquipmentTable from './EquipmentTable';
 import IndividualEquipmentTable from './IndividualEquipmentTable';
+import EquipmentMigrationButton from './EquipmentMigrationButton';
 
 const EquipmentListView = () => {
   const { data, updateSingleEquipmentItem, addEquipmentItem, deleteEquipmentItem, updateIndividualEquipment } = useInventory();
@@ -189,6 +190,7 @@ const EquipmentListView = () => {
           </CardTitle>
           
           <div className="flex gap-2">
+            <EquipmentMigrationButton />
             <div className="flex rounded-lg border">
               <button
                 onClick={() => setViewMode('all')}

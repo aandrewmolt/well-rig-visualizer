@@ -24,75 +24,138 @@ export const useDefaultDataSetup = () => {
   const { data, createEquipmentType, createStorageLocation } = useSupabaseInventory();
   const [isInitializing, setIsInitializing] = useState(false);
   const [hasInitialized, setHasInitialized] = useState(false);
+  const [initializationAttempted, setInitializationAttempted] = useState(false);
 
   useEffect(() => {
     const initializeDefaults = async () => {
-      // Only run if we have no data and haven't already initialized
-      if (hasInitialized || isInitializing) {
+      // Prevent multiple initialization attempts
+      if (hasInitialized || isInitializing || initializationAttempted) {
         return;
       }
 
-      const hasEquipmentTypes = data.equipmentTypes.length > 0;
-      const hasStorageLocations = data.storageLocations.length > 0;
-
-      // If we already have data, mark as initialized and don't create defaults
-      if (hasEquipmentTypes && hasStorageLocations) {
+      // Check if we need to initialize
+      const needsEquipmentTypes = data.equipmentTypes.length === 0;
+      const needsStorageLocations = data.storageLocations.length === 0;
+      
+      // If we already have data, mark as initialized
+      if (!needsEquipmentTypes && !needsStorageLocations) {
         setHasInitialized(true);
+        setInitializationAttempted(true);
         return;
       }
 
+      console.log('Starting default data initialization...');
       setIsInitializing(true);
-      console.log('Initializing default data...');
+      setInitializationAttempted(true);
 
       try {
+        let successCount = 0;
+        let skipCount = 0;
+
         // Create default storage location if none exist
-        if (!hasStorageLocations) {
-          console.log('Creating default storage location...');
-          const existingLocation = data.storageLocations.find(loc => loc.name === DEFAULT_STORAGE_LOCATION.name);
-          if (!existingLocation) {
-            await createStorageLocation(DEFAULT_STORAGE_LOCATION);
+        if (needsStorageLocations) {
+          try {
+            // Check if Main Warehouse already exists by name
+            const existingMainWarehouse = data.storageLocations.find(
+              loc => loc.name.toLowerCase() === DEFAULT_STORAGE_LOCATION.name.toLowerCase()
+            );
+            
+            if (!existingMainWarehouse) {
+              await createStorageLocation(DEFAULT_STORAGE_LOCATION);
+              console.log('Created default storage location');
+              successCount++;
+            } else {
+              console.log('Main Warehouse already exists, skipping creation');
+              skipCount++;
+            }
+          } catch (error: any) {
+            // Handle duplicate key violations gracefully
+            if (error.message?.includes('duplicate key') || 
+                error.message?.includes('already exists') ||
+                error.message?.includes('violates unique constraint')) {
+              console.log('Storage location already exists, continuing...');
+              skipCount++;
+            } else {
+              console.error('Error creating storage location:', error);
+              throw error;
+            }
           }
         }
 
         // Create default equipment types if none exist
-        if (!hasEquipmentTypes) {
-          console.log('Creating default equipment types...');
+        if (needsEquipmentTypes) {
           for (const equipmentType of DEFAULT_EQUIPMENT_TYPES) {
-            const existingType = data.equipmentTypes.find(type => type.name === equipmentType.name);
-            if (!existingType) {
-              try {
+            try {
+              // Check if equipment type already exists by name
+              const existingType = data.equipmentTypes.find(
+                type => type.name.toLowerCase() === equipmentType.name.toLowerCase()
+              );
+              
+              if (!existingType) {
                 await createEquipmentType(equipmentType);
-              } catch (error: any) {
-                // Skip if already exists (duplicate key error)
-                if (!error.message?.includes('duplicate key') && !error.message?.includes('already exists')) {
-                  throw error;
-                }
+                console.log(`Created equipment type: ${equipmentType.name}`);
+                successCount++;
+              } else {
                 console.log(`Equipment type '${equipmentType.name}' already exists, skipping...`);
+                skipCount++;
+              }
+            } catch (error: any) {
+              // Handle duplicate key violations gracefully
+              if (error.message?.includes('duplicate key') || 
+                  error.message?.includes('already exists') ||
+                  error.message?.includes('violates unique constraint')) {
+                console.log(`Equipment type '${equipmentType.name}' already exists, continuing...`);
+                skipCount++;
+              } else {
+                console.error(`Error creating equipment type '${equipmentType.name}':`, error);
+                // Continue with other types instead of failing completely
               }
             }
           }
         }
 
         setHasInitialized(true);
-        toast.success('Default equipment types and storage location created successfully');
-        console.log('Default data initialization completed');
+        
+        // Show appropriate success message
+        if (successCount > 0) {
+          toast.success(`Successfully initialized ${successCount} default items${skipCount > 0 ? ` (${skipCount} already existed)` : ''}`);
+        } else if (skipCount > 0) {
+          console.log(`All default items already exist (${skipCount} items)`);
+        }
+        
+        console.log('Default data initialization completed successfully');
       } catch (error) {
         console.error('Failed to initialize default data:', error);
-        toast.error('Failed to create default data. Please create equipment types and storage locations manually.');
+        toast.error('Failed to create some default data. You may need to create equipment types and storage locations manually.');
+        // Still mark as attempted to prevent infinite retries
+        setHasInitialized(true);
       } finally {
         setIsInitializing(false);
       }
     };
 
-    // Only initialize if we don't have both types of data
-    if ((data.equipmentTypes.length === 0 || data.storageLocations.length === 0) && !isInitializing && !hasInitialized) {
+    // Only run initialization if we have loaded data and need to initialize
+    const hasLoadedData = data.equipmentTypes.length >= 0 && data.storageLocations.length >= 0;
+    const needsInitialization = data.equipmentTypes.length === 0 || data.storageLocations.length === 0;
+    
+    if (hasLoadedData && needsInitialization && !initializationAttempted) {
       initializeDefaults();
     }
-  }, [data.equipmentTypes.length, data.storageLocations.length, hasInitialized, isInitializing, createEquipmentType, createStorageLocation, data.equipmentTypes, data.storageLocations]);
+  }, [
+    data.equipmentTypes.length, 
+    data.storageLocations.length, 
+    hasInitialized, 
+    isInitializing, 
+    initializationAttempted,
+    createEquipmentType, 
+    createStorageLocation, 
+    data.equipmentTypes, 
+    data.storageLocations
+  ]);
 
   return {
     isInitializing,
     hasInitialized,
-    needsInitialization: data.equipmentTypes.length === 0 || data.storageLocations.length === 0
+    needsInitialization: !hasInitialized && (data.equipmentTypes.length === 0 || data.storageLocations.length === 0)
   };
 };

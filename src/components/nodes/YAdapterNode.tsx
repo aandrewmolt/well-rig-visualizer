@@ -4,7 +4,7 @@ import { Handle, Position, useReactFlow } from '@xyflow/react';
 import { Square, RotateCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-const YAdapterNode = ({ data }: { data: any }) => {
+const YAdapterNode = ({ id, data }: { id: string; data: any }) => {
   const { getEdges } = useReactFlow();
   const [topPortNumber, setTopPortNumber] = useState<string>('1');
   const [bottomPortNumber, setBottomPortNumber] = useState<string>('2');
@@ -12,7 +12,7 @@ const YAdapterNode = ({ data }: { data: any }) => {
   // Determine the correct port numbers based on the connected pressure port
   useEffect(() => {
     const edges = getEdges();
-    const incomingEdge = edges.find(edge => edge.target === data.nodeId);
+    const incomingEdge = edges.find(edge => edge.target === id);
     
     if (incomingEdge) {
       const sourceHandle = incomingEdge.sourceHandle;
@@ -31,7 +31,7 @@ const YAdapterNode = ({ data }: { data: any }) => {
         setBottomPortNumber(mapping.bottom);
       }
     }
-  }, [data.nodeId, getEdges]);
+  }, [id, getEdges]);
 
   const swapPortNumbers = () => {
     const tempTop = topPortNumber;

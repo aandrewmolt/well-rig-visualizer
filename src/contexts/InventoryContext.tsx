@@ -204,6 +204,23 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     await mutations.updateEquipmentItem(id, data);
   };
 
+  // Utility functions that were missing
+  const getEquipmentTypeName = (typeId: string): string => {
+    const type = equipmentTypes.find(t => t.id === typeId);
+    return type?.name || 'Unknown Type';
+  };
+
+  const getLocationName = (locationId: string): string => {
+    const location = storageLocations.find(l => l.id === locationId);
+    return location?.name || 'Unknown Location';
+  };
+
+  const getDeployedQuantityByType = (typeId: string): number => {
+    return equipmentItems
+      .filter(item => item.typeId === typeId && item.status === 'deployed')
+      .reduce((total, item) => total + item.quantity, 0);
+  };
+
   const contextValue: InventoryContextType = {
     data,
     isLoading: queriesLoading || isLoading || mutations.isLoading,
@@ -233,6 +250,9 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
     // Utilities
     ...utils,
+    getEquipmentTypeName,
+    getLocationName,
+    getDeployedQuantityByType,
 
     // Legacy compatibility methods
     updateEquipmentTypes: updateEquipmentTypeWrapper,

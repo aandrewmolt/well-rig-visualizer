@@ -25,7 +25,7 @@ const MainDashboard = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Card 
               className="cursor-pointer hover:shadow-lg transition-shadow bg-white border-2 hover:border-blue-300"
-              onClick={() => navigate('/cable-jobs')}
+              onClick={() => navigate('/jobs')}
             >
               <CardHeader className="text-center pb-4">
                 <div className="mx-auto mb-4 p-4 bg-blue-100 rounded-full w-fit">
@@ -46,7 +46,7 @@ const MainDashboard = () => {
 
             <Card 
               className="cursor-pointer hover:shadow-lg transition-shadow bg-white border-2 hover:border-green-300"
-              onClick={() => navigate('/equipment-inventory')}
+              onClick={() => navigate('/inventory')}
             >
               <CardHeader className="text-center pb-4">
                 <div className="mx-auto mb-4 p-4 bg-green-100 rounded-full w-fit">

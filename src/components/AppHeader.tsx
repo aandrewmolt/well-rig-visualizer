@@ -35,27 +35,27 @@ const AppHeader = () => {
           
           <nav className="hidden md:flex items-center space-x-4">
             <Button
-              variant={isActive('/') ? 'default' : 'ghost'}
+              variant={isActive('/dashboard') ? 'default' : 'ghost'}
               size="sm"
-              onClick={() => navigate('/')}
+              onClick={() => navigate('/dashboard')}
               className="flex items-center gap-2"
             >
               <Home className="h-4 w-4" />
               Dashboard
             </Button>
             <Button
-              variant={isActive('/cable-jobs') ? 'default' : 'ghost'}
+              variant={isActive('/jobs') ? 'default' : 'ghost'}
               size="sm"
-              onClick={() => navigate('/cable-jobs')}
+              onClick={() => navigate('/jobs')}
               className="flex items-center gap-2"
             >
               <Cable className="h-4 w-4" />
               Cable Jobs
             </Button>
             <Button
-              variant={isActive('/equipment-inventory') ? 'default' : 'ghost'}
+              variant={isActive('/inventory') || isActive('/inventory/settings') || isActive('/inventory/equipment') ? 'default' : 'ghost'}
               size="sm"
-              onClick={() => navigate('/equipment-inventory')}
+              onClick={() => navigate('/inventory')}
               className="flex items-center gap-2"
             >
               <Package className="h-4 w-4" />

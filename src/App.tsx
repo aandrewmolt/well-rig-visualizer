@@ -32,7 +32,7 @@ function App() {
                   path="/"
                   element={
                     <ProtectedRoute>
-                      <Index />
+                      <Navigate to="/dashboard" replace />
                     </ProtectedRoute>
                   }
                 />

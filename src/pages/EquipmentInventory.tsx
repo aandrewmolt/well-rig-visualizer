@@ -15,12 +15,14 @@ import MaintenanceSchedulePanel from '@/components/inventory/MaintenanceSchedule
 import DataSetupVerifier from '@/components/inventory/DataSetupVerifier';
 import IndividualEquipmentManager from '@/components/inventory/IndividualEquipmentManager';
 import { useDefaultDataSetup } from '@/hooks/useDefaultDataSetup';
+import { useInventory } from '@/contexts/InventoryContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Package, Settings, MapPin, List, ArrowRightLeft, AlertTriangle, Search, History, FileText, Wrench, CheckSquare, Users } from 'lucide-react';
 
 const EquipmentInventory = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const { isInitializing, needsInitialization } = useDefaultDataSetup();
+  const { data } = useInventory();
 
   const handleSwitchToTab = (tab: string) => {
     setActiveTab(tab);
@@ -107,7 +109,11 @@ const EquipmentInventory = () => {
             </TabsContent>
 
             <TabsContent value="individual">
-              <IndividualEquipmentManager />
+              <IndividualEquipmentManager 
+                equipmentType={data.equipmentTypes[0]} 
+                storageLocations={data.storageLocations}
+                onDraftCountChange={() => {}}
+              />
             </TabsContent>
 
             <TabsContent value="locations">

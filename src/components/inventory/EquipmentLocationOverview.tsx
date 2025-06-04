@@ -7,6 +7,17 @@ import { useInventory } from '@/contexts/InventoryContext';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
+interface LocationData {
+  locationId: string;
+  locationName: string;
+  isJob: boolean;
+  equipment: any[];
+  totalItems: number;
+  available: number;
+  deployed: number;
+  redTagged: number;
+}
+
 const EquipmentLocationOverview = () => {
   const { data } = useInventory();
 
@@ -40,7 +51,7 @@ const EquipmentLocationOverview = () => {
   };
 
   // Calculate equipment by location
-  const equipmentByLocation = {};
+  const equipmentByLocation: { [key: string]: LocationData } = {};
 
   // Process bulk equipment items
   data.equipmentItems.forEach(item => {

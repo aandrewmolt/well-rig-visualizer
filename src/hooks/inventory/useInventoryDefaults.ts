@@ -1,3 +1,4 @@
+
 import { EquipmentType, StorageLocation, EquipmentItem } from '@/types/inventory';
 
 export const useInventoryDefaults = () => {
@@ -120,7 +121,8 @@ export const useInventoryDefaults = () => {
         locationId: defaultLocationId,
         quantity: 8,
         status: 'available',
-        notes: '100ft cable reels in good condition'
+        notes: '100ft cable reels in good condition',
+        lastUpdated: new Date()
       },
       {
         id: 'item-2',
@@ -128,7 +130,8 @@ export const useInventoryDefaults = () => {
         locationId: defaultLocationId,
         quantity: 6,
         status: 'available',
-        notes: '200ft cable reels'
+        notes: '200ft cable reels',
+        lastUpdated: new Date()
       },
       {
         id: 'item-3',
@@ -136,7 +139,8 @@ export const useInventoryDefaults = () => {
         locationId: defaultLocationId,
         quantity: 3,
         status: 'available',
-        notes: '300ft cable reels - older version'
+        notes: '300ft cable reels - older version',
+        lastUpdated: new Date()
       },
       {
         id: 'item-4',
@@ -144,7 +148,8 @@ export const useInventoryDefaults = () => {
         locationId: defaultLocationId,
         quantity: 5,
         status: 'available',
-        notes: '300ft cable reels - newer improved version'
+        notes: '300ft cable reels - newer improved version',
+        lastUpdated: new Date()
       },
       {
         id: 'item-5',
@@ -152,7 +157,8 @@ export const useInventoryDefaults = () => {
         locationId: defaultLocationId,
         quantity: 12,
         status: 'available',
-        notes: 'Y adapter cables for connections'
+        notes: 'Y adapter cables for connections',
+        lastUpdated: new Date()
       },
       {
         id: 'item-6',
@@ -160,7 +166,8 @@ export const useInventoryDefaults = () => {
         locationId: defaultLocationId,
         quantity: 4,
         status: 'available',
-        notes: 'Power supply units'
+        notes: 'Power supply units',
+        lastUpdated: new Date()
       }
     ];
   };

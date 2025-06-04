@@ -4,8 +4,6 @@ import { Handle, Position } from '@xyflow/react';
 import { Monitor, Tablet } from 'lucide-react';
 
 const CustomerComputerNode = ({ data }: { data: any }) => {
-  // Use equipmentId if available, otherwise fall back to generic label
-  const displayLabel = data.equipmentId || data.label || 'Customer Computer';
   const isTablet = data.isTablet || data.equipmentId?.startsWith('CT');
   const isAssigned = data.assigned && data.equipmentId;
 
@@ -30,11 +28,11 @@ const CustomerComputerNode = ({ data }: { data: any }) => {
           <Monitor className="h-5 w-5" />
         )}
         <div>
-          <h3 className="font-bold text-sm">{displayLabel}</h3>
-          <p className="text-xs text-gray-300">{isTablet ? 'Tablet' : 'Computer'}</p>
-          {isAssigned && (
-            <p className="text-xs text-green-300">Assigned</p>
+          <h3 className="font-bold text-sm">Customer Computer</h3>
+          {isAssigned && data.equipmentId && (
+            <p className="text-xs text-green-300">{data.equipmentId}</p>
           )}
+          <p className="text-xs text-gray-300">{isTablet ? 'Tablet' : 'Computer'}</p>
         </div>
       </div>
     </div>

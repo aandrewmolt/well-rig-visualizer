@@ -1,3 +1,4 @@
+
 import { useCallback } from 'react';
 import { Node } from '@xyflow/react';
 import { useTrackedEquipment } from './useTrackedEquipment';
@@ -43,7 +44,7 @@ export const useJobDiagramEquipment = ({
 }: UseJobDiagramEquipmentProps) => {
   const { trackedEquipment, deployEquipment, returnEquipment } = useTrackedEquipment();
 
-  // Handle equipment selection - updated for multiple SS boxes
+  // Handle equipment selection - updated for customer computers
   const handleEquipmentSelect = useCallback((type: 'shearstream-box' | 'starlink' | 'customer-computer', equipmentId: string, index?: number) => {
     const equipment = trackedEquipment.find(eq => eq.id === equipmentId);
     if (!equipment) return;

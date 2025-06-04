@@ -31,8 +31,14 @@ export const useEquipmentIdGenerator = () => {
     return `${equipmentType.name} ${id}`;
   };
 
+  const getIdFormat = (equipmentType: EquipmentType): string => {
+    const prefix = equipmentType.defaultIdPrefix || '';
+    return `${prefix}XXX (e.g., ${prefix}001)`;
+  };
+
   return {
     generateEquipmentId,
-    generateEquipmentName
+    generateEquipmentName,
+    getIdFormat
   };
 };

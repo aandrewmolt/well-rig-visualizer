@@ -13,14 +13,14 @@ interface UseJobDiagramEquipmentHandlersProps {
   job: Job;
   selectedShearstreamBoxes: string[];
   selectedStarlink: string;
-  selectedCompanyComputers: string[];
+  selectedCustomerComputers: string[];
   setSelectedShearstreamBoxes: (boxes: string[]) => void;
   setSelectedStarlink: (starlink: string) => void;
-  setSelectedCompanyComputers: (computers: string[]) => void;
+  setSelectedCustomerComputers: (computers: string[]) => void;
   setNodes: (updater: (nodes: any[]) => any[]) => void;
   updateMainBoxName: (nodeId: string, name: string, setNodes: (updater: (nodes: any[]) => any[]) => void) => void;
   updateSatelliteName: (name: string, setNodes: (updater: (nodes: any[]) => any[]) => void) => void;
-  updateCompanyComputerName: (nodeId: string, name: string, setNodes: (updater: (nodes: any[]) => any[]) => void) => void;
+  updateCustomerComputerName: (nodeId: string, name: string, setNodes: (updater: (nodes: any[]) => any[]) => void) => void;
   addShearstreamBox: () => void;
   removeShearstreamBox: (boxId: string) => void;
 }
@@ -29,14 +29,14 @@ export const useJobDiagramEquipmentHandlers = ({
   job,
   selectedShearstreamBoxes,
   selectedStarlink,
-  selectedCompanyComputers,
+  selectedCustomerComputers,
   setSelectedShearstreamBoxes,
   setSelectedStarlink,
-  setSelectedCompanyComputers,
+  setSelectedCustomerComputers,
   setNodes,
   updateMainBoxName,
   updateSatelliteName,
-  updateCompanyComputerName,
+  updateCustomerComputerName,
   addShearstreamBox,
   removeShearstreamBox,
 }: UseJobDiagramEquipmentHandlersProps) => {
@@ -48,14 +48,14 @@ export const useJobDiagramEquipmentHandlers = ({
     job,
     selectedShearstreamBoxes,
     selectedStarlink,
-    selectedCompanyComputers,
+    selectedCustomerComputers,
     setSelectedShearstreamBoxes,
     setSelectedStarlink,
-    setSelectedCompanyComputers,
+    setSelectedCustomerComputers,
     setNodes,
     updateMainBoxName,
     updateSatelliteName,
-    updateCompanyComputerName,
+    updateCustomerComputerName,
     addShearstreamBox,
     removeShearstreamBox,
   });

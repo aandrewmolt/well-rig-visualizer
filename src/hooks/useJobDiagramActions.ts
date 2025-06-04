@@ -51,6 +51,9 @@ export const useJobDiagramActions = ({
     reactFlowWrapper
   );
 
+  // Rename addCompanyComputer to addCustomerComputer for consistency
+  const addCustomerComputer = addCompanyComputer;
+
   const updateWellsideGaugeName = (name: string) => {
     setNodes((nds) => 
       nds.map((node) => 
@@ -65,7 +68,7 @@ export const useJobDiagramActions = ({
     addYAdapter,
     addShearstreamBox,
     removeShearstreamBox,
-    addCompanyComputer,
+    addCustomerComputer,
     updateWellName,
     updateWellColor,
     updateWellsideGaugeName,

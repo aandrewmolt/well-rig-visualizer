@@ -14,7 +14,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import MainBoxNode from '../nodes/MainBoxNode';
 import WellNode from '../nodes/WellNode';
 import YAdapterNode from '../nodes/YAdapterNode';
-import CompanyComputerNode from '../nodes/CompanyComputerNode';
+import CustomerComputerNode from '../nodes/CustomerComputerNode';
 import SatelliteNode from '../nodes/SatelliteNode';
 import WellsideGaugeNode from '../nodes/WellsideGaugeNode';
 import CableEdge from '../edges/CableEdge';
@@ -24,7 +24,7 @@ const nodeTypes = {
   mainBox: MainBoxNode,
   well: WellNode,
   yAdapter: YAdapterNode,
-  companyComputer: CompanyComputerNode,
+  customerComputer: CustomerComputerNode,
   satellite: SatelliteNode,
   wellsideGauge: WellsideGaugeNode,
 };

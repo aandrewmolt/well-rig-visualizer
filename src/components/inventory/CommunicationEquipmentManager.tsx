@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Wifi, Monitor, Tablet, Box, Search, Database, Trash2 } from 'lucide-react';
+import { Wifi, Search, Database, Trash2 } from 'lucide-react';
 import { useInventory } from '@/contexts/InventoryContext';
 import { useDraftEquipmentManager } from '@/hooks/useDraftEquipmentManager';
 import { useEquipmentMigration } from '@/hooks/inventory/useEquipmentMigration';
@@ -114,7 +114,7 @@ const CommunicationEquipmentManager: React.FC = () => {
             Communication Equipment Management
           </CardTitle>
           <p className="text-sm text-gray-600">
-            Manage individual communication equipment items with bulk creation and duplicate prevention.
+            Manage individual communication equipment items with enhanced tracking and job integration.
           </p>
         </CardHeader>
       </Card>
@@ -212,7 +212,7 @@ const CommunicationEquipmentManager: React.FC = () => {
           </CardHeader>
           <CardContent className="pt-0">
             <p className="text-xs text-orange-600">
-              Items are automatically saved after creation.
+              Items are automatically saved after creation. Serial numbers are hidden by default - hover over deployed items to see details.
             </p>
           </CardContent>
         </Card>

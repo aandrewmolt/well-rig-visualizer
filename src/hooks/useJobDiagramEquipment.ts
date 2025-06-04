@@ -49,7 +49,9 @@ export const useJobDiagramEquipment = ({
     try {
       await updateIndividualEquipment(equipmentId, { 
         status: 'deployed',
-        job_id: jobId
+        jobId: jobId,
+        locationId: jobId, // Use job ID as location when deployed
+        locationType: 'job'
       });
       toast.success(`Equipment deployed to job`);
     } catch (error) {
@@ -60,16 +62,111 @@ export const useJobDiagramEquipment = ({
 
   const returnEquipment = useCallback(async (equipmentId: string) => {
     try {
+      // Find the default storage location
+      const defaultLocation = data.storageLocations.find(loc => loc.isDefault);
+      if (!defaultLocation) {
+        throw new Error('No default storage location found');
+      }
+
       await updateIndividualEquipment(equipmentId, { 
         status: 'available',
-        job_id: null
+        jobId: null,
+        locationId: defaultLocation.id,
+        locationType: 'storage'
       });
       toast.success(`Equipment returned to inventory`);
     } catch (error) {
       console.error('Failed to return equipment:', error);
       toast.error('Failed to return equipment');
     }
-  }, [updateIndividualEquipment]);
+  }, [updateIndividualEquipment, data.storageLocations]);
+
+  // Handle equipment assignment with proper node updates
+  const handleEquipmentAssignment = useCallback((assignments: {
+    shearstreamBoxes: string[];
+    starlink?: string;
+    customerComputers: string[];
+  }) => {
+    // Deploy all selected equipment
+    [...assignments.shearstreamBoxes, ...(assignments.starlink ? [assignments.starlink] : []), ...assignments.customerComputers]
+      .forEach(equipmentId => {
+        if (equipmentId) {
+          deployEquipment(equipmentId, job.id);
+        }
+      });
+
+    // Update state
+    setSelectedShearstreamBoxes(assignments.shearstreamBoxes);
+    if (assignments.starlink) {
+      setSelectedStarlink(assignments.starlink);
+    }
+    setSelectedCustomerComputers(assignments.customerComputers);
+
+    // Update node labels with equipment IDs
+    setNodes(nodes => 
+      nodes.map(node => {
+        // Update ShearStream Box nodes
+        if (node.type === 'mainBox') {
+          const boxIndex = node.id === 'main-box' ? 0 : parseInt(node.id.replace('main-box-', '')) - 1;
+          const equipmentId = assignments.shearstreamBoxes[boxIndex];
+          if (equipmentId) {
+            const equipment = data.individualEquipment.find(eq => eq.id === equipmentId);
+            if (equipment) {
+              return {
+                ...node,
+                data: {
+                  ...node.data,
+                  label: equipment.equipmentId,
+                  equipmentId: equipment.equipmentId,
+                  assigned: true
+                }
+              };
+            }
+          }
+        }
+
+        // Update Starlink node
+        if (node.type === 'satellite' && assignments.starlink) {
+          const equipment = data.individualEquipment.find(eq => eq.id === assignments.starlink);
+          if (equipment) {
+            return {
+              ...node,
+              data: {
+                ...node.data,
+                label: equipment.equipmentId,
+                equipmentId: equipment.equipmentId,
+                assigned: true
+              }
+            };
+          }
+        }
+
+        // Update Customer Computer nodes
+        if (node.type === 'companyComputer') {
+          const computerIndex = parseInt(node.id.replace('customer-computer-', '')) - 1;
+          const equipmentId = assignments.customerComputers[computerIndex];
+          if (equipmentId) {
+            const equipment = data.individualEquipment.find(eq => eq.id === equipmentId);
+            if (equipment) {
+              const isTablet = equipment.equipmentId.startsWith('CT');
+              return {
+                ...node,
+                data: {
+                  ...node.data,
+                  label: equipment.equipmentId,
+                  equipmentId: equipment.equipmentId,
+                  isTablet,
+                  assigned: true
+                }
+              };
+            }
+          }
+        }
+
+        return node;
+      })
+    );
+  }, [job.id, deployEquipment, setSelectedShearstreamBoxes, setSelectedStarlink, setSelectedCustomerComputers, setNodes, data.individualEquipment]);
 
   // Handle equipment selection - updated for unified inventory
   const handleEquipmentSelect = useCallback((type: 'shearstream-box' | 'starlink' | 'customer-computer', equipmentId: string, index?: number) => {
@@ -112,7 +209,7 @@ export const useJobDiagramEquipment = ({
       setNodes(nodes => 
         nodes.map(node => 
           node.id === `customer-computer-${index + 1}`
-            ? { ...node, data: { ...node.data, isTablet, equipmentId: equipment.equipmentId }}
+            ? { ...node, data: { ...node.data, isTablet, equipmentId: equipment.equipmentId, assigned: true }}
             : node
         )
       );
@@ -158,6 +255,7 @@ export const useJobDiagramEquipment = ({
 
   return {
     handleEquipmentSelect,
+    handleEquipmentAssignment,
     handleAddShearstreamBox,
     handleRemoveShearstreamBox,
     deployEquipment,

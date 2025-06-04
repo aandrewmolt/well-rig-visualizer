@@ -4,21 +4,24 @@ import { Handle, Position } from '@xyflow/react';
 import { Monitor, Tablet } from 'lucide-react';
 
 const CustomerComputerNode = ({ data }: { data: any }) => {
-  // Standardize the label format - extract equipment ID if available, otherwise use default format
+  // Use equipmentId if available, otherwise fall back to label processing
   const getDisplayLabel = () => {
     if (data.equipmentId) {
       return data.equipmentId;
     }
+    
     // Extract number from label if it exists (e.g., "Customer Computer 001" -> "CC001")
     const match = data.label?.match(/(\d+)/);
     if (match) {
       const prefix = data.isTablet ? 'CT' : 'CC';
       return `${prefix}${match[1].padStart(3, '0')}`;
     }
-    return data.label || 'Customer Computer';
+    
+    return data.label || (data.isTablet ? 'Customer Tablet' : 'Customer Computer');
   };
 
   const isTablet = data.isTablet || data.equipmentId?.startsWith('CT');
+  const displayLabel = getDisplayLabel();
 
   return (
     <div className="bg-gray-700 text-white rounded-lg p-3 border-2 border-gray-500 min-w-[120px] text-center relative">
@@ -41,8 +44,11 @@ const CustomerComputerNode = ({ data }: { data: any }) => {
           <Monitor className="h-5 w-5" />
         )}
         <div>
-          <h3 className="font-bold text-sm">{getDisplayLabel()}</h3>
+          <h3 className="font-bold text-sm">{displayLabel}</h3>
           <p className="text-xs text-gray-300">{isTablet ? 'Tablet' : 'Computer'}</p>
+          {data.equipmentId && (
+            <p className="text-xs text-green-300">Assigned</p>
+          )}
         </div>
       </div>
     </div>

@@ -1,23 +1,232 @@
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { EquipmentType, StorageLocation, EquipmentItem, IndividualEquipment } from '@/types/inventory';
 import { toast } from 'sonner';
-import { EquipmentItem, IndividualEquipment, StorageLocation, EquipmentType } from '@/types/inventory';
 
 export const useSupabaseEquipmentMutations = () => {
-  const queryClient = useQueryClient();
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Helper function to invalidate all related queries
-  const invalidateAllQueries = () => {
-    queryClient.invalidateQueries({ queryKey: ['equipment-types'] });
-    queryClient.invalidateQueries({ queryKey: ['storage-locations'] });
-    queryClient.invalidateQueries({ queryKey: ['equipment-items'] });
-    queryClient.invalidateQueries({ queryKey: ['individual-equipment'] });
+  // Equipment Types
+  const addEquipmentType = async (type: Omit<EquipmentType, 'id'>) => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('equipment_types')
+        .insert([{
+          name: type.name,
+          category: type.category,
+          description: type.description,
+          requires_individual_tracking: type.requiresIndividualTracking,
+          default_id_prefix: type.defaultIdPrefix
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+      toast.success('Equipment type added successfully');
+      return data;
+    } catch (error) {
+      console.error('Error adding equipment type:', error);
+      toast.error('Failed to add equipment type');
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const updateEquipmentItemMutation = useMutation({
-    mutationFn: async ({ id, updates }: { id: string; updates: Partial<EquipmentItem> }) => {
+  const updateEquipmentType = async (id: string, updates: Partial<EquipmentType>) => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('equipment_types')
+        .update({
+          name: updates.name,
+          category: updates.category,
+          description: updates.description,
+          requires_individual_tracking: updates.requiresIndividualTracking,
+          default_id_prefix: updates.defaultIdPrefix
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      toast.success('Equipment type updated successfully');
+      return data;
+    } catch (error) {
+      console.error('Error updating equipment type:', error);
+      toast.error('Failed to update equipment type');
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const deleteEquipmentType = async (id: string) => {
+    setIsLoading(true);
+    try {
+      // Check for dependencies first
+      const { data: equipmentItems } = await supabase
+        .from('equipment_items')
+        .select('id')
+        .eq('type_id', id)
+        .limit(1);
+
+      const { data: individualEquipment } = await supabase
+        .from('individual_equipment')
+        .select('id')
+        .eq('type_id', id)
+        .limit(1);
+
+      if (equipmentItems?.length > 0 || individualEquipment?.length > 0) {
+        toast.error('Cannot delete equipment type - it is being used by existing equipment');
+        return false;
+      }
+
       const { error } = await supabase
+        .from('equipment_types')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      toast.success('Equipment type deleted successfully');
+      return true;
+    } catch (error) {
+      console.error('Error deleting equipment type:', error);
+      toast.error('Failed to delete equipment type');
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Storage Locations
+  const addStorageLocation = async (location: Omit<StorageLocation, 'id'>) => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('storage_locations')
+        .insert([{
+          name: location.name,
+          address: location.address,
+          is_default: location.isDefault
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+      toast.success('Storage location added successfully');
+      return data;
+    } catch (error) {
+      console.error('Error adding storage location:', error);
+      toast.error('Failed to add storage location');
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const updateStorageLocation = async (id: string, updates: Partial<StorageLocation>) => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('storage_locations')
+        .update({
+          name: updates.name,
+          address: updates.address,
+          is_default: updates.isDefault
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      toast.success('Storage location updated successfully');
+      return data;
+    } catch (error) {
+      console.error('Error updating storage location:', error);
+      toast.error('Failed to update storage location');
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const deleteStorageLocation = async (id: string) => {
+    setIsLoading(true);
+    try {
+      // Check for dependencies first
+      const { data: equipmentItems } = await supabase
+        .from('equipment_items')
+        .select('id')
+        .eq('location_id', id)
+        .limit(1);
+
+      const { data: individualEquipment } = await supabase
+        .from('individual_equipment')
+        .select('id')
+        .eq('location_id', id)
+        .limit(1);
+
+      if (equipmentItems?.length > 0 || individualEquipment?.length > 0) {
+        toast.error('Cannot delete storage location - it contains equipment');
+        return false;
+      }
+
+      const { error } = await supabase
+        .from('storage_locations')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      toast.success('Storage location deleted successfully');
+      return true;
+    } catch (error) {
+      console.error('Error deleting storage location:', error);
+      toast.error('Failed to delete storage location');
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Equipment Items
+  const addEquipmentItem = async (item: Omit<EquipmentItem, 'id' | 'lastUpdated'>) => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('equipment_items')
+        .insert([{
+          type_id: item.typeId,
+          location_id: item.locationId,
+          quantity: item.quantity,
+          status: item.status,
+          job_id: item.jobId,
+          notes: item.notes,
+          red_tag_reason: item.redTagReason,
+          red_tag_photo: item.redTagPhoto,
+          location_type: item.location_type || 'storage'
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+      toast.success('Equipment item added successfully');
+      return data;
+    } catch (error) {
+      console.error('Error adding equipment item:', error);
+      toast.error('Failed to add equipment item');
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const updateEquipmentItem = async (id: string, updates: Partial<EquipmentItem>) => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
         .from('equipment_items')
         .update({
           type_id: updates.typeId,
@@ -28,25 +237,83 @@ export const useSupabaseEquipmentMutations = () => {
           notes: updates.notes,
           red_tag_reason: updates.redTagReason,
           red_tag_photo: updates.redTagPhoto,
+          location_type: updates.location_type
         })
-        .eq('id', id);
-      
-      if (error) throw error;
-      return { id, updates };
-    },
-    onSuccess: () => {
-      invalidateAllQueries();
-      toast.success('Equipment updated successfully');
-    },
-    onError: (error) => {
-      console.error('Failed to update equipment:', error);
-      toast.error('Failed to update equipment');
-    }
-  });
+        .eq('id', id)
+        .select()
+        .single();
 
-  const updateIndividualEquipmentMutation = useMutation({
-    mutationFn: async ({ id, updates }: { id: string; updates: Partial<IndividualEquipment> }) => {
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error updating equipment item:', error);
+      toast.error('Failed to update equipment item');
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const deleteEquipmentItem = async (id: string) => {
+    setIsLoading(true);
+    try {
       const { error } = await supabase
+        .from('equipment_items')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      toast.success('Equipment item deleted successfully');
+      return true;
+    } catch (error) {
+      console.error('Error deleting equipment item:', error);
+      toast.error('Failed to delete equipment item');
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Individual Equipment
+  const addIndividualEquipment = async (equipment: Omit<IndividualEquipment, 'id' | 'lastUpdated'>) => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('individual_equipment')
+        .insert([{
+          equipment_id: equipment.equipmentId,
+          name: equipment.name,
+          type_id: equipment.typeId,
+          location_id: equipment.locationId,
+          status: equipment.status,
+          job_id: equipment.jobId,
+          serial_number: equipment.serialNumber,
+          purchase_date: equipment.purchaseDate,
+          warranty_expiry: equipment.warrantyExpiry,
+          notes: equipment.notes,
+          red_tag_reason: equipment.redTagReason,
+          red_tag_photo: equipment.redTagPhoto,
+          location_type: equipment.location_type || 'storage'
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+      toast.success('Individual equipment added successfully');
+      return data;
+    } catch (error) {
+      console.error('Error adding individual equipment:', error);
+      toast.error('Failed to add individual equipment');
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const updateIndividualEquipment = async (id: string, updates: Partial<IndividualEquipment>) => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
         .from('individual_equipment')
         .update({
           equipment_id: updates.equipmentId,
@@ -56,363 +323,69 @@ export const useSupabaseEquipmentMutations = () => {
           status: updates.status,
           job_id: updates.jobId,
           serial_number: updates.serialNumber,
-          purchase_date: updates.purchaseDate?.toISOString().split('T')[0],
-          warranty_expiry: updates.warrantyExpiry?.toISOString().split('T')[0],
+          purchase_date: updates.purchaseDate,
+          warranty_expiry: updates.warrantyExpiry,
           notes: updates.notes,
           red_tag_reason: updates.redTagReason,
           red_tag_photo: updates.redTagPhoto,
+          location_type: updates.location_type
         })
-        .eq('id', id);
-      
+        .eq('id', id)
+        .select()
+        .single();
+
       if (error) throw error;
-      return { id, updates };
-    },
-    onSuccess: () => {
-      invalidateAllQueries();
-      toast.success('Individual equipment updated successfully');
-    },
-    onError: (error) => {
-      console.error('Failed to update individual equipment:', error);
+      return data;
+    } catch (error) {
+      console.error('Error updating individual equipment:', error);
       toast.error('Failed to update individual equipment');
+      throw error;
+    } finally {
+      setIsLoading(false);
     }
-  });
+  };
 
-  const addEquipmentItemMutation = useMutation({
-    mutationFn: async (newItem: Omit<EquipmentItem, 'id' | 'lastUpdated'>) => {
-      const { data, error } = await supabase
-        .from('equipment_items')
-        .insert({
-          type_id: newItem.typeId,
-          location_id: newItem.locationId,
-          quantity: newItem.quantity,
-          status: newItem.status,
-          job_id: newItem.jobId,
-          notes: newItem.notes,
-          red_tag_reason: newItem.redTagReason,
-          red_tag_photo: newItem.redTagPhoto,
-        })
-        .select()
-        .single();
-      
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      invalidateAllQueries();
-      toast.success('Equipment item added successfully');
-    },
-    onError: (error) => {
-      console.error('Failed to add equipment item:', error);
-      toast.error('Failed to add equipment item');
-    }
-  });
-
-  const addIndividualEquipmentMutation = useMutation({
-    mutationFn: async (newEquipment: Omit<IndividualEquipment, 'id' | 'lastUpdated'>) => {
-      const { data, error } = await supabase
-        .from('individual_equipment')
-        .insert({
-          equipment_id: newEquipment.equipmentId,
-          name: newEquipment.name,
-          type_id: newEquipment.typeId,
-          location_id: newEquipment.locationId,
-          status: newEquipment.status,
-          job_id: newEquipment.jobId,
-          serial_number: newEquipment.serialNumber,
-          purchase_date: newEquipment.purchaseDate?.toISOString().split('T')[0],
-          warranty_expiry: newEquipment.warrantyExpiry?.toISOString().split('T')[0],
-          notes: newEquipment.notes,
-          red_tag_reason: newEquipment.redTagReason,
-          red_tag_photo: newEquipment.redTagPhoto,
-        })
-        .select()
-        .single();
-      
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      invalidateAllQueries();
-      toast.success('Individual equipment added successfully');
-    },
-    onError: (error) => {
-      console.error('Failed to add individual equipment:', error);
-      toast.error('Failed to add individual equipment');
-    }
-  });
-
-  const addBulkIndividualEquipmentMutation = useMutation({
-    mutationFn: async (equipment: Omit<IndividualEquipment, 'id' | 'lastUpdated'>[]) => {
-      const { data, error } = await supabase
-        .from('individual_equipment')
-        .insert(equipment.map(eq => ({
-          equipment_id: eq.equipmentId,
-          name: eq.name,
-          type_id: eq.typeId,
-          location_id: eq.locationId,
-          status: eq.status,
-          job_id: eq.jobId,
-          serial_number: eq.serialNumber,
-          purchase_date: eq.purchaseDate?.toISOString().split('T')[0],
-          warranty_expiry: eq.warrantyExpiry?.toISOString().split('T')[0],
-          notes: eq.notes,
-        })))
-        .select();
-      
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: (data) => {
-      invalidateAllQueries();
-      toast.success(`${data?.length || 0} equipment items added successfully`);
-    },
-    onError: (error) => {
-      console.error('Failed to add bulk equipment:', error);
-      toast.error('Failed to add bulk equipment');
-    }
-  });
-
-  const createEquipmentTypeMutation = useMutation({
-    mutationFn: async (newType: Omit<EquipmentType, 'id'>) => {
-      const { data, error } = await supabase
-        .from('equipment_types')
-        .insert({
-          name: newType.name,
-          category: newType.category,
-          description: newType.description,
-          requires_individual_tracking: newType.requiresIndividualTracking,
-          default_id_prefix: newType.defaultIdPrefix,
-        })
-        .select()
-        .single();
-      
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      invalidateAllQueries();
-      toast.success('Equipment type created successfully');
-    },
-    onError: (error) => {
-      console.error('Failed to create equipment type:', error);
-      toast.error('Failed to create equipment type');
-    }
-  });
-
-  const updateEquipmentTypeMutation = useMutation({
-    mutationFn: async ({ id, updates }: { id: string; updates: Partial<EquipmentType> }) => {
-      const { data, error } = await supabase
-        .from('equipment_types')
-        .update({
-          name: updates.name,
-          category: updates.category,
-          description: updates.description,
-          requires_individual_tracking: updates.requiresIndividualTracking,
-          default_id_prefix: updates.defaultIdPrefix,
-        })
-        .eq('id', id)
-        .select()
-        .single();
-      
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      invalidateAllQueries();
-      toast.success('Equipment type updated successfully');
-    },
-    onError: (error) => {
-      console.error('Failed to update equipment type:', error);
-      toast.error('Failed to update equipment type');
-    }
-  });
-
-  const deleteEquipmentTypeMutation = useMutation({
-    mutationFn: async (id: string) => {
+  const deleteIndividualEquipment = async (id: string) => {
+    setIsLoading(true);
+    try {
       const { error } = await supabase
-        .from('equipment_types')
+        .from('individual_equipment')
         .delete()
         .eq('id', id);
-      
+
       if (error) throw error;
-      return id;
-    },
-    onSuccess: () => {
-      invalidateAllQueries();
-      toast.success('Equipment type deleted successfully');
-    },
-    onError: (error) => {
-      console.error('Failed to delete equipment type:', error);
-      toast.error('Failed to delete equipment type');
+      toast.success('Individual equipment deleted successfully');
+      return true;
+    } catch (error) {
+      console.error('Error deleting individual equipment:', error);
+      toast.error('Failed to delete individual equipment');
+      throw error;
+    } finally {
+      setIsLoading(false);
     }
-  });
-
-  const createStorageLocationMutation = useMutation({
-    mutationFn: async (newLocation: Omit<StorageLocation, 'id'>) => {
-      // If setting as default, first unset any existing default
-      if (newLocation.isDefault) {
-        await supabase
-          .from('storage_locations')
-          .update({ is_default: false })
-          .eq('is_default', true);
-      }
-
-      const { data, error } = await supabase
-        .from('storage_locations')
-        .insert({
-          name: newLocation.name,
-          address: newLocation.address,
-          is_default: newLocation.isDefault,
-        })
-        .select()
-        .single();
-      
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      invalidateAllQueries();
-      toast.success('Storage location created successfully');
-    },
-    onError: (error) => {
-      console.error('Failed to create storage location:', error);
-      toast.error('Failed to create storage location');
-    }
-  });
-
-  const updateStorageLocationMutation = useMutation({
-    mutationFn: async ({ id, updates }: { id: string; updates: Partial<StorageLocation> }) => {
-      // If setting as default, first unset any existing default
-      if (updates.isDefault) {
-        await supabase
-          .from('storage_locations')
-          .update({ is_default: false })
-          .eq('is_default', true)
-          .neq('id', id);
-      }
-
-      const { data, error } = await supabase
-        .from('storage_locations')
-        .update({
-          name: updates.name,
-          address: updates.address,
-          is_default: updates.isDefault,
-        })
-        .eq('id', id)
-        .select()
-        .single();
-      
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      invalidateAllQueries();
-      toast.success('Storage location updated successfully');
-    },
-    onError: (error) => {
-      console.error('Failed to update storage location:', error);
-      toast.error('Failed to update storage location');
-    }
-  });
-
-  const deleteStorageLocationMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('storage_locations')
-        .delete()
-        .eq('id', id);
-      
-      if (error) throw error;
-      return id;
-    },
-    onSuccess: () => {
-      invalidateAllQueries();
-      toast.success('Storage location deleted successfully');
-    },
-    onError: (error) => {
-      console.error('Failed to delete storage location:', error);
-      toast.error('Failed to delete storage location');
-    }
-  });
-
-  // Helper function to create storage location from job name
-  const createJobStorageLocation = async (jobName: string) => {
-    const existingLocation = queryClient.getQueryData<StorageLocation[]>(['storage-locations'])
-      ?.find(loc => loc.name === jobName);
-    
-    if (!existingLocation) {
-      return createStorageLocationMutation.mutateAsync({
-        name: jobName,
-        address: undefined,
-        isDefault: false
-      });
-    }
-    return existingLocation;
   };
 
   return {
-    // Equipment Items
-    updateSingleEquipmentItem: (itemId: string, updates: Partial<EquipmentItem>) => {
-      return updateEquipmentItemMutation.mutateAsync({ id: itemId, updates });
-    },
+    isLoading,
     
-    addEquipmentItem: (newItem: Omit<EquipmentItem, 'id' | 'lastUpdated'>) => {
-      return addEquipmentItemMutation.mutateAsync(newItem);
-    },
-
-    // Individual Equipment
-    updateSingleIndividualEquipment: (equipmentId: string, updates: Partial<IndividualEquipment>) => {
-      return updateIndividualEquipmentMutation.mutateAsync({ id: equipmentId, updates });
-    },
-
-    addIndividualEquipment: (newEquipment: Omit<IndividualEquipment, 'id' | 'lastUpdated'>) => {
-      return addIndividualEquipmentMutation.mutateAsync(newEquipment);
-    },
-
-    addBulkIndividualEquipment: (equipment: Omit<IndividualEquipment, 'id' | 'lastUpdated'>[]) => {
-      return addBulkIndividualEquipmentMutation.mutateAsync(equipment);
-    },
-
     // Equipment Types
-    createEquipmentType: (newType: Omit<EquipmentType, 'id'>) => {
-      return createEquipmentTypeMutation.mutateAsync(newType);
-    },
-
-    updateEquipmentType: (typeId: string, updates: Partial<EquipmentType>) => {
-      return updateEquipmentTypeMutation.mutateAsync({ id: typeId, updates });
-    },
-
-    deleteEquipmentType: (typeId: string) => {
-      return deleteEquipmentTypeMutation.mutateAsync(typeId);
-    },
-
+    addEquipmentType,
+    updateEquipmentType,
+    deleteEquipmentType,
+    
     // Storage Locations
-    createStorageLocation: (newLocation: Omit<StorageLocation, 'id'>) => {
-      return createStorageLocationMutation.mutateAsync(newLocation);
-    },
-
-    updateStorageLocation: (locationId: string, updates: Partial<StorageLocation>) => {
-      return updateStorageLocationMutation.mutateAsync({ id: locationId, updates });
-    },
-
-    deleteStorageLocation: (locationId: string) => {
-      return deleteStorageLocationMutation.mutateAsync(locationId);
-    },
-
-    // Job Integration
-    createJobStorageLocation,
-
-    // Loading states
-    isLoading: updateEquipmentItemMutation.isPending || 
-               updateIndividualEquipmentMutation.isPending ||
-               addEquipmentItemMutation.isPending ||
-               addIndividualEquipmentMutation.isPending ||
-               addBulkIndividualEquipmentMutation.isPending ||
-               createEquipmentTypeMutation.isPending ||
-               updateEquipmentTypeMutation.isPending ||
-               deleteEquipmentTypeMutation.isPending ||
-               createStorageLocationMutation.isPending ||
-               updateStorageLocationMutation.isPending ||
-               deleteStorageLocationMutation.isPending,
+    addStorageLocation,
+    updateStorageLocation,
+    deleteStorageLocation,
+    
+    // Equipment Items
+    addEquipmentItem,
+    updateEquipmentItem,
+    deleteEquipmentItem,
+    
+    // Individual Equipment
+    addIndividualEquipment,
+    updateIndividualEquipment,
+    deleteIndividualEquipment,
   };
 };

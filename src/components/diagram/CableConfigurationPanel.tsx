@@ -11,7 +11,7 @@ interface CableConfigurationPanelProps {
   selectedCableType: string;
   setSelectedCableType: (type: string) => void;
   addYAdapter: () => void;
-  addCompanyComputer: () => void;
+  addCustomerComputer: () => void;
   clearDiagram: () => void;
   saveDiagram: () => void;
 }
@@ -20,7 +20,7 @@ const CableConfigurationPanel: React.FC<CableConfigurationPanelProps> = ({
   selectedCableType,
   setSelectedCableType,
   addYAdapter,
-  addCompanyComputer,
+  addCustomerComputer,
   clearDiagram,
   saveDiagram,
 }) => {
@@ -66,7 +66,7 @@ const CableConfigurationPanel: React.FC<CableConfigurationPanelProps> = ({
             <Plus className="h-3 w-3 mr-1" />
             Y Adapter
           </Button>
-          <Button onClick={addCompanyComputer} size="sm" variant="outline" className="text-xs h-8">
+          <Button onClick={addCustomerComputer} size="sm" variant="outline" className="text-xs h-8">
             <Plus className="h-3 w-3 mr-1" />
             Computer
           </Button>

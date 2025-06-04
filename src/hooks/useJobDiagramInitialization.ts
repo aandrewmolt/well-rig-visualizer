@@ -128,6 +128,7 @@ export const useJobDiagramInitialization = ({
       setMainBoxName(jobData.mainBoxName || 'ShearStream Box');
       setSatelliteName(jobData.satelliteName || 'Starlink');
       setWellsideGaugeName(jobData.wellsideGaugeName || 'Wellside Gauge');
+      // Support both old and new property names for backward compatibility
       setCustomerComputerNames(jobData.customerComputerNames || jobData.companyComputerNames || {});
       
       // Fix: Load selected cable type with fallback
@@ -135,12 +136,18 @@ export const useJobDiagramInitialization = ({
         setSelectedCableType(jobData.selectedCableType);
       }
       
-      // Load equipment assignment - updated for multiple SS boxes
+      // Load equipment assignment - updated for multiple SS boxes with migration support
       if (jobData.equipmentAssignment) {
-        setSelectedShearstreamBoxes(jobData.equipmentAssignment.shearstreamBoxIds || []);
-        setSelectedStarlink(jobData.equipmentAssignment.starlinkId || '');
-        setSelectedCustomerComputers(jobData.equipmentAssignment.customerComputerIds || jobData.equipmentAssignment.companyComputerIds || []);
-        setEquipmentAssignment(jobData.equipmentAssignment);
+        const assignment = jobData.equipmentAssignment;
+        setSelectedShearstreamBoxes(assignment.shearstreamBoxIds || []);
+        setSelectedStarlink(assignment.starlinkId || '');
+        // Support migration from old companyComputerIds to new customerComputerIds
+        setSelectedCustomerComputers(assignment.customerComputerIds || assignment.companyComputerIds || []);
+        setEquipmentAssignment({
+          shearstreamBoxIds: assignment.shearstreamBoxIds || [],
+          starlinkId: assignment.starlinkId,
+          customerComputerIds: assignment.customerComputerIds || assignment.companyComputerIds || []
+        });
       }
       
       // Calculate proper node ID counter from existing nodes

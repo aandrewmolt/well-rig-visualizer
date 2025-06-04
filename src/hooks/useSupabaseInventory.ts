@@ -29,22 +29,65 @@ export const useSupabaseInventory = () => {
     lastSync: new Date(),
   };
 
+  // Enhanced mutation wrappers with proper error handling
+  const updateSingleEquipmentItem = async (id: string, updates: any) => {
+    try {
+      await mutations.updateEquipmentItem(id, updates);
+    } catch (error) {
+      console.error('Failed to update equipment item:', error);
+      throw error;
+    }
+  };
+
+  const addEquipmentItem = async (item: any) => {
+    try {
+      await mutations.addEquipmentItem(item);
+    } catch (error) {
+      console.error('Failed to add equipment item:', error);
+      throw error;
+    }
+  };
+
+  const deleteEquipmentItem = async (id: string) => {
+    try {
+      return await mutations.deleteEquipmentItem(id);
+    } catch (error) {
+      console.error('Failed to delete equipment item:', error);
+      throw error;
+    }
+  };
+
+  const deleteEquipmentType = async (id: string) => {
+    try {
+      return await mutations.deleteEquipmentType(id);
+    } catch (error) {
+      console.error('Failed to delete equipment type:', error);
+      throw error;
+    }
+  };
+
   return {
     data,
-    isLoading: queriesLoading || isLoading,
+    isLoading: queriesLoading || isLoading || mutations.isLoading,
     syncStatus: 'synced' as const,
     
-    // Mutations
+    // Enhanced CRUD operations
+    updateSingleEquipmentItem,
+    addEquipmentItem,
+    deleteEquipmentItem,
+    deleteEquipmentType,
+    
+    // All mutation operations
     ...mutations,
 
     // Utilities
     ...utils,
 
-    // Legacy compatibility methods
-    updateEquipmentTypes: () => {},
-    updateStorageLocations: () => {},
-    updateEquipmentItems: () => {},
-    updateIndividualEquipment: () => {},
+    // Legacy compatibility methods (now implemented)
+    updateEquipmentTypes: mutations.updateEquipmentType,
+    updateStorageLocations: mutations.updateStorageLocation,
+    updateEquipmentItems: mutations.updateEquipmentItem,
+    updateIndividualEquipment: mutations.updateIndividualEquipment,
     syncData: async () => data,
     resetToDefaultInventory: () => {},
     cleanupDuplicateDeployments: () => equipmentItems,

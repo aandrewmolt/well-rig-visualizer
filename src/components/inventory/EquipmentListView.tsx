@@ -8,14 +8,16 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Search, Package, Plus, Edit } from 'lucide-react';
+import { Search, Package, Plus, Edit, Trash2 } from 'lucide-react';
 import { useSupabaseInventory } from '@/hooks/useSupabaseInventory';
+import { toast } from 'sonner';
 
 const EquipmentListView = () => {
-  const { data, updateSingleEquipmentItem, addEquipmentItem } = useSupabaseInventory();
+  const { data, updateSingleEquipmentItem, addEquipmentItem, deleteEquipmentItem } = useSupabaseInventory();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterLocation, setFilterLocation] = useState('all');
+  const [filterCategory, setFilterCategory] = useState('all');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
   const [formData, setFormData] = useState({
@@ -29,6 +31,11 @@ const EquipmentListView = () => {
   const getEquipmentTypeName = (typeId: string) => {
     const type = data.equipmentTypes.find(t => t.id === typeId);
     return type?.name || 'Unknown Type';
+  };
+
+  const getEquipmentTypeCategory = (typeId: string) => {
+    const type = data.equipmentTypes.find(t => t.id === typeId);
+    return type?.category || 'other';
   };
 
   const getLocationName = (locationId: string) => {
@@ -49,8 +56,29 @@ const EquipmentListView = () => {
     }
   };
 
+  const getCategoryColor = (category: string) => {
+    switch (category) {
+      case 'cables':
+        return 'bg-blue-100 text-blue-800';
+      case 'gauges':
+        return 'bg-green-100 text-green-800';
+      case 'adapters':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'communication':
+        return 'bg-purple-100 text-purple-800';
+      case 'power':
+        return 'bg-orange-100 text-orange-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  // Get unique categories for filter
+  const availableCategories = [...new Set(data.equipmentTypes.map(type => type.category))];
+
   const filteredEquipment = data.equipmentItems.filter(item => {
     const typeName = getEquipmentTypeName(item.typeId).toLowerCase();
+    const typeCategory = getEquipmentTypeCategory(item.typeId);
     const locationName = getLocationName(item.locationId).toLowerCase();
     const matchesSearch = typeName.includes(searchTerm.toLowerCase()) || 
                          locationName.includes(searchTerm.toLowerCase()) ||
@@ -58,26 +86,45 @@ const EquipmentListView = () => {
     
     const matchesStatus = filterStatus === 'all' || item.status === filterStatus;
     const matchesLocation = filterLocation === 'all' || item.locationId === filterLocation;
+    const matchesCategory = filterCategory === 'all' || typeCategory === filterCategory;
     
-    return matchesSearch && matchesStatus && matchesLocation;
+    return matchesSearch && matchesStatus && matchesLocation && matchesCategory;
   });
 
   const handleStatusChange = (itemId: string, newStatus: 'available' | 'deployed' | 'red-tagged') => {
     updateSingleEquipmentItem(itemId, { status: newStatus });
+    toast.success('Equipment status updated successfully');
+  };
+
+  const handleDelete = async (itemId: string) => {
+    if (window.confirm('Are you sure you want to delete this equipment item?')) {
+      try {
+        await deleteEquipmentItem(itemId);
+        toast.success('Equipment item deleted successfully');
+      } catch (error) {
+        toast.error('Failed to delete equipment item');
+      }
+    }
   };
 
   const handleSubmit = () => {
     if (!formData.typeId || !formData.locationId) {
+      toast.error('Please select equipment type and location');
       return;
     }
 
-    if (editingItem) {
-      updateSingleEquipmentItem(editingItem.id, formData);
-    } else {
-      addEquipmentItem(formData);
+    try {
+      if (editingItem) {
+        updateSingleEquipmentItem(editingItem.id, formData);
+        toast.success('Equipment updated successfully');
+      } else {
+        addEquipmentItem(formData);
+        toast.success('Equipment added successfully');
+      }
+      resetForm();
+    } catch (error) {
+      toast.error('Failed to save equipment');
     }
-    
-    resetForm();
   };
 
   const resetForm = () => {
@@ -104,13 +151,20 @@ const EquipmentListView = () => {
     setIsAddDialogOpen(true);
   };
 
+  const clearFilters = () => {
+    setSearchTerm('');
+    setFilterStatus('all');
+    setFilterLocation('all');
+    setFilterCategory('all');
+  };
+
   return (
     <Card className="bg-white shadow-lg">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-lg">
             <Package className="h-5 w-5" />
-            Equipment List
+            Equipment List ({filteredEquipment.length} items)
           </CardTitle>
           
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
@@ -135,7 +189,14 @@ const EquipmentListView = () => {
                     </SelectTrigger>
                     <SelectContent>
                       {data.equipmentTypes.map(type => (
-                        <SelectItem key={type.id} value={type.id}>{type.name}</SelectItem>
+                        <SelectItem key={type.id} value={type.id}>
+                          <div className="flex items-center gap-2">
+                            {type.name}
+                            <Badge variant="outline" className={getCategoryColor(type.category)}>
+                              {type.category}
+                            </Badge>
+                          </div>
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -209,6 +270,24 @@ const EquipmentListView = () => {
             </div>
           </div>
           
+          <Select value={filterCategory} onValueChange={setFilterCategory}>
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="All Categories" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Categories</SelectItem>
+              {availableCategories.map(category => (
+                <SelectItem key={category} value={category}>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className={getCategoryColor(category)}>
+                      {category}
+                    </Badge>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          
           <Select value={filterStatus} onValueChange={setFilterStatus}>
             <SelectTrigger className="w-48">
               <SelectValue placeholder="Filter by status" />
@@ -234,6 +313,10 @@ const EquipmentListView = () => {
               ))}
             </SelectContent>
           </Select>
+
+          <Button onClick={clearFilters} variant="outline">
+            Clear Filters
+          </Button>
         </div>
       </CardHeader>
       
@@ -243,6 +326,7 @@ const EquipmentListView = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>Equipment Type</TableHead>
+                <TableHead>Category</TableHead>
                 <TableHead>Location</TableHead>
                 <TableHead>Quantity</TableHead>
                 <TableHead>Status</TableHead>
@@ -257,6 +341,11 @@ const EquipmentListView = () => {
                 <TableRow key={item.id}>
                   <TableCell className="font-medium">
                     {getEquipmentTypeName(item.typeId)}
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className={getCategoryColor(getEquipmentTypeCategory(item.typeId))}>
+                      {getEquipmentTypeCategory(item.typeId)}
+                    </Badge>
                   </TableCell>
                   <TableCell>{getLocationName(item.locationId)}</TableCell>
                   <TableCell>{item.quantity}</TableCell>
@@ -280,6 +369,13 @@ const EquipmentListView = () => {
                         variant="outline"
                       >
                         <Edit className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        onClick={() => handleDelete(item.id)}
+                        size="sm"
+                        variant="destructive"
+                      >
+                        <Trash2 className="h-3 w-3" />
                       </Button>
                       <Select
                         value={item.status}
@@ -307,6 +403,9 @@ const EquipmentListView = () => {
             <div className="text-center py-8 text-gray-500">
               <Package className="h-8 w-8 mx-auto mb-2 text-gray-400" />
               <p>No equipment found matching your filters</p>
+              <Button onClick={clearFilters} variant="outline" className="mt-2">
+                Clear Filters
+              </Button>
             </div>
           )}
         </div>

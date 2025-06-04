@@ -11,7 +11,7 @@ interface FloatingDiagramControlsProps {
   setSelectedCableType: (type: string) => void;
   addYAdapter: () => void;
   onAddShearstreamBox: () => void;
-  addCompanyComputer: () => void;
+  addCustomerComputer: () => void;
 }
 
 const FloatingDiagramControls: React.FC<FloatingDiagramControlsProps> = ({
@@ -19,7 +19,7 @@ const FloatingDiagramControls: React.FC<FloatingDiagramControlsProps> = ({
   setSelectedCableType,
   addYAdapter,
   onAddShearstreamBox,
-  addCompanyComputer,
+  addCustomerComputer,
 }) => {
   const { data: inventoryData } = useInventoryData();
 
@@ -82,7 +82,7 @@ const FloatingDiagramControls: React.FC<FloatingDiagramControlsProps> = ({
             </Button>
             
             <Button
-              onClick={addCompanyComputer}
+              onClick={addCustomerComputer}
               size="sm"
               variant="outline"
               className="h-8 text-xs justify-start"

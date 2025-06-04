@@ -14,6 +14,7 @@ import {
 } from '@xyflow/react';
 
 import '@xyflow/react/dist/style.css';
+import '../edges/EdgeSelectionStyles.css';
 
 // Import all node types
 import WellNode from '@/components/nodes/WellNode';
@@ -37,7 +38,7 @@ const nodeTypes = {
 
 const edgeTypes = {
   cable: InteractiveCableEdge,
-  direct: InteractiveCableEdge, // Use InteractiveCableEdge for both types
+  direct: InteractiveCableEdge,
   default: InteractiveCableEdge,
 };
 

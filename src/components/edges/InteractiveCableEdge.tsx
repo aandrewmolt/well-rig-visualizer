@@ -20,6 +20,7 @@ interface InteractiveCableEdgeProps {
   targetPosition: any;
   style?: React.CSSProperties;
   markerEnd?: string;
+  selected?: boolean;
   data?: {
     connectionType?: string;
     label?: string;
@@ -40,6 +41,7 @@ const InteractiveCableEdge: React.FC<InteractiveCableEdgeProps> = ({
   targetPosition,
   style = {},
   markerEnd,
+  selected = false,
   data,
 }) => {
   const { getNodes, getEdges, setEdges } = useReactFlow();
@@ -71,7 +73,6 @@ const InteractiveCableEdge: React.FC<InteractiveCableEdgeProps> = ({
   const getConnectionType = (): string => {
     if (data?.connectionType) return data.connectionType;
     if (currentEdge.data?.connectionType) {
-      // Safely convert unknown to string
       return String(currentEdge.data.connectionType);
     }
     return '';
@@ -92,12 +93,6 @@ const InteractiveCableEdge: React.FC<InteractiveCableEdgeProps> = ({
   // Check if this is a Y to Well connection (can toggle between 100ft and direct)
   const isYToWellConnection = checkIsYToWellConnection(sourceNode?.type, targetNode?.type);
 
-  console.log('Y to Well connection check:', { 
-    isYToWellConnection, 
-    sourceType: sourceNode?.type, 
-    targetType: targetNode?.type 
-  });
-
   // Use the edge toggle logic hook
   const { handleEdgeToggle } = useEdgeToggleLogic({ id, data, currentEdge });
 
@@ -113,11 +108,39 @@ const InteractiveCableEdge: React.FC<InteractiveCableEdgeProps> = ({
     }
   };
 
-  console.log('Edge label:', currentLabel);
+  // Enhanced styling based on connection type and selection state
+  const getEdgeStyle = () => {
+    const connectionType = getConnectionType();
+    const baseStyle = { ...style };
+    
+    // Apply connection type styling
+    if (connectionType === 'direct') {
+      baseStyle.stroke = '#10b981';
+      baseStyle.strokeDasharray = '5,5';
+    } else {
+      baseStyle.stroke = style.stroke || '#3b82f6';
+      baseStyle.strokeDasharray = undefined;
+    }
+    
+    // Apply selection styling
+    if (selected) {
+      baseStyle.strokeWidth = 5;
+      baseStyle.filter = 'drop-shadow(0px 2px 4px rgba(0, 0, 0, 0.2))';
+    } else {
+      baseStyle.strokeWidth = 3;
+    }
+    
+    return baseStyle;
+  };
 
   return (
     <>
-      <BaseEdge path={edgePath} markerEnd={markerEnd} style={style} />
+      <BaseEdge 
+        path={edgePath} 
+        markerEnd={markerEnd} 
+        style={getEdgeStyle()}
+        className={selected ? 'react-flow__edge-selected' : ''}
+      />
       <EdgeLabelRenderer>
         <EdgeLabel
           label={currentLabel}

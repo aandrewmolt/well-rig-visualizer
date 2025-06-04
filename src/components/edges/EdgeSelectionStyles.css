@@ -1,0 +1,36 @@
+
+/* Enhanced edge selection and interaction styles */
+.react-flow__edge-selected {
+  filter: drop-shadow(0px 2px 6px rgba(59, 130, 246, 0.3));
+}
+
+.react-flow__edge:hover .react-flow__edge-path {
+  stroke-width: 4 !important;
+  transition: stroke-width 0.2s ease;
+}
+
+.react-flow__edge.selectable:hover .react-flow__edge-path {
+  filter: drop-shadow(0px 1px 3px rgba(0, 0, 0, 0.2));
+}
+
+/* Interactive edge label animations */
+.edge-label-container {
+  transition: all 0.2s ease;
+}
+
+.edge-label-container:hover {
+  transform: scale(1.05);
+}
+
+/* Direct connection styling */
+.react-flow__edge[data-connection-type="direct"] .react-flow__edge-path {
+  stroke: #10b981;
+  stroke-dasharray: 5,5;
+  animation: dash 1s linear infinite;
+}
+
+@keyframes dash {
+  to {
+    stroke-dashoffset: -10;
+  }
+}

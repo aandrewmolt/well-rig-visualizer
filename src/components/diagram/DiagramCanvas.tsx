@@ -12,6 +12,7 @@ import {
   ConnectionLineType,
 } from '@xyflow/react';
 import { Card, CardContent } from '@/components/ui/card';
+import '../edges/EdgeSelectionStyles.css';
 import MainBoxNode from '../nodes/MainBoxNode';
 import WellNode from '../nodes/WellNode';
 import YAdapterNode from '../nodes/YAdapterNode';

@@ -7,6 +7,14 @@ import { EquipmentItem, IndividualEquipment, StorageLocation, EquipmentType } fr
 export const useSupabaseEquipmentMutations = () => {
   const queryClient = useQueryClient();
 
+  // Helper function to invalidate all related queries
+  const invalidateAllQueries = () => {
+    queryClient.invalidateQueries({ queryKey: ['equipment-types'] });
+    queryClient.invalidateQueries({ queryKey: ['storage-locations'] });
+    queryClient.invalidateQueries({ queryKey: ['equipment-items'] });
+    queryClient.invalidateQueries({ queryKey: ['individual-equipment'] });
+  };
+
   const updateEquipmentItemMutation = useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: Partial<EquipmentItem> }) => {
       const { error } = await supabase
@@ -24,9 +32,10 @@ export const useSupabaseEquipmentMutations = () => {
         .eq('id', id);
       
       if (error) throw error;
+      return { id, updates };
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['equipment-items'] });
+      invalidateAllQueries();
       toast.success('Equipment updated successfully');
     },
     onError: (error) => {
@@ -56,9 +65,10 @@ export const useSupabaseEquipmentMutations = () => {
         .eq('id', id);
       
       if (error) throw error;
+      return { id, updates };
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['individual-equipment'] });
+      invalidateAllQueries();
       toast.success('Individual equipment updated successfully');
     },
     onError: (error) => {
@@ -69,7 +79,7 @@ export const useSupabaseEquipmentMutations = () => {
 
   const addEquipmentItemMutation = useMutation({
     mutationFn: async (newItem: Omit<EquipmentItem, 'id' | 'lastUpdated'>) => {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('equipment_items')
         .insert({
           type_id: newItem.typeId,
@@ -80,12 +90,15 @@ export const useSupabaseEquipmentMutations = () => {
           notes: newItem.notes,
           red_tag_reason: newItem.redTagReason,
           red_tag_photo: newItem.redTagPhoto,
-        });
+        })
+        .select()
+        .single();
       
       if (error) throw error;
+      return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['equipment-items'] });
+      invalidateAllQueries();
       toast.success('Equipment item added successfully');
     },
     onError: (error) => {
@@ -96,7 +109,7 @@ export const useSupabaseEquipmentMutations = () => {
 
   const addIndividualEquipmentMutation = useMutation({
     mutationFn: async (newEquipment: Omit<IndividualEquipment, 'id' | 'lastUpdated'>) => {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('individual_equipment')
         .insert({
           equipment_id: newEquipment.equipmentId,
@@ -111,12 +124,15 @@ export const useSupabaseEquipmentMutations = () => {
           notes: newEquipment.notes,
           red_tag_reason: newEquipment.redTagReason,
           red_tag_photo: newEquipment.redTagPhoto,
-        });
+        })
+        .select()
+        .single();
       
       if (error) throw error;
+      return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['individual-equipment'] });
+      invalidateAllQueries();
       toast.success('Individual equipment added successfully');
     },
     onError: (error) => {
@@ -127,7 +143,7 @@ export const useSupabaseEquipmentMutations = () => {
 
   const addBulkIndividualEquipmentMutation = useMutation({
     mutationFn: async (equipment: Omit<IndividualEquipment, 'id' | 'lastUpdated'>[]) => {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('individual_equipment')
         .insert(equipment.map(eq => ({
           equipment_id: eq.equipmentId,
@@ -140,13 +156,15 @@ export const useSupabaseEquipmentMutations = () => {
           purchase_date: eq.purchaseDate?.toISOString().split('T')[0],
           warranty_expiry: eq.warrantyExpiry?.toISOString().split('T')[0],
           notes: eq.notes,
-        })));
+        })))
+        .select();
       
       if (error) throw error;
+      return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['individual-equipment'] });
-      toast.success('Bulk equipment added successfully');
+    onSuccess: (data) => {
+      invalidateAllQueries();
+      toast.success(`${data?.length || 0} equipment items added successfully`);
     },
     onError: (error) => {
       console.error('Failed to add bulk equipment:', error);
@@ -156,7 +174,7 @@ export const useSupabaseEquipmentMutations = () => {
 
   const createEquipmentTypeMutation = useMutation({
     mutationFn: async (newType: Omit<EquipmentType, 'id'>) => {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('equipment_types')
         .insert({
           name: newType.name,
@@ -164,12 +182,15 @@ export const useSupabaseEquipmentMutations = () => {
           description: newType.description,
           requires_individual_tracking: newType.requiresIndividualTracking,
           default_id_prefix: newType.defaultIdPrefix,
-        });
+        })
+        .select()
+        .single();
       
       if (error) throw error;
+      return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['equipment-types'] });
+      invalidateAllQueries();
       toast.success('Equipment type created successfully');
     },
     onError: (error) => {
@@ -180,7 +201,7 @@ export const useSupabaseEquipmentMutations = () => {
 
   const updateEquipmentTypeMutation = useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: Partial<EquipmentType> }) => {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('equipment_types')
         .update({
           name: updates.name,
@@ -189,12 +210,15 @@ export const useSupabaseEquipmentMutations = () => {
           requires_individual_tracking: updates.requiresIndividualTracking,
           default_id_prefix: updates.defaultIdPrefix,
         })
-        .eq('id', id);
+        .eq('id', id)
+        .select()
+        .single();
       
       if (error) throw error;
+      return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['equipment-types'] });
+      invalidateAllQueries();
       toast.success('Equipment type updated successfully');
     },
     onError: (error) => {
@@ -211,9 +235,10 @@ export const useSupabaseEquipmentMutations = () => {
         .eq('id', id);
       
       if (error) throw error;
+      return id;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['equipment-types'] });
+      invalidateAllQueries();
       toast.success('Equipment type deleted successfully');
     },
     onError: (error) => {
@@ -224,18 +249,29 @@ export const useSupabaseEquipmentMutations = () => {
 
   const createStorageLocationMutation = useMutation({
     mutationFn: async (newLocation: Omit<StorageLocation, 'id'>) => {
-      const { error } = await supabase
+      // If setting as default, first unset any existing default
+      if (newLocation.isDefault) {
+        await supabase
+          .from('storage_locations')
+          .update({ is_default: false })
+          .eq('is_default', true);
+      }
+
+      const { data, error } = await supabase
         .from('storage_locations')
         .insert({
           name: newLocation.name,
           address: newLocation.address,
           is_default: newLocation.isDefault,
-        });
+        })
+        .select()
+        .single();
       
       if (error) throw error;
+      return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['storage-locations'] });
+      invalidateAllQueries();
       toast.success('Storage location created successfully');
     },
     onError: (error) => {
@@ -246,19 +282,31 @@ export const useSupabaseEquipmentMutations = () => {
 
   const updateStorageLocationMutation = useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: Partial<StorageLocation> }) => {
-      const { error } = await supabase
+      // If setting as default, first unset any existing default
+      if (updates.isDefault) {
+        await supabase
+          .from('storage_locations')
+          .update({ is_default: false })
+          .eq('is_default', true)
+          .neq('id', id);
+      }
+
+      const { data, error } = await supabase
         .from('storage_locations')
         .update({
           name: updates.name,
           address: updates.address,
           is_default: updates.isDefault,
         })
-        .eq('id', id);
+        .eq('id', id)
+        .select()
+        .single();
       
       if (error) throw error;
+      return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['storage-locations'] });
+      invalidateAllQueries();
       toast.success('Storage location updated successfully');
     },
     onError: (error) => {
@@ -275,9 +323,10 @@ export const useSupabaseEquipmentMutations = () => {
         .eq('id', id);
       
       if (error) throw error;
+      return id;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['storage-locations'] });
+      invalidateAllQueries();
       toast.success('Storage location deleted successfully');
     },
     onError: (error) => {
@@ -286,49 +335,84 @@ export const useSupabaseEquipmentMutations = () => {
     }
   });
 
+  // Helper function to create storage location from job name
+  const createJobStorageLocation = async (jobName: string) => {
+    const existingLocation = queryClient.getQueryData<StorageLocation[]>(['storage-locations'])
+      ?.find(loc => loc.name === jobName);
+    
+    if (!existingLocation) {
+      return createStorageLocationMutation.mutateAsync({
+        name: jobName,
+        address: undefined,
+        isDefault: false
+      });
+    }
+    return existingLocation;
+  };
+
   return {
+    // Equipment Items
     updateSingleEquipmentItem: (itemId: string, updates: Partial<EquipmentItem>) => {
-      updateEquipmentItemMutation.mutate({ id: itemId, updates });
+      return updateEquipmentItemMutation.mutateAsync({ id: itemId, updates });
     },
     
-    updateSingleIndividualEquipment: (equipmentId: string, updates: Partial<IndividualEquipment>) => {
-      updateIndividualEquipmentMutation.mutate({ id: equipmentId, updates });
+    addEquipmentItem: (newItem: Omit<EquipmentItem, 'id' | 'lastUpdated'>) => {
+      return addEquipmentItemMutation.mutateAsync(newItem);
     },
 
-    addEquipmentItem: (newItem: Omit<EquipmentItem, 'id' | 'lastUpdated'>) => {
-      addEquipmentItemMutation.mutate(newItem);
+    // Individual Equipment
+    updateSingleIndividualEquipment: (equipmentId: string, updates: Partial<IndividualEquipment>) => {
+      return updateIndividualEquipmentMutation.mutateAsync({ id: equipmentId, updates });
     },
 
     addIndividualEquipment: (newEquipment: Omit<IndividualEquipment, 'id' | 'lastUpdated'>) => {
-      addIndividualEquipmentMutation.mutate(newEquipment);
+      return addIndividualEquipmentMutation.mutateAsync(newEquipment);
     },
 
     addBulkIndividualEquipment: (equipment: Omit<IndividualEquipment, 'id' | 'lastUpdated'>[]) => {
-      addBulkIndividualEquipmentMutation.mutate(equipment);
+      return addBulkIndividualEquipmentMutation.mutateAsync(equipment);
     },
 
+    // Equipment Types
     createEquipmentType: (newType: Omit<EquipmentType, 'id'>) => {
-      createEquipmentTypeMutation.mutate(newType);
+      return createEquipmentTypeMutation.mutateAsync(newType);
     },
 
     updateEquipmentType: (typeId: string, updates: Partial<EquipmentType>) => {
-      updateEquipmentTypeMutation.mutate({ id: typeId, updates });
+      return updateEquipmentTypeMutation.mutateAsync({ id: typeId, updates });
     },
 
     deleteEquipmentType: (typeId: string) => {
-      deleteEquipmentTypeMutation.mutate(typeId);
+      return deleteEquipmentTypeMutation.mutateAsync(typeId);
     },
 
+    // Storage Locations
     createStorageLocation: (newLocation: Omit<StorageLocation, 'id'>) => {
-      createStorageLocationMutation.mutate(newLocation);
+      return createStorageLocationMutation.mutateAsync(newLocation);
     },
 
     updateStorageLocation: (locationId: string, updates: Partial<StorageLocation>) => {
-      updateStorageLocationMutation.mutate({ id: locationId, updates });
+      return updateStorageLocationMutation.mutateAsync({ id: locationId, updates });
     },
 
     deleteStorageLocation: (locationId: string) => {
-      deleteStorageLocationMutation.mutate(locationId);
+      return deleteStorageLocationMutation.mutateAsync(locationId);
     },
+
+    // Job Integration
+    createJobStorageLocation,
+
+    // Loading states
+    isLoading: updateEquipmentItemMutation.isPending || 
+               updateIndividualEquipmentMutation.isPending ||
+               addEquipmentItemMutation.isPending ||
+               addIndividualEquipmentMutation.isPending ||
+               addBulkIndividualEquipmentMutation.isPending ||
+               createEquipmentTypeMutation.isPending ||
+               updateEquipmentTypeMutation.isPending ||
+               deleteEquipmentTypeMutation.isPending ||
+               createStorageLocationMutation.isPending ||
+               updateStorageLocationMutation.isPending ||
+               deleteStorageLocationMutation.isPending,
   };
 };

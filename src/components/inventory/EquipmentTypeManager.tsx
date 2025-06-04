@@ -14,6 +14,7 @@ const EquipmentTypeManager = () => {
   const [selectedTypeForDetails, setSelectedTypeForDetails] = useState<EquipmentType | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingType, setEditingType] = useState<EquipmentType | null>(null);
+  const [draftCounts, setDraftCounts] = useState<Record<string, number>>({});
   const [formData, setFormData] = useState({
     name: '',
     category: 'other' as EquipmentType['category'],
@@ -32,17 +33,21 @@ const EquipmentTypeManager = () => {
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!formData.name.trim()) {
       return;
     }
 
-    if (editingType) {
-      updateEquipmentType(editingType.id, formData);
-    } else {
-      createEquipmentType(formData);
+    try {
+      if (editingType) {
+        await updateEquipmentType(editingType.id, formData);
+      } else {
+        await createEquipmentType(formData);
+      }
+      resetForm();
+    } catch (error) {
+      console.error('Error saving equipment type:', error);
     }
-    resetForm();
   };
 
   const handleEdit = (type: EquipmentType) => {
@@ -57,7 +62,7 @@ const EquipmentTypeManager = () => {
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (typeId: string) => {
+  const handleDelete = async (typeId: string) => {
     // Check if any equipment items use this type
     const hasItems = data.equipmentItems.some(item => item.typeId === typeId);
     const hasIndividualItems = data.individualEquipment.some(eq => eq.typeId === typeId);
@@ -66,7 +71,11 @@ const EquipmentTypeManager = () => {
       return;
     }
     
-    deleteEquipmentType(typeId);
+    try {
+      await deleteEquipmentType(typeId);
+    } catch (error) {
+      console.error('Error deleting equipment type:', error);
+    }
   };
 
   const resetForm = () => {
@@ -79,6 +88,10 @@ const EquipmentTypeManager = () => {
     });
     setEditingType(null);
     setIsDialogOpen(false);
+  };
+
+  const handleDraftCountChange = (typeId: string, count: number) => {
+    setDraftCounts(prev => ({ ...prev, [typeId]: count }));
   };
 
   const groupedTypes = data.equipmentTypes.reduce((acc, type) => {
@@ -121,6 +134,7 @@ const EquipmentTypeManager = () => {
                 {types.map(type => {
                   const typeItems = data.equipmentItems.filter(item => item.typeId === type.id);
                   const individualItems = data.individualEquipment.filter(eq => eq.typeId === type.id);
+                  const draftCount = draftCounts[type.id] || 0;
 
                   return (
                     <div key={type.id} className="border rounded-lg p-4">
@@ -131,11 +145,18 @@ const EquipmentTypeManager = () => {
                             <p className="text-sm text-gray-600">{type.description}</p>
                           )}
                           <div className="flex items-center gap-4 mt-2">
-                            <Badge variant="outline">
-                              {typeItems.reduce((sum, item) => sum + item.quantity, 0)} bulk items
-                            </Badge>
+                            {!type.requiresIndividualTracking && (
+                              <Badge variant="outline">
+                                {typeItems.reduce((sum, item) => sum + item.quantity, 0)} bulk items
+                              </Badge>
+                            )}
                             <Badge variant="outline">
                               {individualItems.length} individual items
+                              {draftCount > 0 && (
+                                <span className="text-orange-600 ml-1">
+                                  (+{draftCount} pending)
+                                </span>
+                              )}
                             </Badge>
                             {type.requiresIndividualTracking && (
                               <Badge className="bg-blue-100 text-blue-800">
@@ -172,10 +193,11 @@ const EquipmentTypeManager = () => {
                         </div>
                       </div>
 
-                      {selectedTypeForDetails?.id === type.id && type.requiresIndividualTracking && (
+                      {selectedTypeForDetails?.id === type.id && (
                         <IndividualEquipmentManager
                           equipmentType={type}
                           storageLocations={data.storageLocations}
+                          onDraftCountChange={(count) => handleDraftCountChange(type.id, count)}
                         />
                       )}
                     </div>

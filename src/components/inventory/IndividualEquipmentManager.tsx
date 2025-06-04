@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -59,6 +60,9 @@ const IndividualEquipmentManager: React.FC<IndividualEquipmentManagerProps> = ({
   const generateEquipmentName = (prefix: string, id: string) => {
     if (prefix === 'CC') return `Customer Computer ${id.replace('CC', '')}`;
     if (prefix === 'CT') return `Customer Tablet ${id.replace('CT', '')}`;
+    if (prefix === 'SL') return `Starlink ${id.replace('SL', '')}`;
+    if (prefix === 'SS') return `ShearStream Box ${id.replace('SS', '')}`;
+    if (prefix === 'PG') return `Pressure Gauge ${id.replace('PG', '')}`;
     return `${equipmentType.name} ${id}`;
   };
 
@@ -75,7 +79,7 @@ const IndividualEquipmentManager: React.FC<IndividualEquipmentManagerProps> = ({
     return newId;
   };
 
-  const handleSubmit = (saveImmediate = false) => {
+  const handleSubmit = async (saveImmediate = false) => {
     if (!formData.equipmentId.trim() || !formData.name.trim() || !formData.locationId) {
       toast.error('Equipment ID, name, and location are required');
       return;
@@ -90,40 +94,51 @@ const IndividualEquipmentManager: React.FC<IndividualEquipmentManagerProps> = ({
       return;
     }
 
-    if (editingEquipment) {
-      updateSingleIndividualEquipment(editingEquipment.id, {
-        ...formData,
-        typeId: equipmentType.id,
-        status: editingEquipment.status
-      });
-      toast.success('Equipment updated successfully');
-    } else {
-      const newEquipment = {
-        equipmentId: formData.equipmentId,
-        name: formData.name,
-        typeId: equipmentType.id,
-        locationId: formData.locationId,
-        status: 'available' as const,
-        serialNumber: formData.serialNumber,
-        notes: formData.notes
-      };
-
-      if (saveImmediate) {
-        addIndividualEquipment(newEquipment);
+    try {
+      if (editingEquipment) {
+        await updateSingleIndividualEquipment(editingEquipment.id, {
+          ...formData,
+          typeId: equipmentType.id,
+          status: editingEquipment.status
+        });
+        toast.success('Equipment updated successfully');
       } else {
-        setDraftEquipment(prev => [...prev, { ...newEquipment, id: `draft-${Date.now()}` }]);
-        toast.success('Equipment added to drafts (will auto-save in 0.5 seconds)');
-        setTimeout(() => {
-          addIndividualEquipment(newEquipment);
-          setDraftEquipment(prev => prev.filter(draft => draft.equipmentId !== newEquipment.equipmentId));
-        }, 500);
-      }
-    }
+        const newEquipment = {
+          equipmentId: formData.equipmentId,
+          name: formData.name,
+          typeId: equipmentType.id,
+          locationId: formData.locationId,
+          status: 'available' as const,
+          serialNumber: formData.serialNumber,
+          notes: formData.notes
+        };
 
-    resetForm();
+        if (saveImmediate) {
+          await addIndividualEquipment(newEquipment);
+          toast.success('Equipment saved successfully');
+        } else {
+          setDraftEquipment(prev => [...prev, { ...newEquipment, id: `draft-${Date.now()}` }]);
+          toast.success('Equipment added to drafts (will auto-save in 0.5 seconds)');
+          setTimeout(async () => {
+            try {
+              await addIndividualEquipment(newEquipment);
+              setDraftEquipment(prev => prev.filter(draft => draft.equipmentId !== newEquipment.equipmentId));
+            } catch (error) {
+              console.error('Error auto-saving equipment:', error);
+              toast.error('Failed to auto-save equipment');
+            }
+          }, 500);
+        }
+      }
+
+      resetForm();
+    } catch (error) {
+      console.error('Error saving equipment:', error);
+      toast.error('Failed to save equipment');
+    }
   };
 
-  const handleBulkCreate = (saveImmediate = false) => {
+  const handleBulkCreate = async (saveImmediate = false) => {
     if (!bulkCreateData.locationId || bulkCreateData.count <= 0) {
       toast.error('Location and valid count are required');
       return;
@@ -156,24 +171,35 @@ const IndividualEquipmentManager: React.FC<IndividualEquipmentManagerProps> = ({
       });
     }
 
-    if (saveImmediate) {
-      addBulkIndividualEquipment(newEquipment);
-    } else {
-      const drafts = newEquipment.map(eq => ({ ...eq, id: `draft-${Date.now()}-${eq.equipmentId}` }));
-      setDraftEquipment(prev => [...prev, ...drafts]);
-      toast.success(`${bulkCreateData.count} equipment items added to drafts (will auto-save in 0.5 seconds)`);
-      setTimeout(() => {
-        addBulkIndividualEquipment(newEquipment);
-        setDraftEquipment(prev => prev.filter(draft => !newEquipment.some(eq => eq.equipmentId === draft.equipmentId)));
-      }, 500);
+    try {
+      if (saveImmediate) {
+        await addBulkIndividualEquipment(newEquipment);
+        toast.success(`${bulkCreateData.count} equipment items saved successfully`);
+      } else {
+        const drafts = newEquipment.map(eq => ({ ...eq, id: `draft-${Date.now()}-${eq.equipmentId}` }));
+        setDraftEquipment(prev => [...prev, ...drafts]);
+        toast.success(`${bulkCreateData.count} equipment items added to drafts (will auto-save in 0.5 seconds)`);
+        setTimeout(async () => {
+          try {
+            await addBulkIndividualEquipment(newEquipment);
+            setDraftEquipment(prev => prev.filter(draft => !newEquipment.some(eq => eq.equipmentId === draft.equipmentId)));
+          } catch (error) {
+            console.error('Error auto-saving bulk equipment:', error);
+            toast.error('Failed to auto-save bulk equipment');
+          }
+        }, 500);
+      }
+      
+      setIsBulkCreateOpen(false);
+      setBulkCreateData(prev => ({
+        ...prev,
+        startNumber: prev.startNumber + prev.count,
+        count: 5
+      }));
+    } catch (error) {
+      console.error('Error creating bulk equipment:', error);
+      toast.error('Failed to create bulk equipment');
     }
-    
-    setIsBulkCreateOpen(false);
-    setBulkCreateData(prev => ({
-      ...prev,
-      startNumber: prev.startNumber + prev.count,
-      count: 5
-    }));
   };
 
   const handleEdit = (equipment: IndividualEquipment) => {

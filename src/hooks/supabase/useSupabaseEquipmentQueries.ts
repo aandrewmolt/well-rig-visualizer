@@ -3,8 +3,75 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { EquipmentType, StorageLocation, EquipmentItem, IndividualEquipment } from '@/types/inventory';
 
+// Default equipment types with proper individual tracking
+const DEFAULT_EQUIPMENT_TYPES: Omit<EquipmentType, 'id'>[] = [
+  {
+    name: 'Company Computer',
+    category: 'communication',
+    description: 'Customer computers for data collection',
+    requiresIndividualTracking: true,
+    defaultIdPrefix: 'CC'
+  },
+  {
+    name: 'Customer Tablet',
+    category: 'communication', 
+    description: 'Customer tablets for monitoring',
+    requiresIndividualTracking: true,
+    defaultIdPrefix: 'CT'
+  },
+  {
+    name: 'Starlink',
+    category: 'communication',
+    description: 'Satellite communication equipment',
+    requiresIndividualTracking: true,
+    defaultIdPrefix: 'SL'
+  },
+  {
+    name: 'ShearStream Box',
+    category: 'communication',
+    description: 'Main data collection unit',
+    requiresIndividualTracking: true,
+    defaultIdPrefix: 'SS'
+  },
+  {
+    name: '100ft Cable',
+    category: 'cables',
+    description: '100 foot cables',
+    requiresIndividualTracking: false,
+    defaultIdPrefix: 'C100'
+  },
+  {
+    name: '200ft Cable',
+    category: 'cables',
+    description: '200 foot cables',
+    requiresIndividualTracking: false,
+    defaultIdPrefix: 'C200'
+  },
+  {
+    name: '300ft Cable',
+    category: 'cables',
+    description: '300 foot cables',
+    requiresIndividualTracking: false,
+    defaultIdPrefix: 'C300'
+  },
+  {
+    name: '1502 Pressure Gauge',
+    category: 'gauges',
+    description: 'Wellside pressure monitoring gauge',
+    requiresIndividualTracking: true,
+    defaultIdPrefix: 'PG'
+  },
+  {
+    name: 'Y Adapter Cable',
+    category: 'adapters',
+    description: 'Cable splitter adapter',
+    requiresIndividualTracking: false,
+    defaultIdPrefix: 'YA'
+  }
+];
+
 export const useSupabaseEquipmentQueries = () => {
-  // Query for equipment types
+  // Query for equipment types with automatic creation of defaults
   const { data: equipmentTypes = [], isLoading: typesLoading } = useQuery({
     queryKey: ['equipment-types'],
     queryFn: async () => {
@@ -15,7 +82,7 @@ export const useSupabaseEquipmentQueries = () => {
       
       if (error) throw error;
       
-      return data.map(type => ({
+      const existingTypes = data.map(type => ({
         id: type.id,
         name: type.name,
         category: type.category as 'cables' | 'gauges' | 'adapters' | 'communication' | 'other',
@@ -23,6 +90,47 @@ export const useSupabaseEquipmentQueries = () => {
         requiresIndividualTracking: type.requires_individual_tracking,
         defaultIdPrefix: type.default_id_prefix || undefined,
       })) as EquipmentType[];
+
+      // Check if we need to create default types
+      const missingTypes = DEFAULT_EQUIPMENT_TYPES.filter(defaultType => 
+        !existingTypes.some(existing => existing.name === defaultType.name)
+      );
+
+      if (missingTypes.length > 0) {
+        console.log('Creating missing equipment types:', missingTypes);
+        const { error: insertError } = await supabase
+          .from('equipment_types')
+          .insert(missingTypes.map(type => ({
+            name: type.name,
+            category: type.category,
+            description: type.description,
+            requires_individual_tracking: type.requiresIndividualTracking,
+            default_id_prefix: type.defaultIdPrefix,
+          })));
+
+        if (insertError) {
+          console.error('Error creating default equipment types:', insertError);
+        } else {
+          // Refetch to get the complete list with IDs
+          const { data: updatedData, error: refetchError } = await supabase
+            .from('equipment_types')
+            .select('*')
+            .order('category', { ascending: true });
+
+          if (!refetchError && updatedData) {
+            return updatedData.map(type => ({
+              id: type.id,
+              name: type.name,
+              category: type.category as 'cables' | 'gauges' | 'adapters' | 'communication' | 'other',
+              description: type.description || undefined,
+              requiresIndividualTracking: type.requires_individual_tracking,
+              defaultIdPrefix: type.default_id_prefix || undefined,
+            })) as EquipmentType[];
+          }
+        }
+      }
+      
+      return existingTypes;
     }
   });
 

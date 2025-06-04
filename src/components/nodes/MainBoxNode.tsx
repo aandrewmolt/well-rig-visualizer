@@ -42,40 +42,40 @@ const MainBoxNode = ({ data }: { data: any }) => {
   const isAssigned = data.assigned && data.equipmentId;
 
   return (
-    <div className="bg-gray-800 text-white rounded-lg p-4 border-2 border-gray-600 min-w-[250px]">
-      <div className="flex items-center gap-2 mb-3">
-        <Square className="h-5 w-5" />
+    <div className="bg-slate-900 text-white rounded-lg p-4 border-2 border-slate-600 min-w-[280px] shadow-lg">
+      <div className="flex items-center gap-2 mb-4">
+        <Square className="h-5 w-5 text-blue-400" />
         <div>
-          <h3 className="font-bold text-lg">ShearStream Box</h3>
+          <h3 className="font-bold text-lg text-white">ShearStream Box</h3>
           {isAssigned && data.equipmentId && (
-            <p className="text-xs text-green-300">{data.equipmentId}</p>
+            <p className="text-sm text-green-400 font-medium">{data.equipmentId}</p>
           )}
         </div>
       </div>
       
-      {/* COM Port Selection with Baud Rates - Compact layout */}
-      <div className="mb-3 space-y-1">
-        <div className="flex items-center gap-1">
-          <span className="text-xs text-gray-300 w-10">Frac:</span>
+      {/* COM Port Selection with Baud Rates - Improved layout and contrast */}
+      <div className="mb-4 space-y-3">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium text-slate-200 w-12">Frac:</span>
           <Select value={fracDataPort} onValueChange={setFracDataPort}>
-            <SelectTrigger className="h-6 text-xs bg-gray-700 border-gray-600 flex-1">
+            <SelectTrigger className="h-8 text-sm bg-slate-700 border-slate-500 text-white hover:bg-slate-600 flex-1">
               <SelectValue placeholder="COM" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-slate-800 border-slate-600">
               {comPorts.map(port => (
-                <SelectItem key={port.id} value={port.id}>
+                <SelectItem key={port.id} value={port.id} className="text-white hover:bg-slate-700">
                   {port.label}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
           <Select value={fracBaudRate} onValueChange={setFracBaudRate}>
-            <SelectTrigger className="h-6 text-xs bg-gray-700 border-gray-600 w-16">
+            <SelectTrigger className="h-8 text-sm bg-slate-700 border-slate-500 text-white hover:bg-slate-600 w-20">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-slate-800 border-slate-600">
               {baudRates.map(rate => (
-                <SelectItem key={rate.id} value={rate.id}>
+                <SelectItem key={rate.id} value={rate.id} className="text-white hover:bg-slate-700">
                   {rate.label}
                 </SelectItem>
               ))}
@@ -83,27 +83,27 @@ const MainBoxNode = ({ data }: { data: any }) => {
           </Select>
         </div>
         
-        <div className="flex items-center gap-1">
-          <span className="text-xs text-gray-300 w-10">Gauge:</span>
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium text-slate-200 w-12">Gauge:</span>
           <Select value={gaugeDataPort} onValueChange={setGaugeDataPort}>
-            <SelectTrigger className="h-6 text-xs bg-gray-700 border-gray-600 flex-1">
+            <SelectTrigger className="h-8 text-sm bg-slate-700 border-slate-500 text-white hover:bg-slate-600 flex-1">
               <SelectValue placeholder="COM" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-slate-800 border-slate-600">
               {comPorts.map(port => (
-                <SelectItem key={port.id} value={port.id}>
+                <SelectItem key={port.id} value={port.id} className="text-white hover:bg-slate-700">
                   {port.label}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
           <Select value={gaugeBaudRate} onValueChange={setGaugeBaudRate}>
-            <SelectTrigger className="h-6 text-xs bg-gray-700 border-gray-600 w-16">
+            <SelectTrigger className="h-8 text-sm bg-slate-700 border-slate-500 text-white hover:bg-slate-600 w-20">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-slate-800 border-slate-600">
               {baudRates.map(rate => (
-                <SelectItem key={rate.id} value={rate.id}>
+                <SelectItem key={rate.id} value={rate.id} className="text-white hover:bg-slate-700">
                   {rate.label}
                 </SelectItem>
               ))}
@@ -114,10 +114,10 @@ const MainBoxNode = ({ data }: { data: any }) => {
       
       <div className="space-y-2">
         {pressurePorts.map((port, index) => (
-          <div key={port.id} className="flex items-center justify-between bg-gray-700 rounded p-2 relative">
+          <div key={port.id} className="flex items-center justify-between bg-slate-700 rounded-md p-3 relative border border-slate-600">
             <div>
-              <span className="font-semibold">{port.label}</span>
-              <span className="text-xs text-gray-300 ml-2">({port.pressure})</span>
+              <span className="font-semibold text-white text-base">{port.label}</span>
+              <span className="text-sm text-slate-300 ml-2">({port.pressure})</span>
             </div>
             <Handle
               type="source"

@@ -18,8 +18,7 @@ import YAdapterNode from '../nodes/YAdapterNode';
 import CustomerComputerNode from '../nodes/CustomerComputerNode';
 import SatelliteNode from '../nodes/SatelliteNode';
 import WellsideGaugeNode from '../nodes/WellsideGaugeNode';
-import CableEdge from '../edges/CableEdge';
-import DirectEdge from '../edges/DirectEdge';
+import InteractiveCableEdge from '../edges/InteractiveCableEdge';
 
 const nodeTypes = {
   mainBox: MainBoxNode,
@@ -31,10 +30,10 @@ const nodeTypes = {
 };
 
 const edgeTypes = {
-  cable: CableEdge,
-  direct: DirectEdge,
-  smoothstep: DirectEdge, // Use DirectEdge for smoothstep connections
-  default: CableEdge, // Default edge type
+  cable: InteractiveCableEdge,
+  direct: InteractiveCableEdge,
+  smoothstep: InteractiveCableEdge,
+  default: InteractiveCableEdge,
 };
 
 interface DiagramCanvasProps {
@@ -89,7 +88,7 @@ const DiagramCanvas: React.FC<DiagramCanvasProps> = ({
             multiSelectionKeyCode={null} // Simplify selection
             defaultEdgeOptions={{
               style: { strokeWidth: 3, stroke: '#374151' },
-              type: 'smoothstep',
+              type: 'cable',
               animated: false,
             }}
             connectionLineStyle={{ strokeWidth: 3, stroke: '#6366f1' }}

@@ -2,10 +2,32 @@
 import React, { useState } from 'react';
 import { BaseEdge, getBezierPath, EdgeLabelRenderer, useReactFlow } from '@xyflow/react';
 import ConnectionEditorDialog from '../diagram/ConnectionEditorDialog';
-import DirectEdgeLabel from './DirectEdgeLabel';
+import EdgeLabel from './EdgeLabel';
 import { useDirectEdgeLogic } from '@/hooks/edges/useDirectEdgeLogic';
 
-const DirectEdge = ({
+interface DirectEdgeProps {
+  id: string;
+  sourceX: number;
+  sourceY: number;
+  targetX: number;
+  targetY: number;
+  sourcePosition: any;
+  targetPosition: any;
+  style?: React.CSSProperties;
+  markerEnd?: string;
+  selected?: boolean;
+  source: string;
+  target: string;
+  sourceHandle?: string;
+  targetHandle?: string;
+  data?: {
+    connectionType?: string;
+    label?: string;
+    immediateSave?: () => void;
+  };
+}
+
+const DirectEdge: React.FC<DirectEdgeProps> = ({
   id,
   sourceX,
   sourceY,
@@ -21,7 +43,7 @@ const DirectEdge = ({
   sourceHandle,
   targetHandle,
   data,
-}: any) => {
+}) => {
   const { getNodes } = useReactFlow();
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   
@@ -49,6 +71,21 @@ const DirectEdge = ({
     data,
   };
 
+  // Handle edge deletion with immediate save
+  const handleEdgeDelete = () => {
+    console.log('Deleting direct edge:', id);
+    handleDelete();
+    
+    // Trigger immediate save if available
+    if (data?.immediateSave) {
+      console.log('Triggering immediate save after direct edge deletion');
+      setTimeout(() => data.immediateSave!(), 50);
+    }
+  };
+
+  // Get current label
+  const currentLabel = data?.label || 'Direct Connection';
+
   return (
     <>
       <BaseEdge 
@@ -56,19 +93,19 @@ const DirectEdge = ({
         markerEnd={markerEnd} 
         style={{
           ...style,
-          stroke: '#8b5cf6',
-          strokeWidth: selected ? 6 : 4,
+          stroke: '#10b981',
+          strokeWidth: selected ? 6 : 3,
           strokeDasharray: '5,5',
         }} 
       />
       <EdgeLabelRenderer>
-        <DirectEdgeLabel
+        <EdgeLabel
+          label={currentLabel}
+          isInteractive={true}
+          onToggle={handleDirectClick}
+          onDelete={handleEdgeDelete}
           labelX={labelX}
           labelY={labelY}
-          selected={selected}
-          onDirectClick={handleDirectClick}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
         />
       </EdgeLabelRenderer>
 

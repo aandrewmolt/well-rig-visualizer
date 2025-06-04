@@ -25,7 +25,6 @@ import WellsideGaugeNode from '@/components/nodes/WellsideGaugeNode';
 
 // Import edge types
 import InteractiveCableEdge from '@/components/edges/InteractiveCableEdge';
-import DirectEdge from '@/components/edges/DirectEdge';
 
 const nodeTypes = {
   well: WellNode,

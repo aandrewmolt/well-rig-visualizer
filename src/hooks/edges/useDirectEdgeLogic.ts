@@ -1,3 +1,4 @@
+
 import { useReactFlow } from '@xyflow/react';
 import { useInventoryData } from '@/hooks/useInventoryData';
 import { useCableTypeService } from '@/hooks/cables/useCableTypeService';
@@ -13,7 +14,6 @@ export const useDirectEdgeLogic = (id: string) => {
 
   const handleDirectClick = () => {
     const nodes = getNodes();
-    const currentEdge = null; // We'll get this from the edges in setEdges
     
     setEdges((edges) => {
       const edge = edges.find(e => e.id === id);
@@ -77,8 +77,8 @@ export const useDirectEdgeLogic = (id: string) => {
                   label: 'Direct Connection'
                 },
                 style: {
-                  stroke: '#8b5cf6',
-                  strokeWidth: 4,
+                  stroke: '#10b981',
+                  strokeWidth: 3,
                   strokeDasharray: '5,5',
                 },
                 animated: true,
@@ -186,8 +186,8 @@ export const useDirectEdgeLogic = (id: string) => {
                 label: 'Direct Connection'
               },
               style: {
-                stroke: '#8b5cf6',
-                strokeWidth: 4,
+                stroke: '#10b981',
+                strokeWidth: 3,
                 strokeDasharray: '5,5',
               },
               animated: true,

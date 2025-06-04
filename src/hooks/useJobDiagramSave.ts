@@ -45,7 +45,7 @@ export const useJobDiagramSave = ({
   const lastSavedDataRef = useRef<string>('');
   const initialLoadCompleteRef = useRef(false);
 
-  // Save data preparation with enhanced edge validation
+  // Save data preparation with enhanced edge validation and configuration data
   const saveDataMemo = useMemo(() => {
     // Validate and sanitize edges before saving
     const validatedEdges = edges.filter(edge => {
@@ -67,6 +67,30 @@ export const useJobDiagramSave = ({
       style: edge.style || {},
     }));
 
+    // Extract baud rates and COM ports from MainBox nodes
+    const mainBoxNode = nodes.find(node => node.type === 'mainBox');
+    const fracBaudRate = mainBoxNode?.data?.fracBaudRate || '19200';
+    const gaugeBaudRate = mainBoxNode?.data?.gaugeBaudRate || '9600';
+    const fracComPort = mainBoxNode?.data?.fracComPort || '';
+    const gaugeComPort = mainBoxNode?.data?.gaugeComPort || '';
+
+    // Create enhanced config object with all current settings
+    const enhancedConfig = {
+      nodePositions: nodes.map(node => ({
+        id: node.id,
+        position: node.position,
+        data: node.data,
+        style: node.style
+      })),
+      edgeStyles: validatedEdges.map(edge => ({
+        id: edge.id,
+        style: edge.style,
+        data: edge.data
+      })),
+      lastSaved: new Date().toISOString(),
+      version: '1.0'
+    };
+
     return {
       id: job.id,
       name: job.name,
@@ -79,6 +103,11 @@ export const useJobDiagramSave = ({
       wellsideGaugeName,
       customerComputerNames,
       selectedCableType,
+      fracBaudRate,
+      gaugeBaudRate,
+      fracComPort,
+      gaugeComPort,
+      enhancedConfig,
       equipmentAssignment: {
         shearstreamBoxIds: selectedShearstreamBoxes.filter(Boolean),
         starlinkId: selectedStarlink || undefined,
@@ -108,7 +137,7 @@ export const useJobDiagramSave = ({
   const performSave = React.useCallback(() => {
     // Only save if data has actually changed and we're not in the initial load phase
     if (isInitialized && initialLoadCompleteRef.current && currentDataString !== lastSavedDataRef.current) {
-      console.log('Performing save - data has changed');
+      console.log('Performing enhanced save - data has changed');
       lastSavedDataRef.current = currentDataString;
       saveJob(saveDataMemo);
     } else if (!initialLoadCompleteRef.current) {
@@ -118,7 +147,7 @@ export const useJobDiagramSave = ({
     }
   }, [isInitialized, currentDataString, saveJob, saveDataMemo]);
 
-  const { debouncedSave, cleanup } = useDebouncedSave(performSave, 1000); // Increased debounce time
+  const { debouncedSave, cleanup } = useDebouncedSave(performSave, 800); // Slightly faster save for better UX
 
   // Mark initial load as complete after a short delay
   useEffect(() => {
@@ -126,8 +155,8 @@ export const useJobDiagramSave = ({
       const timer = setTimeout(() => {
         initialLoadCompleteRef.current = true;
         lastSavedDataRef.current = currentDataString;
-        console.log('Initial load complete, ready for auto-save');
-      }, 2000); // Wait 2 seconds after initialization to start auto-saving
+        console.log('Initial load complete, ready for enhanced auto-save');
+      }, 1500); // Reduced delay for faster responsiveness
 
       return () => clearTimeout(timer);
     }

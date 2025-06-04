@@ -17,6 +17,11 @@ export interface JobDiagram {
   satelliteName: string;
   wellsideGaugeName: string;
   selectedCableType: string;
+  fracBaudRate: string;
+  gaugeBaudRate: string;
+  fracComPort: string;
+  gaugeComPort: string;
+  enhancedConfig: any;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -49,6 +54,11 @@ export const useSupabaseJobs = () => {
         satelliteName: job.satellite_name,
         wellsideGaugeName: job.wellside_gauge_name,
         selectedCableType: job.selected_cable_type,
+        fracBaudRate: job.frac_baud_rate || '19200',
+        gaugeBaudRate: job.gauge_baud_rate || '9600',
+        fracComPort: job.frac_com_port || '',
+        gaugeComPort: job.gauge_com_port || '',
+        enhancedConfig: job.enhanced_config || {},
         createdAt: new Date(job.created_at),
         updatedAt: new Date(job.updated_at),
       })) as JobDiagram[];
@@ -73,6 +83,11 @@ export const useSupabaseJobs = () => {
           satellite_name: jobData.satelliteName,
           wellside_gauge_name: jobData.wellsideGaugeName,
           selected_cable_type: jobData.selectedCableType,
+          frac_baud_rate: jobData.fracBaudRate,
+          gauge_baud_rate: jobData.gaugeBaudRate,
+          frac_com_port: jobData.fracComPort,
+          gauge_com_port: jobData.gaugeComPort,
+          enhanced_config: jobData.enhancedConfig,
         })
         .select()
         .single();

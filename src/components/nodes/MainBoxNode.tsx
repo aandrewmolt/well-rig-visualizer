@@ -1,14 +1,31 @@
 
-import React, { useState } from 'react';
-import { Handle, Position } from '@xyflow/react';
+import React, { useState, useEffect } from 'react';
+import { Handle, Position, useReactFlow } from '@xyflow/react';
 import { Square } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useSupabaseJobs } from '@/hooks/useSupabaseJobs';
 
-const MainBoxNode = ({ data }: { data: any }) => {
-  const [fracDataPort, setFracDataPort] = useState<string>('');
-  const [gaugeDataPort, setGaugeDataPort] = useState<string>('');
-  const [fracBaudRate, setFracBaudRate] = useState<string>('9600');
-  const [gaugeBaudRate, setGaugeBaudRate] = useState<string>('9600');
+const MainBoxNode = ({ id, data }: { id: string; data: any }) => {
+  const { getNodes } = useReactFlow();
+  const { saveJob } = useSupabaseJobs();
+  const [fracDataPort, setFracDataPort] = useState<string>(data.fracComPort || '');
+  const [gaugeDataPort, setGaugeDataPort] = useState<string>(data.gaugeComPort || '');
+  const [fracBaudRate, setFracBaudRate] = useState<string>(data.fracBaudRate || '19200');
+  const [gaugeBaudRate, setGaugeBaudRate] = useState<string>(data.gaugeBaudRate || '9600');
+
+  // Save settings whenever they change
+  useEffect(() => {
+    if (data.jobId) {
+      const jobData = {
+        id: data.jobId,
+        fracComPort: fracDataPort,
+        gaugeComPort: gaugeDataPort,
+        fracBaudRate,
+        gaugeBaudRate,
+      };
+      saveJob(jobData);
+    }
+  }, [fracDataPort, gaugeDataPort, fracBaudRate, gaugeBaudRate, data.jobId, saveJob]);
 
   // Available COM ports for selection
   const comPorts = [

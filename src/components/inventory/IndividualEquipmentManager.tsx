@@ -23,6 +23,11 @@ const IndividualEquipmentManager: React.FC<IndividualEquipmentManagerProps> = ({
 }) => {
   const { data, addIndividualEquipment, isLoading } = useSupabaseInventory();
   
+  // Create a wrapper function that converts Promise<data> to Promise<void>
+  const addEquipmentWrapper = async (equipment: any): Promise<void> => {
+    await addIndividualEquipment(equipment);
+  };
+  
   const {
     isFormOpen,
     setIsFormOpen,
@@ -35,7 +40,7 @@ const IndividualEquipmentManager: React.FC<IndividualEquipmentManagerProps> = ({
   } = useIndividualEquipmentLogic(
     equipmentType,
     storageLocations,
-    addIndividualEquipment,
+    addEquipmentWrapper,
     onDraftCountChange
   );
 

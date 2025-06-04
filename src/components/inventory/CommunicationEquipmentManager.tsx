@@ -17,9 +17,12 @@ const CommunicationEquipmentManager: React.FC = () => {
     draftEquipment,
     addDraftEquipment,
     addBulkDraftEquipment,
-  } = useDraftEquipmentManager(data.individualEquipment, (equipment) => {
-    updateIndividualEquipment(equipment);
-  });
+  } = useDraftEquipmentManager(
+    data.individualEquipment, 
+    (equipment) => {
+      updateIndividualEquipment(equipment);
+    }
+  );
 
   const getEquipmentForType = (typeId: string) => {
     const existing = data.individualEquipment.filter(eq => eq.typeId === typeId);

@@ -18,12 +18,11 @@ export const useCableTypeService = (equipmentTypes: EquipmentType[]) => {
     const id = cableType.id;
     const name = cableType.name.toLowerCase();
     
-    // Handle specific cable type IDs
+    // Handle specific cable type IDs - removed generic 300ft-cable
     if (id === '100ft-cable') return '#ef4444'; // Red
     if (id === '200ft-cable') return '#3b82f6'; // Blue  
     if (id === '300ft-cable-old') return '#f59e0b'; // Orange for old 300ft
     if (id === '300ft-cable-new') return '#10b981'; // Green for new 300ft
-    if (id === '300ft-cable') return '#8b5cf6'; // Purple for generic 300ft
     
     // Fallback to name-based detection
     if (name.includes('100ft')) return '#ef4444'; // Red
@@ -35,7 +34,7 @@ export const useCableTypeService = (equipmentTypes: EquipmentType[]) => {
       if (name.includes('new') || name.includes('direct') || (name.includes('reel') && name.includes('new'))) {
         return '#10b981'; // Green for new 300ft
       }
-      return '#8b5cf6'; // Purple for generic 300ft
+      // No more fallback to purple for generic 300ft since we removed it
     }
     
     return '#6b7280'; // Gray for unknown

@@ -22,7 +22,7 @@ export const useCableConnectionValidator = () => {
         const id = cableType.id;
         const name = cableType.name.toLowerCase();
         
-        // Handle specific cable type IDs
+        // Handle specific cable type IDs - removed generic 300ft-cable
         if (id === '100ft-cable') {
           return {
             cableTypeId: cableType.id,

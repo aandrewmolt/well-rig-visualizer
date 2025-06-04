@@ -10,7 +10,7 @@ export const useEquipmentMigration = () => {
 
   const migrateEquipmentNaming = useCallback(async () => {
     try {
-      console.log('Starting AGGRESSIVE equipment naming migration...');
+      console.log('Starting equipment ID padding migration...');
       
       const updates = [];
       
@@ -51,7 +51,7 @@ export const useEquipmentMigration = () => {
           needsUpdate = true;
         }
 
-        // STEP 2: AGGRESSIVE name fixing - look for ANY old naming patterns
+        // STEP 2: Update names to match new IDs
         const oldNamePatterns = [
           'Alpha', 'Beta', 'Gamma', 'Delta', 'Echo', 'Foxtrot', 'Golf', 'Hotel',
           'Unit', 'Terminal', 'Field', 'Laptop', 'Dell', 'Lenovo', 'HP', 'Computer',
@@ -126,7 +126,7 @@ export const useEquipmentMigration = () => {
       }
 
       if (updates.length > 0) {
-        console.log(`Updating ${updates.length} equipment items...`);
+        console.log(`Updating ${updates.length} equipment items with correct padding...`);
         console.log('Updates:', updates);
         
         // Update each equipment item
@@ -138,16 +138,16 @@ export const useEquipmentMigration = () => {
           });
         }
 
-        toast.success(`Updated ${updates.length} equipment items with correct naming and IDs`);
-        console.log('Equipment migration completed successfully');
+        toast.success(`Updated ${updates.length} equipment items with correct ID padding`);
+        console.log('Equipment ID padding migration completed successfully');
       } else {
-        toast.info('No equipment items needed migration');
-        console.log('No equipment items needed migration');
+        toast.info('No equipment items needed ID padding updates');
+        console.log('No equipment items needed ID padding updates');
       }
 
     } catch (error) {
-      console.error('Failed to migrate equipment naming:', error);
-      toast.error('Failed to migrate equipment naming');
+      console.error('Failed to migrate equipment ID padding:', error);
+      toast.error('Failed to migrate equipment ID padding');
     }
   }, [data.individualEquipment, data.equipmentTypes, updateIndividualEquipment]);
 

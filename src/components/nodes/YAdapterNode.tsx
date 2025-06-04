@@ -5,13 +5,13 @@ import { Square, RotateCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const YAdapterNode = ({ data }: { data: any }) => {
-  const [topPortNumbers, setTopPortNumbers] = useState<string>(data.topPortNumbers || '1,2');
-  const [bottomPortNumbers, setBottomPortNumbers] = useState<string>(data.bottomPortNumbers || '3,4');
+  const [topPortNumber, setTopPortNumber] = useState<string>(data.topPortNumber || '1');
+  const [bottomPortNumber, setBottomPortNumber] = useState<string>(data.bottomPortNumber || '2');
 
   const swapPortNumbers = () => {
-    const tempTop = topPortNumbers;
-    setTopPortNumbers(bottomPortNumbers);
-    setBottomPortNumbers(tempTop);
+    const tempTop = topPortNumber;
+    setTopPortNumber(bottomPortNumber);
+    setBottomPortNumber(tempTop);
   };
 
   return (
@@ -59,16 +59,16 @@ const YAdapterNode = ({ data }: { data: any }) => {
         }}
       />
       <div
-        className="absolute text-sm font-bold"
+        className="absolute text-lg font-bold"
         style={{
-          right: -35,
+          right: -25,
           top: '25%',
           transform: 'translateY(-50%)',
           color: '#374151',
-          fontSize: '14px'
+          fontSize: '18px'
         }}
       >
-        {topPortNumbers}
+        {topPortNumber}
       </div>
       
       {/* Output 2 - Bottom port */}
@@ -86,16 +86,16 @@ const YAdapterNode = ({ data }: { data: any }) => {
         }}
       />
       <div
-        className="absolute text-sm font-bold"
+        className="absolute text-lg font-bold"
         style={{
-          right: -35,
+          right: -25,
           top: '65%',
           transform: 'translateY(-50%)',
           color: '#374151',
-          fontSize: '14px'
+          fontSize: '18px'
         }}
       >
-        {bottomPortNumbers}
+        {bottomPortNumber}
       </div>
       
       {/* Connection capability indicator */}

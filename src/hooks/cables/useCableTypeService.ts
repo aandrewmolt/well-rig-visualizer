@@ -15,16 +15,29 @@ export const useCableTypeService = (equipmentTypes: EquipmentType[]) => {
     const cableType = getCableTypeById(cableTypeId);
     if (!cableType) return '#6b7280'; // Default gray
     
+    const id = cableType.id;
     const name = cableType.name.toLowerCase();
+    
+    // Handle specific cable type IDs
+    if (id === '100ft-cable') return '#ef4444'; // Red
+    if (id === '200ft-cable') return '#3b82f6'; // Blue  
+    if (id === '300ft-cable-old') return '#f59e0b'; // Orange for old 300ft
+    if (id === '300ft-cable-new') return '#10b981'; // Green for new 300ft
+    if (id === '300ft-cable') return '#8b5cf6'; // Purple for generic 300ft
+    
+    // Fallback to name-based detection
     if (name.includes('100ft')) return '#ef4444'; // Red
     if (name.includes('200ft')) return '#3b82f6'; // Blue  
     if (name.includes('300ft')) {
-      // Different colors for old vs new 300ft
-      if (name.includes('old') || name.includes('y adapter') || (name.includes('reel') && !name.includes('new'))) {
+      if (name.includes('old') || name.includes('y adapter') || (name.includes('reel') && name.includes('old'))) {
         return '#f59e0b'; // Orange for old 300ft
       }
-      return '#10b981'; // Green for new 300ft
+      if (name.includes('new') || name.includes('direct') || (name.includes('reel') && name.includes('new'))) {
+        return '#10b981'; // Green for new 300ft
+      }
+      return '#8b5cf6'; // Purple for generic 300ft
     }
+    
     return '#6b7280'; // Gray for unknown
   };
 
@@ -37,7 +50,7 @@ export const useCableTypeService = (equipmentTypes: EquipmentType[]) => {
     // Prefer 200ft cable as default
     const cable200ft = equipmentTypes.find(type => 
       type.category === 'cables' && 
-      type.name.toLowerCase().includes('200ft')
+      type.id === '200ft-cable'
     );
     
     if (cable200ft) return cable200ft.id;
@@ -51,10 +64,13 @@ export const useCableTypeService = (equipmentTypes: EquipmentType[]) => {
     const cableType = getCableTypeById(cableTypeId);
     if (!cableType) return '200ft';
     
+    const id = cableType.id;
     const name = cableType.name.toLowerCase();
-    if (name.includes('100ft')) return '100ft';
-    if (name.includes('200ft')) return '200ft';
-    if (name.includes('300ft')) return '300ft';
+    
+    if (id === '100ft-cable' || name.includes('100ft')) return '100ft';
+    if (id === '200ft-cable' || name.includes('200ft')) return '200ft';
+    if (id.includes('300ft') || name.includes('300ft')) return '300ft';
+    
     return '200ft';
   };
 
@@ -62,12 +78,17 @@ export const useCableTypeService = (equipmentTypes: EquipmentType[]) => {
     const cableType = getCableTypeById(cableTypeId);
     if (!cableType) return undefined;
     
+    const id = cableType.id;
     const name = cableType.name.toLowerCase();
+    
+    if (id === '300ft-cable-old') return 'old';
+    if (id === '300ft-cable-new') return 'new';
+    
     if (name.includes('300ft')) {
-      if (name.includes('old') || name.includes('y adapter') || (name.includes('reel') && !name.includes('new'))) {
+      if (name.includes('old') || name.includes('y adapter') || (name.includes('reel') && name.includes('old'))) {
         return 'old';
       }
-      if (name.includes('new') || name.includes('direct')) {
+      if (name.includes('new') || name.includes('direct') || (name.includes('reel') && name.includes('new'))) {
         return 'new';
       }
     }

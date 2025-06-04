@@ -8,9 +8,11 @@ export const DEFAULT_EQUIPMENT_TYPES: EquipmentType[] = [
   { id: 'customer-computer', name: 'Customer Computer', category: 'communication', description: 'Client workstation', requiresIndividualTracking: false },
   { id: 'customer-tablet', name: 'Customer Tablet', category: 'communication', description: 'Portable client device', requiresIndividualTracking: false },
   
-  // Cables - Updated to include 100ft and 200ft
+  // Cables - Enhanced with separate old and new 300ft types
   { id: '100ft-cable', name: '100ft Cable', category: 'cables', description: '100 foot data cable', requiresIndividualTracking: false },
   { id: '200ft-cable', name: '200ft Cable', category: 'cables', description: '200 foot data cable', requiresIndividualTracking: false },
+  { id: '300ft-cable-old', name: '300ft Cable/Reel (Old)', category: 'cables', description: '300 foot data cable for Y-adapter connections', requiresIndividualTracking: false },
+  { id: '300ft-cable-new', name: '300ft Cable/Reel (New)', category: 'cables', description: '300 foot data cable for direct connections', requiresIndividualTracking: false },
   { id: '300ft-cable', name: '300ft Cable', category: 'cables', description: '300 foot data cable', requiresIndividualTracking: false },
   
   // Adapters
@@ -44,13 +46,17 @@ export const useInventoryDefaults = () => {
     // Customer Tablets
     { id: 'ct001', typeId: 'customer-tablet', locationId: 'warehouse', quantity: 4, status: 'available', lastUpdated: new Date() },
     
-    // Cables - Enhanced with 100ft and 200ft
+    // Cables - Enhanced with old and new 300ft variants
     { id: 'c100-001', typeId: '100ft-cable', locationId: 'warehouse', quantity: 15, status: 'available', lastUpdated: new Date() },
     { id: 'c100-002', typeId: '100ft-cable', locationId: 'field-trailer', quantity: 8, status: 'available', lastUpdated: new Date() },
     { id: 'c200-001', typeId: '200ft-cable', locationId: 'warehouse', quantity: 12, status: 'available', lastUpdated: new Date() },
     { id: 'c200-002', typeId: '200ft-cable', locationId: 'field-trailer', quantity: 6, status: 'available', lastUpdated: new Date() },
     { id: 'c300-001', typeId: '300ft-cable', locationId: 'warehouse', quantity: 8, status: 'available', lastUpdated: new Date() },
     { id: 'c300-002', typeId: '300ft-cable', locationId: 'field-trailer', quantity: 4, status: 'available', lastUpdated: new Date() },
+    { id: 'c300old-001', typeId: '300ft-cable-old', locationId: 'warehouse', quantity: 6, status: 'available', lastUpdated: new Date() },
+    { id: 'c300old-002', typeId: '300ft-cable-old', locationId: 'field-trailer', quantity: 3, status: 'available', lastUpdated: new Date() },
+    { id: 'c300new-001', typeId: '300ft-cable-new', locationId: 'warehouse', quantity: 5, status: 'available', lastUpdated: new Date() },
+    { id: 'c300new-002', typeId: '300ft-cable-new', locationId: 'field-trailer', quantity: 2, status: 'available', lastUpdated: new Date() },
     
     // Y Adapters
     { id: 'ya001', typeId: 'y-adapter', locationId: 'warehouse', quantity: 10, status: 'available', lastUpdated: new Date() },

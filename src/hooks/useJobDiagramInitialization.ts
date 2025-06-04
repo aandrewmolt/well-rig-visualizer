@@ -129,7 +129,7 @@ export const useJobDiagramInitialization = ({
       setSatelliteName(jobData.satelliteName || 'Starlink');
       setWellsideGaugeName(jobData.wellsideGaugeName || 'Wellside Gauge');
       // Support both old and new property names for backward compatibility
-      setCustomerComputerNames(jobData.customerComputerNames || jobData.companyComputerNames || {});
+      setCustomerComputerNames(jobData.customerComputerNames || jobData.company_computer_names || {});
       
       // Fix: Load selected cable type with fallback
       if (jobData.selectedCableType) {
@@ -142,11 +142,11 @@ export const useJobDiagramInitialization = ({
         setSelectedShearstreamBoxes(assignment.shearstreamBoxIds || []);
         setSelectedStarlink(assignment.starlinkId || '');
         // Support migration from old companyComputerIds to new customerComputerIds
-        setSelectedCustomerComputers(assignment.customerComputerIds || assignment.companyComputerIds || []);
+        setSelectedCustomerComputers(assignment.customerComputerIds || assignment.company_computer_ids || []);
         setEquipmentAssignment({
           shearstreamBoxIds: assignment.shearstreamBoxIds || [],
           starlinkId: assignment.starlinkId,
-          customerComputerIds: assignment.customerComputerIds || assignment.companyComputerIds || []
+          customerComputerIds: assignment.customerComputerIds || assignment.company_computer_ids || []
         });
       }
       

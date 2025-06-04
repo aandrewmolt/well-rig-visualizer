@@ -2,7 +2,7 @@
 export interface EquipmentType {
   id: string;
   name: string;
-  category: 'cables' | 'gauges' | 'adapters' | 'communication' | 'other';
+  category: 'cables' | 'gauges' | 'adapters' | 'communication' | 'power' | 'other';
   description?: string;
   requiresIndividualTracking: boolean;
   defaultIdPrefix?: string;
@@ -25,6 +25,7 @@ export interface EquipmentItem {
   notes?: string;
   redTagReason?: string;
   redTagPhoto?: string;
+  location_type?: string;
   lastUpdated: Date;
 }
 
@@ -42,6 +43,7 @@ export interface IndividualEquipment {
   notes?: string;
   redTagReason?: string;
   redTagPhoto?: string;
+  location_type?: string;
   lastUpdated: Date;
 }
 

@@ -77,8 +77,25 @@ export const useSupabaseInventory = () => {
     deleteEquipmentItem,
     deleteEquipmentType,
     
-    // All mutation operations
+    // All mutation operations with proper aliases
     ...mutations,
+    createEquipmentType: mutations.addEquipmentType,
+    createStorageLocation: mutations.addStorageLocation,
+    addIndividualEquipment: mutations.addIndividualEquipment,
+    updateSingleIndividualEquipment: mutations.updateIndividualEquipment,
+    
+    // Bulk operations
+    addBulkIndividualEquipment: async (equipment: any[]) => {
+      try {
+        const results = await Promise.all(
+          equipment.map(eq => mutations.addIndividualEquipment(eq))
+        );
+        return results;
+      } catch (error) {
+        console.error('Failed to add bulk individual equipment:', error);
+        throw error;
+      }
+    },
 
     // Utilities
     ...utils,

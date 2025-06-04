@@ -8,17 +8,25 @@ const MainBoxNode = ({ data }: { data: any }) => {
   const [fracDataPort, setFracDataPort] = useState<string>('');
   const [gaugeDataPort, setGaugeDataPort] = useState<string>('');
 
-  const ports = [
-    { id: 'p1', label: 'P1', coms: 'Pressure1,2' },
-    { id: 'p2', label: 'P2', coms: 'Pressure3,4' },
-    { id: 'p3', label: 'P3', coms: 'Pressure5,6' },
-    { id: 'p4', label: 'P4', coms: 'Pressure7,8' },
+  // Available COM ports for selection
+  const comPorts = [
+    { id: 'com1', label: 'COM1' },
+    { id: 'com2', label: 'COM2' },
+    { id: 'com3', label: 'COM3' },
+    { id: 'com4', label: 'COM4' },
+    { id: 'com5', label: 'COM5' },
+    { id: 'com6', label: 'COM6' },
+    { id: 'com7', label: 'COM7' },
+    { id: 'com8', label: 'COM8' },
   ];
 
-  const portOptions = ports.map(port => ({
-    value: port.id,
-    label: `${port.label} (${port.coms})`
-  }));
+  // These pressure ports all come from the selected gauge COM port
+  const pressurePorts = [
+    { id: 'p1', label: 'P1', pressure: 'Pressure1,2' },
+    { id: 'p2', label: 'P2', pressure: 'Pressure3,4' },
+    { id: 'p3', label: 'P3', pressure: 'Pressure5,6' },
+    { id: 'p4', label: 'P4', pressure: 'Pressure7,8' },
+  ];
 
   const isAssigned = data.assigned && data.equipmentId;
 
@@ -43,9 +51,9 @@ const MainBoxNode = ({ data }: { data: any }) => {
               <SelectValue placeholder="Select" />
             </SelectTrigger>
             <SelectContent>
-              {portOptions.map(option => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
+              {comPorts.map(port => (
+                <SelectItem key={port.id} value={port.id}>
+                  {port.label}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -59,9 +67,9 @@ const MainBoxNode = ({ data }: { data: any }) => {
               <SelectValue placeholder="Select" />
             </SelectTrigger>
             <SelectContent>
-              {portOptions.map(option => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
+              {comPorts.map(port => (
+                <SelectItem key={port.id} value={port.id}>
+                  {port.label}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -70,11 +78,11 @@ const MainBoxNode = ({ data }: { data: any }) => {
       </div>
       
       <div className="space-y-2">
-        {ports.map((port, index) => (
+        {pressurePorts.map((port, index) => (
           <div key={port.id} className="flex items-center justify-between bg-gray-700 rounded p-2 relative">
             <div>
               <span className="font-semibold">{port.label}</span>
-              <span className="text-xs text-gray-300 ml-2">({port.coms})</span>
+              <span className="text-xs text-gray-300 ml-2">({port.pressure})</span>
             </div>
             <Handle
               type="source"

@@ -19,9 +19,16 @@ export const useEquipmentDeletion = ({
 }: UseEquipmentDeletionProps) => {
 
   const canDeleteEquipmentType = (typeId: string): { canDelete: boolean; reason?: string; details?: string[] } => {
+    console.log('Checking if equipment type can be deleted:', typeId);
+    console.log('Available equipment items:', equipmentItems.length);
+    console.log('Available individual equipment:', individualEquipment.length);
+    
     // Check if any equipment items use this type
     const relatedEquipmentItems = equipmentItems.filter(item => item.typeId === typeId);
     const relatedIndividualEquipment = individualEquipment.filter(item => item.typeId === typeId);
+    
+    console.log('Related equipment items found:', relatedEquipmentItems.length);
+    console.log('Related individual equipment found:', relatedIndividualEquipment.length);
     
     const details: string[] = [];
     
@@ -35,6 +42,7 @@ export const useEquipmentDeletion = ({
     }
     
     if (details.length > 0) {
+      console.log('Cannot delete - dependencies found:', details);
       return { 
         canDelete: false, 
         reason: 'Cannot delete equipment type that still has equipment assigned to it.',
@@ -42,6 +50,7 @@ export const useEquipmentDeletion = ({
       };
     }
 
+    console.log('Equipment type can be deleted - no dependencies found');
     return { canDelete: true };
   };
 
@@ -63,14 +72,17 @@ export const useEquipmentDeletion = ({
   };
 
   const handleDeleteEquipmentType = async (typeId: string, typeName: string) => {
+    console.log('Attempting to delete equipment type:', typeName, typeId);
+    
     const { canDelete, reason, details } = canDeleteEquipmentType(typeId);
     
     if (!canDelete) {
-      let detailMessage = reason;
+      let detailMessage = reason || 'Cannot delete this equipment type.';
       if (details && details.length > 0) {
-        detailMessage += '\n\nRelated items:\n• ' + details.join('\n• ');
-        detailMessage += '\n\nTo delete this equipment type, you must first remove or reassign all related equipment.';
+        detailMessage += '\n\nBlocking items:\n• ' + details.join('\n• ');
+        detailMessage += '\n\nTo delete this equipment type, you must first remove or reassign all related equipment from the Inventory tab.';
       }
+      console.log('Delete blocked:', detailMessage);
       toast.error(detailMessage);
       return false;
     }
@@ -79,9 +91,13 @@ export const useEquipmentDeletion = ({
       `Are you sure you want to delete the equipment type "${typeName}"? This action cannot be undone.`
     );
 
-    if (!confirmed) return false;
+    if (!confirmed) {
+      console.log('Delete cancelled by user');
+      return false;
+    }
 
     try {
+      console.log('Proceeding with equipment type deletion');
       await deleteEquipmentType(typeId);
       toast.success(`Equipment type "${typeName}" deleted successfully`);
       return true;

@@ -10,10 +10,9 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, Edit, Trash, MapPin } from 'lucide-react';
 import { useSupabaseInventory } from '@/hooks/useSupabaseInventory';
 import { StorageLocation } from '@/types/inventory';
-import { toast } from 'sonner';
 
 const StorageLocationManager = () => {
-  const { data } = useSupabaseInventory();
+  const { data, createStorageLocation, updateStorageLocation, deleteStorageLocation } = useSupabaseInventory();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingLocation, setEditingLocation] = useState<StorageLocation | null>(null);
   const [formData, setFormData] = useState({
@@ -24,13 +23,14 @@ const StorageLocationManager = () => {
 
   const handleSubmit = () => {
     if (!formData.name.trim()) {
-      toast.error('Location name is required');
       return;
     }
 
-    // TODO: Implement create/update storage location
-    console.log('Creating/updating storage location:', formData);
-    toast.success(editingLocation ? 'Storage location updated' : 'Storage location created');
+    if (editingLocation) {
+      updateStorageLocation(editingLocation.id, formData);
+    } else {
+      createStorageLocation(formData);
+    }
     resetForm();
   };
 
@@ -45,9 +45,15 @@ const StorageLocationManager = () => {
   };
 
   const handleDelete = (locationId: string) => {
-    // TODO: Implement delete storage location
-    console.log('Deleting storage location:', locationId);
-    toast.success('Storage location deleted');
+    // Check if any equipment is at this location
+    const hasEquipment = data.equipmentItems.some(item => item.locationId === locationId) ||
+                         data.individualEquipment.some(eq => eq.locationId === locationId);
+    
+    if (hasEquipment) {
+      return;
+    }
+    
+    deleteStorageLocation(locationId);
   };
 
   const resetForm = () => {

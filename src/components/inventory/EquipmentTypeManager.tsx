@@ -2,20 +2,15 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Edit, Trash, Package } from 'lucide-react';
+import { Package } from 'lucide-react';
 import { useSupabaseInventory } from '@/hooks/useSupabaseInventory';
-import IndividualEquipmentManager from './IndividualEquipmentManager';
 import { EquipmentType } from '@/types/inventory';
-import { toast } from 'sonner';
+import EquipmentTypeForm from './EquipmentTypeForm';
+import IndividualEquipmentManager from './IndividualEquipmentManager';
 
 const EquipmentTypeManager = () => {
-  const { data } = useSupabaseInventory();
+  const { data, createEquipmentType, updateEquipmentType, deleteEquipmentType } = useSupabaseInventory();
   const [selectedTypeForDetails, setSelectedTypeForDetails] = useState<EquipmentType | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingType, setEditingType] = useState<EquipmentType | null>(null);
@@ -39,13 +34,14 @@ const EquipmentTypeManager = () => {
 
   const handleSubmit = () => {
     if (!formData.name.trim()) {
-      toast.error('Equipment name is required');
       return;
     }
 
-    // TODO: Implement create/update equipment type
-    console.log('Creating/updating equipment type:', formData);
-    toast.success(editingType ? 'Equipment type updated' : 'Equipment type created');
+    if (editingType) {
+      updateEquipmentType(editingType.id, formData);
+    } else {
+      createEquipmentType(formData);
+    }
     resetForm();
   };
 
@@ -62,9 +58,15 @@ const EquipmentTypeManager = () => {
   };
 
   const handleDelete = (typeId: string) => {
-    // TODO: Implement delete equipment type
-    console.log('Deleting equipment type:', typeId);
-    toast.success('Equipment type deleted');
+    // Check if any equipment items use this type
+    const hasItems = data.equipmentItems.some(item => item.typeId === typeId);
+    const hasIndividualItems = data.individualEquipment.some(eq => eq.typeId === typeId);
+    
+    if (hasItems || hasIndividualItems) {
+      return;
+    }
+    
+    deleteEquipmentType(typeId);
   };
 
   const resetForm = () => {
@@ -91,93 +93,16 @@ const EquipmentTypeManager = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">Equipment Types</h2>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={() => setEditingType(null)}>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Equipment Type
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>
-                {editingType ? 'Edit Equipment Type' : 'Add Equipment Type'}
-              </DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="name">Equipment Name</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="Enter equipment name..."
-                />
-              </div>
-              <div>
-                <Label htmlFor="category">Category</Label>
-                <Select value={formData.category} onValueChange={(value: any) => setFormData({ ...formData, category: value })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="cables">Cables</SelectItem>
-                    <SelectItem value="gauges">Gauges</SelectItem>
-                    <SelectItem value="adapters">Adapters</SelectItem>
-                    <SelectItem value="communication">Communication</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="description">Description (Optional)</Label>
-                <Input
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Enter description..."
-                />
-              </div>
-              <div className="space-y-3">
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="individual-tracking"
-                    checked={formData.requiresIndividualTracking}
-                    onCheckedChange={(checked) => setFormData({ ...formData, requiresIndividualTracking: checked })}
-                  />
-                  <Label htmlFor="individual-tracking" className="text-sm font-medium">
-                    Requires Individual Tracking
-                  </Label>
-                </div>
-                <p className="text-xs text-gray-600">
-                  Enable this for equipment that needs individual IDs/names (e.g., SS-001, SL-002)
-                </p>
-                {formData.requiresIndividualTracking && (
-                  <div>
-                    <Label htmlFor="prefix">Default ID Prefix</Label>
-                    <Input
-                      id="prefix"
-                      value={formData.defaultIdPrefix}
-                      onChange={(e) => setFormData({ ...formData, defaultIdPrefix: e.target.value })}
-                      placeholder="e.g., SS-, SL-, CC-"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      This will be used to auto-generate IDs like {formData.defaultIdPrefix}001
-                    </p>
-                  </div>
-                )}
-              </div>
-              <div className="flex space-x-2">
-                <Button onClick={handleSubmit} className="flex-1">
-                  {editingType ? 'Update' : 'Add'}
-                </Button>
-                <Button onClick={resetForm} variant="outline" className="flex-1">
-                  Cancel
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <EquipmentTypeForm
+          isDialogOpen={isDialogOpen}
+          setIsDialogOpen={setIsDialogOpen}
+          editingType={editingType}
+          setEditingType={setEditingType}
+          formData={formData}
+          setFormData={setFormData}
+          onSubmit={handleSubmit}
+          onReset={resetForm}
+        />
       </div>
 
       <div className="space-y-6">
@@ -225,7 +150,7 @@ const EquipmentTypeManager = () => {
                             size="sm"
                             variant="outline"
                           >
-                            <Edit className="h-4 w-4" />
+                            Edit
                           </Button>
                           <Button
                             onClick={() => handleDelete(type.id)}
@@ -233,7 +158,7 @@ const EquipmentTypeManager = () => {
                             variant="outline"
                             className="text-red-600 hover:text-red-700"
                           >
-                            <Trash className="h-4 w-4" />
+                            Delete
                           </Button>
                           <Button
                             onClick={() => setSelectedTypeForDetails(

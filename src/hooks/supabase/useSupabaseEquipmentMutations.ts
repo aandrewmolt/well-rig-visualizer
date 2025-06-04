@@ -2,7 +2,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { EquipmentItem, IndividualEquipment, StorageLocation } from '@/types/inventory';
+import { EquipmentItem, IndividualEquipment, StorageLocation, EquipmentType } from '@/types/inventory';
 
 export const useSupabaseEquipmentMutations = () => {
   const queryClient = useQueryClient();
@@ -125,6 +125,103 @@ export const useSupabaseEquipmentMutations = () => {
     }
   });
 
+  const addBulkIndividualEquipmentMutation = useMutation({
+    mutationFn: async (equipment: Omit<IndividualEquipment, 'id' | 'lastUpdated'>[]) => {
+      const { error } = await supabase
+        .from('individual_equipment')
+        .insert(equipment.map(eq => ({
+          equipment_id: eq.equipmentId,
+          name: eq.name,
+          type_id: eq.typeId,
+          location_id: eq.locationId,
+          status: eq.status,
+          job_id: eq.jobId,
+          serial_number: eq.serialNumber,
+          purchase_date: eq.purchaseDate?.toISOString().split('T')[0],
+          warranty_expiry: eq.warrantyExpiry?.toISOString().split('T')[0],
+          notes: eq.notes,
+        })));
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['individual-equipment'] });
+      toast.success('Bulk equipment added successfully');
+    },
+    onError: (error) => {
+      console.error('Failed to add bulk equipment:', error);
+      toast.error('Failed to add bulk equipment');
+    }
+  });
+
+  const createEquipmentTypeMutation = useMutation({
+    mutationFn: async (newType: Omit<EquipmentType, 'id'>) => {
+      const { error } = await supabase
+        .from('equipment_types')
+        .insert({
+          name: newType.name,
+          category: newType.category,
+          description: newType.description,
+          requires_individual_tracking: newType.requiresIndividualTracking,
+          default_id_prefix: newType.defaultIdPrefix,
+        });
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['equipment-types'] });
+      toast.success('Equipment type created successfully');
+    },
+    onError: (error) => {
+      console.error('Failed to create equipment type:', error);
+      toast.error('Failed to create equipment type');
+    }
+  });
+
+  const updateEquipmentTypeMutation = useMutation({
+    mutationFn: async ({ id, updates }: { id: string; updates: Partial<EquipmentType> }) => {
+      const { error } = await supabase
+        .from('equipment_types')
+        .update({
+          name: updates.name,
+          category: updates.category,
+          description: updates.description,
+          requires_individual_tracking: updates.requiresIndividualTracking,
+          default_id_prefix: updates.defaultIdPrefix,
+        })
+        .eq('id', id);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['equipment-types'] });
+      toast.success('Equipment type updated successfully');
+    },
+    onError: (error) => {
+      console.error('Failed to update equipment type:', error);
+      toast.error('Failed to update equipment type');
+    }
+  });
+
+  const deleteEquipmentTypeMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('equipment_types')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['equipment-types'] });
+      toast.success('Equipment type deleted successfully');
+    },
+    onError: (error) => {
+      console.error('Failed to delete equipment type:', error);
+      toast.error('Failed to delete equipment type');
+    }
+  });
+
   const createStorageLocationMutation = useMutation({
     mutationFn: async (newLocation: Omit<StorageLocation, 'id'>) => {
       const { error } = await supabase
@@ -204,6 +301,22 @@ export const useSupabaseEquipmentMutations = () => {
 
     addIndividualEquipment: (newEquipment: Omit<IndividualEquipment, 'id' | 'lastUpdated'>) => {
       addIndividualEquipmentMutation.mutate(newEquipment);
+    },
+
+    addBulkIndividualEquipment: (equipment: Omit<IndividualEquipment, 'id' | 'lastUpdated'>[]) => {
+      addBulkIndividualEquipmentMutation.mutate(equipment);
+    },
+
+    createEquipmentType: (newType: Omit<EquipmentType, 'id'>) => {
+      createEquipmentTypeMutation.mutate(newType);
+    },
+
+    updateEquipmentType: (typeId: string, updates: Partial<EquipmentType>) => {
+      updateEquipmentTypeMutation.mutate({ id: typeId, updates });
+    },
+
+    deleteEquipmentType: (typeId: string) => {
+      deleteEquipmentTypeMutation.mutate(typeId);
     },
 
     createStorageLocation: (newLocation: Omit<StorageLocation, 'id'>) => {

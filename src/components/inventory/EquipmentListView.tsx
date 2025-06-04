@@ -8,9 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Search, Filter, Package, Plus, Edit, Trash } from 'lucide-react';
+import { Search, Package, Plus, Edit } from 'lucide-react';
 import { useSupabaseInventory } from '@/hooks/useSupabaseInventory';
-import { toast } from 'sonner';
 
 const EquipmentListView = () => {
   const { data, updateSingleEquipmentItem, addEquipmentItem } = useSupabaseInventory();
@@ -65,21 +64,17 @@ const EquipmentListView = () => {
 
   const handleStatusChange = (itemId: string, newStatus: 'available' | 'deployed' | 'red-tagged') => {
     updateSingleEquipmentItem(itemId, { status: newStatus });
-    toast.success('Equipment status updated');
   };
 
   const handleSubmit = () => {
     if (!formData.typeId || !formData.locationId) {
-      toast.error('Please select equipment type and location');
       return;
     }
 
     if (editingItem) {
       updateSingleEquipmentItem(editingItem.id, formData);
-      toast.success('Equipment updated successfully');
     } else {
       addEquipmentItem(formData);
-      toast.success('Equipment added successfully');
     }
     
     resetForm();
@@ -275,7 +270,7 @@ const EquipmentListView = () => {
                     {item.notes || '-'}
                   </TableCell>
                   <TableCell>
-                    {item.lastUpdated.toLocaleDateString()}
+                    {new Date(item.lastUpdated).toLocaleDateString()}
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-1">

@@ -1,9 +1,19 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Handle, Position } from '@xyflow/react';
-import { Square } from 'lucide-react';
+import { Square, RotateCw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 const YAdapterNode = ({ data }: { data: any }) => {
+  const [topPortNumbers, setTopPortNumbers] = useState<string>(data.topPortNumbers || '1,2');
+  const [bottomPortNumbers, setBottomPortNumbers] = useState<string>(data.bottomPortNumbers || '3,4');
+
+  const swapPortNumbers = () => {
+    const tempTop = topPortNumbers;
+    setTopPortNumbers(bottomPortNumbers);
+    setBottomPortNumbers(tempTop);
+  };
+
   return (
     <div className="bg-yellow-500 text-gray-900 rounded-lg p-3 border-2 border-yellow-400 min-w-[100px] text-center relative">
       <Handle
@@ -22,8 +32,19 @@ const YAdapterNode = ({ data }: { data: any }) => {
         <Square className="h-5 w-5 rotate-45" />
         <h3 className="font-bold text-sm">{data.label}</h3>
       </div>
+
+      {/* Swap button */}
+      <Button
+        onClick={swapPortNumbers}
+        size="sm"
+        variant="ghost"
+        className="absolute -top-2 -right-2 h-6 w-6 p-0 bg-white hover:bg-gray-100 border border-gray-300 rounded-full"
+        title="Swap port numbers"
+      >
+        <RotateCw className="h-3 w-3" />
+      </Button>
       
-      {/* Output 1 - Pressure ports 1,2 */}
+      {/* Output 1 - Top port */}
       <Handle
         type="source"
         position={Position.Right}
@@ -47,10 +68,10 @@ const YAdapterNode = ({ data }: { data: any }) => {
           fontSize: '14px'
         }}
       >
-        1,2
+        {topPortNumbers}
       </div>
       
-      {/* Output 2 - Pressure ports 3,4 */}
+      {/* Output 2 - Bottom port */}
       <Handle
         type="source"
         position={Position.Right}
@@ -74,7 +95,7 @@ const YAdapterNode = ({ data }: { data: any }) => {
           fontSize: '14px'
         }}
       >
-        3,4
+        {bottomPortNumbers}
       </div>
       
       {/* Connection capability indicator */}

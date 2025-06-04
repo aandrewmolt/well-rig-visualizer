@@ -98,7 +98,7 @@ export const useSupabaseEquipmentTracking = (jobId: string, nodes: Node[], edges
         case 'yAdapter':
           usage.adapters++;
           break;
-        case 'companyComputer':
+        case 'customerComputer':
           usage.computers++;
           break;
         case 'satellite':
@@ -144,7 +144,7 @@ export const useSupabaseEquipmentTracking = (jobId: string, nodes: Node[], edges
     const allocations = [
       { category: 'gauges', name: 'pressure', quantity: usage.gauges },
       { category: 'adapters', name: 'y adapter', quantity: usage.adapters },
-      { category: 'communication', name: 'computer', quantity: usage.computers },
+      { category: 'communication', name: 'customer computer', quantity: usage.computers },
       { category: 'communication', name: 'satellite', quantity: usage.satellite },
     ];
 

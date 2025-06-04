@@ -53,16 +53,16 @@ export const optimizeImage = (
           // Create new file with optimized blob
           const optimizedFile = new File(
             [blob],
-            `${file.name.split('.')[0]}.${format}`,
+            `${file.name.split('.')[0]}.webp`,
             {
-              type: `image/${format}`,
+              type: 'image/webp',
               lastModified: Date.now(),
             }
           );
 
           resolve(optimizedFile);
         },
-        `image/${format}`,
+        'image/webp',
         quality
       );
     };
@@ -77,5 +77,5 @@ export const optimizeImage = (
 
 export const getOptimizedFileName = (originalName: string): string => {
   const nameWithoutExt = originalName.split('.')[0];
-  return `${nameWithoutExt}.webp`;
+  return `${nameWithoutExt}_${Date.now()}.webp`;
 };

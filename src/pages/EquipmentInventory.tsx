@@ -13,11 +13,13 @@ import EquipmentHistoryViewer from '@/components/inventory/EquipmentHistoryViewe
 import EquipmentReportsExporter from '@/components/inventory/EquipmentReportsExporter';
 import MaintenanceSchedulePanel from '@/components/inventory/MaintenanceSchedulePanel';
 import DataSetupVerifier from '@/components/inventory/DataSetupVerifier';
+import { useDefaultDataSetup } from '@/hooks/useDefaultDataSetup';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Package, Settings, MapPin, List, ArrowRightLeft, AlertTriangle, Search, History, FileText, Wrench, CheckSquare } from 'lucide-react';
 
 const EquipmentInventory = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
+  const { isInitializing, needsInitialization } = useDefaultDataSetup();
 
   const handleSwitchToTab = (tab: string) => {
     setActiveTab(tab);
@@ -36,6 +38,11 @@ const EquipmentInventory = () => {
             <p className="text-gray-600">
               Manage your equipment inventory across all storage locations. All team members can view and update inventory in real-time.
             </p>
+            {isInitializing && (
+              <div className="mt-2 text-sm text-blue-600">
+                Setting up default equipment types and storage locations...
+              </div>
+            )}
           </div>
           
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">

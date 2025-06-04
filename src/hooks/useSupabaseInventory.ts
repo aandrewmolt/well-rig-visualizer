@@ -1,9 +1,10 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { InventoryData } from '@/types/inventory';
 import { useSupabaseEquipmentQueries } from './supabase/useSupabaseEquipmentQueries';
 import { useSupabaseEquipmentMutations } from './supabase/useSupabaseEquipmentMutations';
 import { useSupabaseEquipmentUtils } from './supabase/useSupabaseEquipmentUtils';
+import { supabase } from '@/integrations/supabase/client';
 
 export const useSupabaseInventory = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -13,12 +14,43 @@ export const useSupabaseInventory = () => {
     storageLocations,
     equipmentItems,
     individualEquipment,
-    isLoading: queriesLoading
+    isLoading: queriesLoading,
+    refetch
   } = useSupabaseEquipmentQueries();
 
   const mutations = useSupabaseEquipmentMutations();
   
   const utils = useSupabaseEquipmentUtils(equipmentItems, individualEquipment);
+
+  // Set up real-time subscriptions
+  useEffect(() => {
+    console.log('Setting up real-time subscriptions for inventory...');
+    
+    const channel = supabase
+      .channel('inventory-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'equipment_types' }, () => {
+        console.log('Equipment types changed, refetching...');
+        refetch.refetchEquipmentTypes();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'storage_locations' }, () => {
+        console.log('Storage locations changed, refetching...');
+        refetch.refetchStorageLocations();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'equipment_items' }, () => {
+        console.log('Equipment items changed, refetching...');
+        refetch.refetchEquipmentItems();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'individual_equipment' }, () => {
+        console.log('Individual equipment changed, refetching...');
+        refetch.refetchIndividualEquipment();
+      })
+      .subscribe();
+
+    return () => {
+      console.log('Cleaning up real-time subscriptions...');
+      supabase.removeChannel(channel);
+    };
+  }, [refetch]);
 
   // Combined data object
   const data: InventoryData = {

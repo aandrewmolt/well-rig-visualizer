@@ -6,6 +6,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Upload, Camera, Zap } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { optimizeImage } from '@/utils/imageOptimizer';
+import { toast } from 'sonner';
 
 interface JobPhotoUploadProps {
   sectionLabel: string;
@@ -20,19 +22,40 @@ const JobPhotoUpload: React.FC<JobPhotoUploadProps> = ({
 }) => {
   const [caption, setCaption] = useState('');
   const [dragOver, setDragOver] = useState(false);
+  const [isOptimizing, setIsOptimizing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileSelect = (files: FileList | null) => {
+  const handleFileSelect = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
     
     const file = files[0];
     if (!file.type.startsWith('image/')) {
-      alert('Please select an image file');
+      toast.error('Please select an image file');
       return;
     }
     
-    onUpload(file, sectionLabel, caption);
-    setCaption('');
+    setIsOptimizing(true);
+    try {
+      // Optimize the image before uploading
+      const optimizedFile = await optimizeImage(file, {
+        maxWidth: 1200,
+        maxHeight: 800,
+        quality: 0.85,
+        format: 'webp'
+      });
+      
+      onUpload(optimizedFile, sectionLabel, caption);
+      setCaption('');
+      toast.success('Image optimized and uploaded successfully');
+    } catch (error) {
+      console.error('Error optimizing image:', error);
+      toast.error('Failed to optimize image');
+      // Fallback to original file if optimization fails
+      onUpload(file, sectionLabel, caption);
+      setCaption('');
+    } finally {
+      setIsOptimizing(false);
+    }
   };
 
   const handleDrop = (e: React.DragEvent) => {
@@ -51,13 +74,15 @@ const JobPhotoUpload: React.FC<JobPhotoUploadProps> = ({
     setDragOver(false);
   };
 
+  const isProcessing = isUploading || isOptimizing;
+
   return (
     <Card className="w-full">
       <CardHeader>
         <CardTitle className="text-sm flex items-center gap-2">
           <Zap className="h-4 w-4 text-green-500" />
           Add Photo to {sectionLabel}
-          <span className="text-xs text-green-600 font-normal">(Auto-optimized)</span>
+          <span className="text-xs text-green-600 font-normal">(Auto-optimized to WebP)</span>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -88,7 +113,7 @@ const JobPhotoUpload: React.FC<JobPhotoUploadProps> = ({
               Drag & drop an image here, or click to select
             </p>
             <p className="text-xs text-green-600">
-              Images will be automatically compressed and optimized for web
+              Images will be automatically compressed and converted to WebP format
             </p>
             <div className="flex gap-2 justify-center">
               <Button
@@ -96,7 +121,7 @@ const JobPhotoUpload: React.FC<JobPhotoUploadProps> = ({
                 variant="outline"
                 size="sm"
                 onClick={() => fileInputRef.current?.click()}
-                disabled={isUploading}
+                disabled={isProcessing}
                 className="text-xs"
               >
                 <Upload className="h-3 w-3 mr-1" />
@@ -110,7 +135,7 @@ const JobPhotoUpload: React.FC<JobPhotoUploadProps> = ({
                   fileInputRef.current?.setAttribute('capture', 'environment');
                   fileInputRef.current?.click();
                 }}
-                disabled={isUploading}
+                disabled={isProcessing}
                 className="text-xs"
               >
                 <Camera className="h-3 w-3 mr-1" />
@@ -128,9 +153,9 @@ const JobPhotoUpload: React.FC<JobPhotoUploadProps> = ({
           className="hidden"
         />
         
-        {isUploading && (
+        {isProcessing && (
           <div className="text-xs text-blue-600 text-center space-y-1">
-            <p>Optimizing and uploading...</p>
+            <p>{isOptimizing ? 'Optimizing image...' : 'Uploading...'}</p>
             <div className="w-full bg-gray-200 rounded-full h-1">
               <div className="bg-blue-600 h-1 rounded-full animate-pulse w-3/4"></div>
             </div>

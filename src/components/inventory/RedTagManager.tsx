@@ -7,17 +7,20 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { AlertTriangle, Camera, MapPin, Calendar, Tag } from 'lucide-react';
+import { AlertTriangle, Camera, MapPin, Calendar, Tag, Upload, X } from 'lucide-react';
 import { useInventoryData } from '@/hooks/useInventoryData';
+import { supabase } from '@/integrations/supabase/client';
+import { optimizeImage, getOptimizedFileName } from '@/utils/imageOptimizer';
 import { toast } from 'sonner';
 
 const RedTagManager: React.FC = () => {
   const { data, updateSingleEquipmentItem, updateSingleIndividualEquipment } = useInventoryData();
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [redTagData, setRedTagData] = useState({
     reason: '',
-    photo: '',
+    photos: [] as string[],
     notes: ''
   });
 
@@ -25,6 +28,53 @@ const RedTagManager: React.FC = () => {
     ...data.equipmentItems.filter(item => item.status === 'red-tagged'),
     ...data.individualEquipment.filter(eq => eq.status === 'red-tagged')
   ];
+
+  const handlePhotoUpload = async (file: File) => {
+    setIsUploading(true);
+    try {
+      // Optimize the image first
+      const optimizedFile = await optimizeImage(file, {
+        maxWidth: 1200,
+        maxHeight: 800,
+        quality: 0.85,
+        format: 'webp'
+      });
+
+      const fileName = getOptimizedFileName(file.name);
+      const filePath = `red-tags/${Date.now()}_${fileName}`;
+
+      // Upload to Supabase storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('equipment-photos')
+        .upload(filePath, optimizedFile);
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('equipment-photos')
+        .getPublicUrl(filePath);
+
+      setRedTagData(prev => ({
+        ...prev,
+        photos: [...prev.photos, publicUrl]
+      }));
+
+      toast.success('Photo uploaded and optimized successfully');
+    } catch (error) {
+      console.error('Error uploading photo:', error);
+      toast.error('Failed to upload photo');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const removePhoto = (photoUrl: string) => {
+    setRedTagData(prev => ({
+      ...prev,
+      photos: prev.photos.filter(url => url !== photoUrl)
+    }));
+  };
 
   const handleRedTag = async (item: any, isIndividual: boolean) => {
     if (!redTagData.reason) {
@@ -36,7 +86,7 @@ const RedTagManager: React.FC = () => {
       const updates = {
         status: 'red-tagged' as const,
         redTagReason: redTagData.reason,
-        redTagPhoto: redTagData.photo,
+        redTagPhoto: redTagData.photos[0] || null, // Store first photo for backward compatibility
         notes: redTagData.notes
       };
 
@@ -46,9 +96,23 @@ const RedTagManager: React.FC = () => {
         await updateSingleEquipmentItem(item.id, updates);
       }
 
+      // Save additional photos to red_tag_photos table if multiple photos
+      if (redTagData.photos.length > 0) {
+        for (const photoUrl of redTagData.photos) {
+          await supabase
+            .from('red_tag_photos')
+            .insert({
+              equipment_item_id: isIndividual ? null : item.id,
+              individual_equipment_id: isIndividual ? item.id : null,
+              photo_url: photoUrl,
+              description: redTagData.reason
+            });
+        }
+      }
+
       toast.success('Item red-tagged successfully');
       setIsDialogOpen(false);
-      setRedTagData({ reason: '', photo: '', notes: '' });
+      setRedTagData({ reason: '', photos: [], notes: '' });
     } catch (error) {
       console.error('Error red-tagging item:', error);
       toast.error('Failed to red-tag item');
@@ -68,6 +132,12 @@ const RedTagManager: React.FC = () => {
       } else {
         await updateSingleEquipmentItem(item.id, updates);
       }
+
+      // Remove associated photos
+      await supabase
+        .from('red_tag_photos')
+        .delete()
+        .eq(isIndividual ? 'individual_equipment_id' : 'equipment_item_id', item.id);
 
       toast.success('Red tag removed successfully');
     } catch (error) {
@@ -107,8 +177,8 @@ const RedTagManager: React.FC = () => {
         <div className="grid gap-4">
           {redTaggedItems.map((item) => {
             const isIndividual = 'equipmentId' in item;
-            const typeName = getTypeName(item.typeId);
-            const locationName = getLocationName(item.locationId);
+            const typeName = data.equipmentTypes.find(t => t.id === item.typeId)?.name || 'Unknown Type';
+            const locationName = data.storageLocations.find(l => l.id === item.locationId)?.name || 'Unknown Location';
 
             return (
               <Card key={item.id} className="border-red-200 bg-red-50">
@@ -172,13 +242,20 @@ const RedTagManager: React.FC = () => {
                     >
                       Remove Red Tag
                     </Button>
-                    <Dialog>
+                    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                       <DialogTrigger asChild>
-                        <Button variant="outline" size="sm">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => {
+                            setSelectedItem(item);
+                            setRedTagData({ reason: item.redTagReason || '', photos: [], notes: item.notes || '' });
+                          }}
+                        >
                           Edit Red Tag
                         </Button>
                       </DialogTrigger>
-                      <DialogContent>
+                      <DialogContent className="max-w-2xl">
                         <DialogHeader>
                           <DialogTitle>Edit Red Tag</DialogTitle>
                         </DialogHeader>
@@ -191,14 +268,47 @@ const RedTagManager: React.FC = () => {
                               placeholder="Damage, malfunction, etc."
                             />
                           </div>
+
                           <div>
-                            <Label>Photo URL (Optional)</Label>
-                            <Input
-                              value={redTagData.photo}
-                              onChange={(e) => setRedTagData(prev => ({ ...prev, photo: e.target.value }))}
-                              placeholder="https://..."
-                            />
+                            <Label>Photos</Label>
+                            <div className="space-y-3">
+                              <div className="flex items-center gap-2">
+                                <Input
+                                  type="file"
+                                  accept="image/*"
+                                  onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) handlePhotoUpload(file);
+                                  }}
+                                  disabled={isUploading}
+                                />
+                                {isUploading && <span className="text-sm text-blue-600">Optimizing...</span>}
+                              </div>
+                              
+                              {redTagData.photos.length > 0 && (
+                                <div className="grid grid-cols-3 gap-2">
+                                  {redTagData.photos.map((photo, index) => (
+                                    <div key={index} className="relative">
+                                      <img 
+                                        src={photo} 
+                                        alt={`Red tag photo ${index + 1}`}
+                                        className="w-full h-20 object-cover rounded border"
+                                      />
+                                      <Button
+                                        size="sm"
+                                        variant="destructive"
+                                        className="absolute top-1 right-1 h-6 w-6 p-0"
+                                        onClick={() => removePhoto(photo)}
+                                      >
+                                        <X className="h-3 w-3" />
+                                      </Button>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
                           </div>
+
                           <div>
                             <Label>Additional Notes</Label>
                             <Textarea
@@ -208,11 +318,12 @@ const RedTagManager: React.FC = () => {
                             />
                           </div>
                           <Button 
-                            onClick={() => handleRedTag(item, isIndividual)}
+                            onClick={() => handleRedTag(selectedItem, 'equipmentId' in selectedItem)}
                             className="w-full"
+                            disabled={isUploading}
                           >
                             Update Red Tag
-                            </Button>
+                          </Button>
                         </div>
                       </DialogContent>
                     </Dialog>

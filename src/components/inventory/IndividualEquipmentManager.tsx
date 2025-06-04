@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -13,11 +12,13 @@ import EquipmentGrid from './EquipmentGrid';
 interface IndividualEquipmentManagerProps {
   equipmentType: EquipmentType;
   storageLocations: StorageLocation[];
+  onDraftCountChange?: (count: number) => void;
 }
 
 const IndividualEquipmentManager: React.FC<IndividualEquipmentManagerProps> = ({
   equipmentType,
-  storageLocations
+  storageLocations,
+  onDraftCountChange
 }) => {
   const { data, addIndividualEquipment, addBulkIndividualEquipment, updateSingleIndividualEquipment } = useSupabaseInventory();
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -43,6 +44,13 @@ const IndividualEquipmentManager: React.FC<IndividualEquipmentManagerProps> = ({
   });
 
   const individualEquipment = data.individualEquipment.filter(eq => eq.typeId === equipmentType.id);
+
+  // Call onDraftCountChange when draft equipment changes
+  React.useEffect(() => {
+    if (onDraftCountChange) {
+      onDraftCountChange(draftEquipment.length);
+    }
+  }, [draftEquipment.length, onDraftCountChange]);
 
   const generateEquipmentId = (prefix: string, number: number) => {
     return `${prefix}${number.toString().padStart(3, '0')}`;

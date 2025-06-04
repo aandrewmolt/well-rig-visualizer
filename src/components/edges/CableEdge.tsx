@@ -37,7 +37,107 @@ const CableEdge = ({
     targetPosition,
   });
 
-  const handleEdit = () => {
+  const handleQuickToggle = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    const sourceNode = getNodes().find(node => node.id === source);
+    const targetNode = getNodes().find(node => node.id === target);
+    
+    // Check if this connection can be toggled between direct and cable
+    const canToggle = (
+      (sourceNode?.type === 'satellite' && targetNode?.type === 'mainBox') ||
+      (sourceNode?.type === 'mainBox' && targetNode?.type === 'satellite') ||
+      (sourceNode?.type === 'satellite' && targetNode?.type === 'shearstreamBox') ||
+      (sourceNode?.type === 'shearstreamBox' && targetNode?.type === 'satellite') ||
+      (sourceNode?.type === 'yAdapter' && (targetNode?.type === 'well' || targetNode?.type === 'wellsideGauge' || targetNode?.type === 'companyComputer'))
+    );
+
+    if (!canToggle) {
+      // If can't toggle, open the edit dialog
+      setIsEditDialogOpen(true);
+      return;
+    }
+
+    const currentConnectionType = data?.connectionType || 'cable';
+    
+    if (currentConnectionType === 'cable') {
+      // Switch to direct connection
+      setEdges((edges) => 
+        edges.map((edge) => {
+          if (edge.id === id) {
+            return {
+              ...edge,
+              type: 'direct',
+              data: {
+                ...edge.data,
+                connectionType: 'direct',
+                label: 'Direct Connection'
+              },
+              style: {
+                stroke: '#10b981',
+                strokeWidth: 3,
+                strokeDasharray: '5,5',
+              },
+              animated: true,
+            };
+          }
+          return edge;
+        })
+      );
+    } else {
+      // Switch to cable connection - find the first available cable type
+      const availableCables = inventoryData.equipmentTypes.filter(type => 
+        type.category === 'cables'
+      );
+      
+      // Sort by preference: 100ft first, then 200ft, then 300ft
+      const sortedCables = availableCables.sort((a, b) => {
+        const aName = a.name.toLowerCase();
+        const bName = b.name.toLowerCase();
+        
+        if (aName.includes('100ft')) return -1;
+        if (bName.includes('100ft')) return 1;
+        if (aName.includes('200ft')) return -1;
+        if (bName.includes('200ft')) return 1;
+        if (aName.includes('300ft')) return -1;
+        if (bName.includes('300ft')) return 1;
+        
+        return 0;
+      });
+
+      const defaultCable = sortedCables[0];
+      
+      if (defaultCable) {
+        setEdges((edges) => 
+          edges.map((edge) => {
+            if (edge.id === id) {
+              return {
+                ...edge,
+                type: 'cable',
+                data: {
+                  ...edge.data,
+                  connectionType: 'cable',
+                  cableTypeId: defaultCable.id,
+                  label: getCableDisplayName(defaultCable.id)
+                },
+                style: {
+                  stroke: getCableColor(defaultCable.id),
+                  strokeWidth: 3,
+                  strokeDasharray: undefined,
+                },
+                animated: false,
+              };
+            }
+            return edge;
+          })
+        );
+      }
+    }
+  };
+
+  const handleRightClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     setIsEditDialogOpen(true);
   };
 
@@ -69,8 +169,8 @@ const CableEdge = ({
                 label: 'Direct Connection'
               },
               style: {
-                stroke: '#8b5cf6',
-                strokeWidth: 4,
+                stroke: '#10b981',
+                strokeWidth: 3,
                 strokeDasharray: '5,5',
               },
               animated: true,
@@ -149,8 +249,10 @@ const CableEdge = ({
             color: '#374151',
             whiteSpace: 'nowrap',
           }}
-          onClick={handleEdit}
+          onClick={handleQuickToggle}
+          onContextMenu={handleRightClick}
           className="nodrag nopan hover:bg-gray-50"
+          title="Left click to toggle connection type, right click for advanced options"
         >
           {cableLabel}
         </div>

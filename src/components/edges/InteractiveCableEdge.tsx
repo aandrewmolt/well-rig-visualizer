@@ -25,6 +25,7 @@ interface InteractiveCableEdgeProps {
     cableTypeId?: string;
     sourceHandle?: string;
     targetHandle?: string;
+    immediateSave?: () => void;
   };
 }
 
@@ -102,7 +103,7 @@ const InteractiveCableEdge: React.FC<InteractiveCableEdgeProps> = ({
       });
       
       setEdges((prevEdges: Edge[]) => {
-        return prevEdges.map((edge: Edge) => {
+        const updatedEdges = prevEdges.map((edge: Edge) => {
           if (edge.id === id) {
             if (newType === 'direct') {
               // Create direct connection
@@ -117,6 +118,7 @@ const InteractiveCableEdge: React.FC<InteractiveCableEdgeProps> = ({
                   sourceHandle: edge.sourceHandle || data?.sourceHandle,
                   targetHandle: edge.targetHandle || data?.targetHandle,
                   cableTypeId: undefined, // Clear cable-specific data
+                  immediateSave: data?.immediateSave,
                 },
                 style: {
                   stroke: '#10b981',
@@ -140,6 +142,7 @@ const InteractiveCableEdge: React.FC<InteractiveCableEdgeProps> = ({
                   cableTypeId: '1', // 100ft cable type ID
                   sourceHandle: edge.sourceHandle || data?.sourceHandle,
                   targetHandle: edge.targetHandle || data?.targetHandle,
+                  immediateSave: data?.immediateSave,
                 },
                 style: {
                   stroke: '#3b82f6',
@@ -154,6 +157,14 @@ const InteractiveCableEdge: React.FC<InteractiveCableEdgeProps> = ({
           }
           return edge;
         });
+
+        // Trigger immediate save if available
+        if (data?.immediateSave) {
+          console.log('Triggering immediate save after edge toggle');
+          setTimeout(() => data.immediateSave!(), 50);
+        }
+
+        return updatedEdges;
       });
 
       console.log('Edge toggle completed');

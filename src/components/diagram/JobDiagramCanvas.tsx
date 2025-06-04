@@ -38,8 +38,8 @@ const nodeTypes = {
 
 const edgeTypes = {
   cable: InteractiveCableEdge,
-  direct: DirectEdge,
-  default: InteractiveCableEdge, // Use InteractiveCableEdge as default
+  direct: InteractiveCableEdge, // Use InteractiveCableEdge for both types
+  default: InteractiveCableEdge,
 };
 
 interface JobDiagramCanvasProps {
@@ -49,6 +49,7 @@ interface JobDiagramCanvasProps {
   onEdgesChange: OnEdgesChange;
   onConnect: OnConnect;
   reactFlowWrapper: React.RefObject<HTMLDivElement>;
+  immediateSave?: () => void;
 }
 
 const JobDiagramCanvas: React.FC<JobDiagramCanvasProps> = ({
@@ -58,13 +59,25 @@ const JobDiagramCanvas: React.FC<JobDiagramCanvasProps> = ({
   onEdgesChange,
   onConnect,
   reactFlowWrapper,
+  immediateSave,
 }) => {
+  // Enhanced edges with immediateSave function
+  const enhancedEdges = React.useMemo(() => {
+    return edges.map(edge => ({
+      ...edge,
+      data: {
+        ...edge.data,
+        immediateSave,
+      },
+    }));
+  }, [edges, immediateSave]);
+
   return (
     <div className="flex-1 h-full" ref={reactFlowWrapper}>
       <ReactFlowProvider>
         <ReactFlow
           nodes={nodes}
-          edges={edges}
+          edges={enhancedEdges}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}

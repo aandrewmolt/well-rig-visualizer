@@ -1,4 +1,3 @@
-
 import React, { useCallback, useState } from 'react';
 
 import '@xyflow/react/dist/style.css';
@@ -91,9 +90,11 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
     onEdgesChange(changes);
     
     // Check if this is a Y→Well toggle (edge update)
-    const hasEdgeUpdate = changes.some(change => change.type === 'reset' || 
-      (change.type === 'add' && change.item?.type === 'direct') ||
-      (change.type === 'add' && change.item?.data?.connectionType === 'direct'));
+    const hasEdgeUpdate = changes.some(change => 
+      change.type === 'reset' || 
+      (change.type === 'replace' && change.item) ||
+      (change.item && (change.item.type === 'direct' || change.item.data?.connectionType === 'direct'))
+    );
     
     if (hasEdgeUpdate) {
       console.log('Detected edge toggle, triggering immediate save');
@@ -266,6 +267,7 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
           onEdgesChange={enhancedOnEdgesChange}
           onConnect={enhancedOnConnect}
           reactFlowWrapper={reactFlowWrapper}
+          immediateSave={immediateSave}
         />
       </div>
     </div>

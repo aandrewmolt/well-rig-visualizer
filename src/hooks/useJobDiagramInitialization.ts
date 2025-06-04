@@ -29,24 +29,16 @@ interface UseJobDiagramInitializationProps {
 
 // Well colors for unique identification
 const wellColors = [
-  '#3b82f6', // blue
-  '#10b981', // emerald
-  '#f59e0b', // amber
-  '#ef4444', // red
-  '#8b5cf6', // violet
-  '#f97316', // orange
-  '#06b6d4', // cyan
-  '#84cc16', // lime
-  '#ec4899', // pink
-  '#6366f1', // indigo
+  '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', 
+  '#f97316', '#06b6d4', '#84cc16', '#ec4899', '#6366f1',
 ];
 
 // Function to generate well positions on the right side
 const generateWellPositions = (wellCount: number) => {
   const positions = [];
-  const startX = 750; // Right side positioning
-  const startY = 150; // Starting Y position
-  const verticalSpacing = 150; // Space between wells vertically
+  const startX = 750;
+  const startY = 150;
+  const verticalSpacing = 150;
   
   for (let i = 0; i < wellCount; i++) {
     const x = startX;
@@ -61,12 +53,11 @@ const createDefaultNodes = (job: JobDiagram, mainBoxName: string, satelliteName:
   
   const wellPositions = generateWellPositions(job.wellCount);
   
-  // Always create at least 1 ShearStream Box in the center
   const newNodes: Node[] = [
     {
       id: 'main-box',
       type: 'mainBox',
-      position: { x: 400, y: 250 }, // Center position
+      position: { x: 400, y: 250 },
       data: { 
         label: mainBoxName || 'ShearStream Box',
         boxNumber: 1,
@@ -74,24 +65,23 @@ const createDefaultNodes = (job: JobDiagram, mainBoxName: string, satelliteName:
         assigned: false
       },
       draggable: true,
-      deletable: true, // Make deletable
+      deletable: true,
     },
-    // Starlink Satellite on the left
     {
       id: 'satellite',
       type: 'satellite',
-      position: { x: 150, y: 450 }, // Left side position
+      position: { x: 150, y: 450 },
       data: { 
         label: satelliteName || 'Starlink',
         equipmentId: null,
         assigned: false
       },
       draggable: true,
-      deletable: true, // Make deletable
+      deletable: true,
     },
   ];
 
-  // Create wells with unique colors on the right side
+  // Create wells with unique colors
   wellPositions.forEach((pos, index) => {
     newNodes.push({
       id: `well-${index + 1}`,
@@ -100,31 +90,54 @@ const createDefaultNodes = (job: JobDiagram, mainBoxName: string, satelliteName:
       data: { 
         label: `Well ${index + 1}`,
         wellNumber: index + 1,
-        color: wellColors[index % wellColors.length] // Assign unique colors
+        color: wellColors[index % wellColors.length]
       },
       draggable: true,
-      deletable: true, // Make deletable
+      deletable: true,
     });
   });
 
-  // Add wellside gauge if selected - position below the wells
+  // Add wellside gauge if selected
   if (job.hasWellsideGauge) {
     const lastWellY = wellPositions.length > 0 ? wellPositions[wellPositions.length - 1].y : 150;
     newNodes.push({
       id: 'wellside-gauge',
       type: 'wellsideGauge',
-      position: { x: 750, y: lastWellY + 150 }, // Below the last well
+      position: { x: 750, y: lastWellY + 150 },
       data: { 
         label: wellsideGaugeName || 'Wellside Gauge',
-        color: '#10b981' // Green color
+        color: '#10b981'
       },
       draggable: true,
-      deletable: true, // Make deletable
+      deletable: true,
     });
   }
 
   console.log('Created default nodes:', newNodes);
   return newNodes;
+};
+
+// Enhanced edge restoration function that preserves ALL edge properties
+const restoreEdgeData = (edges: any[]) => {
+  return edges.map(edge => ({
+    ...edge,
+    // Restore sourceHandle from multiple possible locations
+    sourceHandle: edge.sourceHandle || edge.data?.sourceHandle,
+    targetHandle: edge.targetHandle || edge.data?.targetHandle,
+    // Ensure data object exists with all properties
+    data: {
+      ...edge.data,
+      sourceHandle: edge.data?.sourceHandle || edge.sourceHandle,
+      targetHandle: edge.data?.targetHandle || edge.targetHandle,
+      connectionType: edge.data?.connectionType || (edge.type === 'direct' ? 'direct' : 'cable'),
+      cableTypeId: edge.data?.cableTypeId,
+      label: edge.data?.label || edge.label,
+    },
+    // Preserve styling
+    style: edge.style || {},
+    animated: edge.animated,
+    label: edge.label,
+  }));
 };
 
 export const useJobDiagramInitialization = (props: UseJobDiagramInitializationProps) => {
@@ -163,20 +176,44 @@ export const useJobDiagramInitialization = (props: UseJobDiagramInitializationPr
     props.setWellsideGaugeName(initialData.wellsideGaugeName || 'Wellside Gauge');
     props.setCustomerComputerNames(initialData.companyComputerNames || {});
 
-    // Check if we have saved nodes and edges - if so, use them instead of creating defaults
+    // Enhanced data loading with complete preservation
     if (initialData.nodes && Array.isArray(initialData.nodes) && initialData.nodes.length > 0) {
-      console.log('Loading saved nodes and edges:', {
+      console.log('Loading saved nodes and edges with full preservation:', {
         nodeCount: initialData.nodes.length,
         edgeCount: initialData.edges?.length || 0
       });
       
-      // Use saved nodes and edges
-      props.setNodes(initialData.nodes);
-      props.setEdges(initialData.edges && initialData.edges.length > 0 ? initialData.edges : []);
+      // Restore nodes with all properties preserved
+      const restoredNodes = initialData.nodes.map(node => ({
+        ...node,
+        data: {
+          ...node.data,
+          // Ensure all data properties are preserved
+        },
+        style: node.style || {},
+        draggable: node.draggable !== false,
+        deletable: node.deletable !== false,
+      }));
+      
+      // Restore edges with enhanced data preservation
+      const restoredEdges = initialData.edges && initialData.edges.length > 0 
+        ? restoreEdgeData(initialData.edges) 
+        : [];
+      
+      console.log('Restored edges with sourceHandle info:', restoredEdges.map(e => ({
+        id: e.id,
+        sourceHandle: e.sourceHandle,
+        edgeDataSourceHandle: e.data?.sourceHandle,
+        type: e.type,
+        label: e.label
+      })));
+      
+      props.setNodes(restoredNodes);
+      props.setEdges(restoredEdges);
       
       // Set node counter based on existing nodes
       const maxNodeId = Math.max(
-        ...initialData.nodes.map(node => {
+        ...restoredNodes.map(node => {
           const match = node.id.match(/\d+/);
           return match ? parseInt(match[0]) : 0;
         }),
@@ -184,7 +221,7 @@ export const useJobDiagramInitialization = (props: UseJobDiagramInitializationPr
       );
       props.setNodeIdCounter(maxNodeId + 1);
     } else {
-      // Only create default nodes if no saved nodes exist (new job)
+      // Only create default nodes if no saved nodes exist
       console.log('No saved nodes found, creating default nodes for new job');
       
       const defaultNodes = createDefaultNodes(

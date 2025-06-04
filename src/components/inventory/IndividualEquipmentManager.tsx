@@ -4,11 +4,13 @@ import { Loader2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { useSupabaseInventory } from '@/hooks/useSupabaseInventory';
 import { EquipmentType, StorageLocation } from '@/types/inventory';
+import { useIndividualEquipmentManager } from '@/hooks/inventory/useIndividualEquipmentManager';
 import IndividualEquipmentForm from './IndividualEquipmentForm';
+import BulkEquipmentCreationDialog from './BulkEquipmentCreationDialog';
+import EquipmentGrid from './EquipmentGrid';
 import IndividualEquipmentHeader from './individual/IndividualEquipmentHeader';
 import IndividualEquipmentStats from './individual/IndividualEquipmentStats';
 import DraftItemsList from './individual/DraftItemsList';
-import { useIndividualEquipmentLogic } from './individual/useIndividualEquipmentLogic';
 
 interface IndividualEquipmentManagerProps {
   equipmentType?: EquipmentType;
@@ -21,26 +23,10 @@ const IndividualEquipmentManager: React.FC<IndividualEquipmentManagerProps> = ({
   storageLocations,
   onDraftCountChange,
 }) => {
-  const { data, addIndividualEquipment, isLoading } = useSupabaseInventory();
+  const { isLoading } = useSupabaseInventory();
   
-  // Create a wrapper function that converts Promise<data> to Promise<void>
-  const addEquipmentWrapper = async (equipment: any): Promise<void> => {
-    await addIndividualEquipment(equipment);
-  };
-  
-  const {
-    isFormOpen,
-    setIsFormOpen,
-    draftItems,
-    formData,
-    setFormData,
-    handleSubmit,
-    onReset,
-    saveDraftItems,
-  } = useIndividualEquipmentLogic(
-    equipmentType,
-    storageLocations,
-    addEquipmentWrapper,
+  const manager = useIndividualEquipmentManager(
+    equipmentType!,
     onDraftCountChange
   );
 
@@ -60,9 +46,9 @@ const IndividualEquipmentManager: React.FC<IndividualEquipmentManagerProps> = ({
     return (
       <div className="space-y-3">
         <IndividualEquipmentHeader
-          draftCount={draftItems.length}
-          onSaveDrafts={saveDraftItems}
-          onOpenForm={() => setIsFormOpen(true)}
+          draftCount={manager.draftEquipment.length}
+          onSaveDrafts={manager.saveImmediately}
+          onOpenForm={() => manager.setIsFormOpen(true)}
         />
         <Card className="border-orange-200 bg-orange-50">
           <CardContent className="p-3">
@@ -75,32 +61,68 @@ const IndividualEquipmentManager: React.FC<IndividualEquipmentManagerProps> = ({
     );
   }
 
-  const existingEquipment = data.individualEquipment?.filter(eq => eq.typeId === equipmentType.id) || [];
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'available': return 'bg-green-100 text-green-800';
+      case 'deployed': return 'bg-blue-100 text-blue-800';
+      case 'maintenance': return 'bg-yellow-100 text-yellow-800';
+      case 'red-tagged': return 'bg-red-100 text-red-800';
+      case 'retired': return 'bg-gray-100 text-gray-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getLocationName = (locationId: string) => {
+    const location = storageLocations.find(loc => loc.id === locationId);
+    return location?.name || 'Unknown Location';
+  };
 
   return (
     <div className="space-y-3">
       <IndividualEquipmentHeader
-        draftCount={draftItems.length}
-        onSaveDrafts={saveDraftItems}
-        onOpenForm={() => setIsFormOpen(true)}
+        draftCount={manager.draftEquipment.length}
+        onSaveDrafts={manager.saveImmediately}
+        onOpenForm={() => manager.setIsFormOpen(true)}
+        onBulkCreate={() => manager.setIsBulkCreateOpen(true)}
       />
 
-      <IndividualEquipmentStats equipment={existingEquipment} />
-      <DraftItemsList draftItems={draftItems} />
+      <IndividualEquipmentStats equipment={manager.individualEquipment} />
+      <DraftItemsList draftItems={manager.draftEquipment} />
+
+      <EquipmentGrid
+        equipment={manager.allEquipment}
+        draftEquipment={manager.draftEquipment}
+        onEdit={manager.setEditingEquipment}
+        onDelete={manager.handleDelete}
+        onStatusChange={manager.handleStatusChange}
+        onLocationChange={manager.handleLocationChange}
+        getStatusColor={getStatusColor}
+        getLocationName={getLocationName}
+        storageLocations={storageLocations}
+      />
 
       <IndividualEquipmentForm
-        isFormOpen={isFormOpen}
-        setIsFormOpen={setIsFormOpen}
-        editingEquipment={null}
-        setEditingEquipment={() => {}}
-        formData={formData}
-        setFormData={setFormData}
+        isFormOpen={manager.isFormOpen}
+        setIsFormOpen={manager.setIsFormOpen}
+        editingEquipment={manager.editingEquipment}
+        setEditingEquipment={manager.setEditingEquipment}
+        formData={manager.formData}
+        setFormData={manager.setFormData}
         equipmentType={equipmentType}
         storageLocations={storageLocations}
-        allEquipment={existingEquipment}
-        onSubmit={handleSubmit}
-        onReset={onReset}
-        onPrefixChange={(prefix) => setFormData(prev => ({ ...prev, selectedPrefix: prefix }))}
+        allEquipment={manager.allEquipment}
+        onSubmit={manager.handleSubmit}
+        onReset={manager.resetForm}
+        onPrefixChange={manager.handlePrefixChange}
+      />
+
+      <BulkEquipmentCreationDialog
+        isOpen={manager.isBulkCreateOpen}
+        onClose={() => manager.setIsBulkCreateOpen(false)}
+        equipmentType={equipmentType}
+        storageLocations={storageLocations}
+        existingEquipment={manager.allEquipment}
+        onBulkCreate={manager.handleBulkCreate}
       />
     </div>
   );

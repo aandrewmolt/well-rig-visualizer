@@ -6,13 +6,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Switch } from '@/components/ui/switch';
 import { Plus, MapPin, Trash2, Edit } from 'lucide-react';
 import { useInventory } from '@/contexts/InventoryContext';
 import { toast } from 'sonner';
 
 const StorageLocationManager = () => {
-  const { data, createStorageLocation, updateStorageLocations } = useInventory();
+  const { data, createStorageLocation, updateStorageLocation, deleteStorageLocation } = useInventory();
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingLocation, setEditingLocation] = useState<any>(null);
@@ -37,6 +38,18 @@ const StorageLocationManager = () => {
     setIsDialogOpen(true);
   };
 
+  const handleDelete = async (location: any) => {
+    try {
+      const result = await deleteStorageLocation(location.id);
+      if (result) {
+        toast.success('Storage location deleted successfully');
+      }
+    } catch (error) {
+      console.error('Error deleting location:', error);
+      toast.error('Failed to delete storage location');
+    }
+  };
+
   const handleSubmit = async () => {
     if (!formData.name.trim()) {
       toast.error('Location name is required');
@@ -45,7 +58,7 @@ const StorageLocationManager = () => {
 
     try {
       if (editingLocation) {
-        await updateStorageLocations(editingLocation.id, formData);
+        await updateStorageLocation(editingLocation.id, formData);
         toast.success('Storage location updated successfully');
       } else {
         await createStorageLocation(formData);
@@ -166,6 +179,39 @@ const StorageLocationManager = () => {
                     >
                       <Edit className="h-3 w-3" />
                     </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete Storage Location</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to delete "{location.name}"? This action cannot be undone.
+                            {location.isDefault && (
+                              <span className="block mt-2 text-amber-600 font-medium">
+                                Warning: This is your default location.
+                              </span>
+                            )}
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => handleDelete(location)}
+                            className="bg-red-600 hover:bg-red-700"
+                          >
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 </div>
               </CardContent>

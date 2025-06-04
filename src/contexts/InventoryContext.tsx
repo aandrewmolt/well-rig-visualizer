@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { InventoryData } from '@/types/inventory';
 import { useSupabaseEquipmentQueries } from '@/hooks/supabase/useSupabaseEquipmentQueries';
@@ -16,6 +15,7 @@ interface InventoryContextType {
   addEquipmentItem: (item: any) => Promise<void>;
   deleteEquipmentItem: (id: string) => Promise<any>;
   deleteEquipmentType: (id: string) => Promise<any>;
+  deleteStorageLocation: (id: string) => Promise<any>;
   
   // All mutation operations
   addEquipmentType: (data: any) => Promise<void>;
@@ -163,6 +163,15 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
   };
 
+  const deleteStorageLocationWrapper = async (id: string) => {
+    try {
+      return await mutations.deleteStorageLocation(id);
+    } catch (error) {
+      console.error('Failed to delete storage location:', error);
+      throw error;
+    }
+  };
+
   const addBulkIndividualEquipment = async (equipment: any[]) => {
     try {
       const results = await Promise.all(
@@ -249,6 +258,7 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     addEquipmentItem,
     deleteEquipmentItem,
     deleteEquipmentType,
+    deleteStorageLocation: deleteStorageLocationWrapper,
     
     // All mutation operations with proper wrapper functions
     addEquipmentType: addEquipmentTypeWrapper,

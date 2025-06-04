@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,12 +5,12 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Plus, Settings, Trash2, Edit } from 'lucide-react';
-import { useSupabaseInventory } from '@/hooks/useSupabaseInventory';
+import { useInventory } from '@/contexts/InventoryContext';
 import { toast } from 'sonner';
 import EquipmentTypeForm from './EquipmentTypeForm';
 
 const EquipmentTypeManager = () => {
-  const { data, createEquipmentType, updateEquipmentTypes, deleteEquipmentType } = useSupabaseInventory();
+  const { data, createEquipmentType, updateEquipmentTypes, deleteEquipmentType } = useInventory();
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingType, setEditingType] = useState<any>(null);

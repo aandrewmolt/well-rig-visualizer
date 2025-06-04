@@ -1,16 +1,15 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Package, Plus } from 'lucide-react';
-import { useSupabaseInventory } from '@/hooks/useSupabaseInventory';
+import { useInventory } from '@/contexts/InventoryContext';
 import { toast } from 'sonner';
 import EquipmentListFilters from './EquipmentListFilters';
 import EquipmentFormDialog from './EquipmentFormDialog';
 import EquipmentTable from './EquipmentTable';
 
 const EquipmentListView = () => {
-  const { data, updateSingleEquipmentItem, addEquipmentItem, deleteEquipmentItem } = useSupabaseInventory();
+  const { data, updateSingleEquipmentItem, addEquipmentItem, deleteEquipmentItem } = useInventory();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterLocation, setFilterLocation] = useState('all');

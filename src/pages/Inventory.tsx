@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Settings } from 'lucide-react';
@@ -19,13 +18,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { useSupabaseInventory } from '@/hooks/useSupabaseInventory';
+import { useInventory } from '@/contexts/InventoryContext';
 import StorageTransferManager from '@/components/inventory/StorageTransferManager';
 import RedTagManager from '@/components/inventory/RedTagManager';
 import DataInitializationGuard from '@/components/inventory/DataInitializationGuard';
 
 const Inventory = () => {
-  const { data, updateSingleEquipmentItem } = useSupabaseInventory();
+  const { data, updateSingleEquipmentItem } = useInventory();
 
   const getTypeName = (typeId: string) => {
     const type = data.equipmentTypes.find(t => t.id === typeId);

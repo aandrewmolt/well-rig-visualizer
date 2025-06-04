@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AppHeader from '@/components/AppHeader';
@@ -8,10 +7,10 @@ import RedTagDashboard from '@/components/inventory/RedTagDashboard';
 import DataInitializationGuard from '@/components/inventory/DataInitializationGuard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Settings, Building, ArrowRightLeft, AlertTriangle, Package } from 'lucide-react';
-import { useSupabaseInventory } from '@/hooks/useSupabaseInventory';
+import { useInventory } from '@/contexts/InventoryContext';
 
 const InventorySettings = () => {
-  const { data } = useSupabaseInventory();
+  const { data } = useInventory();
 
   // Calculate summary stats
   const availableItems = data.equipmentItems.filter(item => item.status === 'available').length;

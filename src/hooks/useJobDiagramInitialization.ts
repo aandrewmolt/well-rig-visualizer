@@ -1,6 +1,7 @@
+
 import { useCallback } from 'react';
 import { Node } from '@xyflow/react';
-import { useSupabaseJobs as useJobStorage } from '@/hooks/useSupabaseJobs';
+import { useSupabaseJobs } from '@/hooks/useSupabaseJobs';
 
 interface Job {
   id: string;
@@ -40,13 +41,11 @@ const generateWellPositions = (wellCount: number) => {
   for (let i = 0; i < wellCount; i++) {
     const x = 75 + (i % 5) * 150; // 5 wells per row
     const y = 450 + Math.floor(i / 5) * 150; // Adjust y position for each row
-    positions.push({ x, y });
   }
   return positions;
 };
 
 export const useJobDiagramInitialization = (props: UseJobDiagramInitializationProps) => {
-  const { useSupabaseJobs } = useJobStorage();
   const { jobs } = useSupabaseJobs();
 
   const initializeJob = useCallback(() => {

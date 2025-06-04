@@ -1,15 +1,11 @@
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Settings, Trash2, Edit, AlertTriangle } from 'lucide-react';
+import { Card } from '@/components/ui/card';
 import { useInventory } from '@/contexts/InventoryContext';
 import { useEquipmentDeletion } from '@/hooks/inventory/useEquipmentDeletion';
 import { toast } from 'sonner';
-import EquipmentTypeForm from './EquipmentTypeForm';
+import EquipmentTypeManagerHeader from './EquipmentTypeManagerHeader';
+import EquipmentTypeGrid from './EquipmentTypeGrid';
 
 const EquipmentTypeManager = () => {
   const { data, createEquipmentType, updateEquipmentTypes, deleteEquipmentType } = useInventory();
@@ -83,121 +79,27 @@ const EquipmentTypeManager = () => {
 
   return (
     <Card className="bg-white shadow-lg">
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Settings className="h-5 w-5" />
-            Equipment Types ({filteredTypes.length})
-          </CardTitle>
-          
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button onClick={() => setEditingType(null)}>
-                <Plus className="mr-2 h-4 w-4" />
-                Add Type
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>
-                  {editingType ? 'Edit Equipment Type' : 'Add Equipment Type'}
-                </DialogTitle>
-              </DialogHeader>
-              <EquipmentTypeForm
-                editingType={editingType}
-                onSubmit={handleSubmit}
-                onCancel={handleCancel}
-              />
-            </DialogContent>
-          </Dialog>
-        </div>
-        
-        <div className="relative">
-          <Input
-            placeholder="Search equipment types..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-4"
-          />
-        </div>
-      </CardHeader>
+      <EquipmentTypeManagerHeader
+        filteredTypesCount={filteredTypes.length}
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        isDialogOpen={isDialogOpen}
+        onDialogOpenChange={setIsDialogOpen}
+        editingType={editingType}
+        onEditingTypeChange={setEditingType}
+        onSubmit={handleSubmit}
+        onCancel={handleCancel}
+      />
       
-      <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredTypes.map((type) => {
-            const equipmentCounts = getEquipmentCountForType(type.id);
-            const { canDelete, details } = canDeleteEquipmentType(type.id);
-            const totalItems = equipmentCounts.equipmentItems + equipmentCounts.individualEquipment;
-            
-            return (
-              <Card key={type.id} className="border border-gray-200">
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between mb-2">
-                    <h3 className="font-medium text-sm">{type.name}</h3>
-                    <div className="flex gap-1">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleEdit(type)}
-                      >
-                        <Edit className="h-3 w-3" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleDelete(type.id, type.name)}
-                        disabled={!canDelete}
-                        className={canDelete ? "hover:text-red-600" : "opacity-50 cursor-not-allowed"}
-                        title={canDelete ? "Delete equipment type" : `Cannot delete - ${details?.join(', ')}`}
-                      >
-                        {!canDelete && <AlertTriangle className="h-3 w-3 mr-1" />}
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Badge className={getCategoryColor(type.category)}>
-                      {type.category}
-                    </Badge>
-                    
-                    {totalItems > 0 && (
-                      <div className="text-xs text-blue-600 font-medium">
-                        {equipmentCounts.equipmentItems > 0 && (
-                          <div>{equipmentCounts.equipmentItems} item records ({equipmentCounts.totalQuantity} total)</div>
-                        )}
-                        {equipmentCounts.individualEquipment > 0 && (
-                          <div>{equipmentCounts.individualEquipment} individual items</div>
-                        )}
-                      </div>
-                    )}
-                    
-                    {type.description && (
-                      <p className="text-xs text-gray-600">{type.description}</p>
-                    )}
-                    
-                    {type.defaultIdPrefix && (
-                      <div className="text-xs text-gray-500">
-                        Prefix: {type.defaultIdPrefix}
-                      </div>
-                    )}
-                    
-                    <div className="text-xs text-gray-500">
-                      Individual Tracking: {type.requiresIndividualTracking ? 'Yes' : 'No'}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-        
-        {filteredTypes.length === 0 && (
-          <div className="text-center py-8">
-            <p className="text-gray-500">No equipment types found.</p>
-          </div>
-        )}
-      </CardContent>
+      <EquipmentTypeGrid
+        filteredTypes={filteredTypes}
+        data={data}
+        canDeleteEquipmentType={canDeleteEquipmentType}
+        getEquipmentCountForType={getEquipmentCountForType}
+        getCategoryColor={getCategoryColor}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+      />
     </Card>
   );
 };

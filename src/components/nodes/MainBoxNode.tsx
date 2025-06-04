@@ -7,6 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 const MainBoxNode = ({ data }: { data: any }) => {
   const [fracDataPort, setFracDataPort] = useState<string>('');
   const [gaugeDataPort, setGaugeDataPort] = useState<string>('');
+  const [fracBaudRate, setFracBaudRate] = useState<string>('9600');
+  const [gaugeBaudRate, setGaugeBaudRate] = useState<string>('9600');
 
   // Available COM ports for selection
   const comPorts = [
@@ -20,6 +22,15 @@ const MainBoxNode = ({ data }: { data: any }) => {
     { id: 'com8', label: 'COM8' },
   ];
 
+  // Common baud rates with 9600 and 19200 first
+  const baudRates = [
+    { id: '9600', label: '9600' },
+    { id: '19200', label: '19200' },
+    { id: '38400', label: '38400' },
+    { id: '57600', label: '57600' },
+    { id: '115200', label: '115200' },
+  ];
+
   // These pressure ports all come from the selected gauge COM port
   const pressurePorts = [
     { id: 'p1', label: 'P1', pressure: 'Pressure1,2' },
@@ -31,7 +42,7 @@ const MainBoxNode = ({ data }: { data: any }) => {
   const isAssigned = data.assigned && data.equipmentId;
 
   return (
-    <div className="bg-gray-800 text-white rounded-lg p-4 border-2 border-gray-600 min-w-[200px]">
+    <div className="bg-gray-800 text-white rounded-lg p-4 border-2 border-gray-600 min-w-[250px]">
       <div className="flex items-center gap-2 mb-3">
         <Square className="h-5 w-5" />
         <div>
@@ -42,13 +53,13 @@ const MainBoxNode = ({ data }: { data: any }) => {
         </div>
       </div>
       
-      {/* COM Port Selection - Compact layout */}
+      {/* COM Port Selection with Baud Rates - Compact layout */}
       <div className="mb-3 space-y-1">
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-gray-300 w-12">Frac:</span>
+        <div className="flex items-center gap-1">
+          <span className="text-xs text-gray-300 w-10">Frac:</span>
           <Select value={fracDataPort} onValueChange={setFracDataPort}>
-            <SelectTrigger className="h-6 text-xs bg-gray-700 border-gray-600">
-              <SelectValue placeholder="Select" />
+            <SelectTrigger className="h-6 text-xs bg-gray-700 border-gray-600 flex-1">
+              <SelectValue placeholder="COM" />
             </SelectTrigger>
             <SelectContent>
               {comPorts.map(port => (
@@ -58,18 +69,42 @@ const MainBoxNode = ({ data }: { data: any }) => {
               ))}
             </SelectContent>
           </Select>
+          <Select value={fracBaudRate} onValueChange={setFracBaudRate}>
+            <SelectTrigger className="h-6 text-xs bg-gray-700 border-gray-600 w-16">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {baudRates.map(rate => (
+                <SelectItem key={rate.id} value={rate.id}>
+                  {rate.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-gray-300 w-12">Gauge:</span>
+        <div className="flex items-center gap-1">
+          <span className="text-xs text-gray-300 w-10">Gauge:</span>
           <Select value={gaugeDataPort} onValueChange={setGaugeDataPort}>
-            <SelectTrigger className="h-6 text-xs bg-gray-700 border-gray-600">
-              <SelectValue placeholder="Select" />
+            <SelectTrigger className="h-6 text-xs bg-gray-700 border-gray-600 flex-1">
+              <SelectValue placeholder="COM" />
             </SelectTrigger>
             <SelectContent>
               {comPorts.map(port => (
                 <SelectItem key={port.id} value={port.id}>
                   {port.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={gaugeBaudRate} onValueChange={setGaugeBaudRate}>
+            <SelectTrigger className="h-6 text-xs bg-gray-700 border-gray-600 w-16">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {baudRates.map(rate => (
+                <SelectItem key={rate.id} value={rate.id}>
+                  {rate.label}
                 </SelectItem>
               ))}
             </SelectContent>

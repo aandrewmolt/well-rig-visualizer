@@ -124,70 +124,72 @@ const WellConfigurationPanel: React.FC<WellConfigurationPanelProps> = ({
             </div>
           )}
           
-          {/* Well Configurations */}
-          {wellNodes.map((wellNode, index) => {
-            const nodeData = wellNode.data as NodeData;
-            return (
-              <div 
-                key={wellNode.id} 
-                className="p-2 border border-blue-200 rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50"
-              >
-                <div className="flex items-center gap-1.5 mb-1.5">
-                  <div className="p-0.5 bg-blue-100 rounded-md">
-                    <Droplets className="h-2.5 w-2.5 text-blue-600" />
-                  </div>
-                  <Label className="text-xs font-semibold text-blue-800">
-                    Well {index + 1} Configuration
-                  </Label>
-                  <Badge variant="outline" className="ml-auto bg-blue-100 text-blue-700 border-blue-300 text-xs px-1 py-0">
-                    Active
-                  </Badge>
-                </div>
-                
-                <div className="space-y-1.5">
-                  <div>
-                    <Label htmlFor={`well-name-${wellNode.id}`} className="text-xs text-gray-600 mb-0.5 block">
-                      Well Name
+          {/* Well Configurations in 2-column grid */}
+          <div className="grid grid-cols-2 gap-2">
+            {wellNodes.map((wellNode, index) => {
+              const nodeData = wellNode.data as NodeData;
+              return (
+                <div 
+                  key={wellNode.id} 
+                  className="p-2 border border-blue-200 rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50"
+                >
+                  <div className="flex items-center gap-1.5 mb-1.5">
+                    <div className="p-0.5 bg-blue-100 rounded-md">
+                      <Droplets className="h-2.5 w-2.5 text-blue-600" />
+                    </div>
+                    <Label className="text-xs font-semibold text-blue-800 flex-1">
+                      Well {index + 1}
                     </Label>
-                    <Input
-                      id={`well-name-${wellNode.id}`}
-                      value={nodeData.label || ''}
-                      onChange={(e) => updateWellName(wellNode.id, e.target.value)}
-                      className="h-6 text-xs border border-blue-200 focus:border-blue-400"
-                      placeholder="Enter well name..."
-                    />
+                    <Badge variant="outline" className="bg-blue-100 text-blue-700 border-blue-300 text-xs px-1 py-0">
+                      Active
+                    </Badge>
                   </div>
-                  <div>
-                    <Label className="text-xs text-gray-600 mb-0.5 block flex items-center gap-1">
-                      <Palette className="h-2.5 w-2.5" />
-                      Color
-                    </Label>
-                    <Select
-                      value={nodeData.color || '#3b82f6'}
-                      onValueChange={(color) => updateWellColor(wellNode.id, color)}
-                    >
-                      <SelectTrigger className="h-6 border border-blue-200 focus:border-blue-400">
-                        <div 
-                          className="w-2.5 h-2.5 rounded border border-gray-300" 
-                          style={{ backgroundColor: nodeData.color || '#3b82f6' }}
-                        />
-                      </SelectTrigger>
-                      <SelectContent className="bg-white border border-gray-200 shadow-lg max-h-40 z-50">
-                        {colorOptions.map(color => (
-                          <SelectItem key={color.value} value={color.value} className="hover:bg-gray-50 text-xs">
-                            <div className="flex items-center gap-2">
-                              <div className={`w-2.5 h-2.5 rounded ${color.class}`}></div>
-                              <span>{color.name}</span>
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                  
+                  <div className="space-y-1.5">
+                    <div>
+                      <Label htmlFor={`well-name-${wellNode.id}`} className="text-xs text-gray-600 mb-0.5 block">
+                        Well Name
+                      </Label>
+                      <Input
+                        id={`well-name-${wellNode.id}`}
+                        value={nodeData.label || ''}
+                        onChange={(e) => updateWellName(wellNode.id, e.target.value)}
+                        className="h-6 text-xs border border-blue-200 focus:border-blue-400"
+                        placeholder="Enter well name..."
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-gray-600 mb-0.5 block flex items-center gap-1">
+                        <Palette className="h-2.5 w-2.5" />
+                        Color
+                      </Label>
+                      <Select
+                        value={nodeData.color || '#3b82f6'}
+                        onValueChange={(color) => updateWellColor(wellNode.id, color)}
+                      >
+                        <SelectTrigger className="h-6 border border-blue-200 focus:border-blue-400">
+                          <div 
+                            className="w-2.5 h-2.5 rounded border border-gray-300" 
+                            style={{ backgroundColor: nodeData.color || '#3b82f6' }}
+                          />
+                        </SelectTrigger>
+                        <SelectContent className="bg-white border border-gray-200 shadow-lg max-h-40 z-50">
+                          {colorOptions.map(color => (
+                            <SelectItem key={color.value} value={color.value} className="hover:bg-gray-50 text-xs">
+                              <div className="flex items-center gap-2">
+                                <div className={`w-2.5 h-2.5 rounded ${color.class}`}></div>
+                                <span>{color.name}</span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       </CardContent>
     </Card>

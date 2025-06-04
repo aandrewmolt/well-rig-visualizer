@@ -2,7 +2,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { EquipmentItem, IndividualEquipment } from '@/types/inventory';
+import { EquipmentItem, IndividualEquipment, StorageLocation } from '@/types/inventory';
 
 export const useSupabaseEquipmentMutations = () => {
   const queryClient = useQueryClient();
@@ -125,6 +125,70 @@ export const useSupabaseEquipmentMutations = () => {
     }
   });
 
+  const createStorageLocationMutation = useMutation({
+    mutationFn: async (newLocation: Omit<StorageLocation, 'id'>) => {
+      const { error } = await supabase
+        .from('storage_locations')
+        .insert({
+          name: newLocation.name,
+          address: newLocation.address,
+          is_default: newLocation.isDefault,
+        });
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['storage-locations'] });
+      toast.success('Storage location created successfully');
+    },
+    onError: (error) => {
+      console.error('Failed to create storage location:', error);
+      toast.error('Failed to create storage location');
+    }
+  });
+
+  const updateStorageLocationMutation = useMutation({
+    mutationFn: async ({ id, updates }: { id: string; updates: Partial<StorageLocation> }) => {
+      const { error } = await supabase
+        .from('storage_locations')
+        .update({
+          name: updates.name,
+          address: updates.address,
+          is_default: updates.isDefault,
+        })
+        .eq('id', id);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['storage-locations'] });
+      toast.success('Storage location updated successfully');
+    },
+    onError: (error) => {
+      console.error('Failed to update storage location:', error);
+      toast.error('Failed to update storage location');
+    }
+  });
+
+  const deleteStorageLocationMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('storage_locations')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['storage-locations'] });
+      toast.success('Storage location deleted successfully');
+    },
+    onError: (error) => {
+      console.error('Failed to delete storage location:', error);
+      toast.error('Failed to delete storage location');
+    }
+  });
+
   return {
     updateSingleEquipmentItem: (itemId: string, updates: Partial<EquipmentItem>) => {
       updateEquipmentItemMutation.mutate({ id: itemId, updates });
@@ -140,6 +204,18 @@ export const useSupabaseEquipmentMutations = () => {
 
     addIndividualEquipment: (newEquipment: Omit<IndividualEquipment, 'id' | 'lastUpdated'>) => {
       addIndividualEquipmentMutation.mutate(newEquipment);
+    },
+
+    createStorageLocation: (newLocation: Omit<StorageLocation, 'id'>) => {
+      createStorageLocationMutation.mutate(newLocation);
+    },
+
+    updateStorageLocation: (locationId: string, updates: Partial<StorageLocation>) => {
+      updateStorageLocationMutation.mutate({ id: locationId, updates });
+    },
+
+    deleteStorageLocation: (locationId: string) => {
+      deleteStorageLocationMutation.mutate(locationId);
     },
   };
 };

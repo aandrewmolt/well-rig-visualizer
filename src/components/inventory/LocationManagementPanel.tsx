@@ -11,7 +11,7 @@ import { useSupabaseInventory } from '@/hooks/useSupabaseInventory';
 import { toast } from 'sonner';
 
 const LocationManagementPanel = () => {
-  const { data } = useSupabaseInventory();
+  const { data, createStorageLocation, updateStorageLocation, deleteStorageLocation } = useSupabaseInventory();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingLocation, setEditingLocation] = useState<any>(null);
@@ -26,15 +26,17 @@ const LocationManagementPanel = () => {
     }
 
     try {
-      // Create location via Supabase
-      // This would be implemented in useSupabaseInventory
-      toast.success('Location created successfully');
+      createStorageLocation({
+        name: newLocationName.trim(),
+        address: newLocationAddress.trim() || undefined,
+        isDefault: isDefault,
+      });
       setIsCreateDialogOpen(false);
       setNewLocationName('');
       setNewLocationAddress('');
       setIsDefault(false);
     } catch (error) {
-      toast.error('Failed to create location');
+      console.error('Error creating location:', error);
     }
   };
 
@@ -52,26 +54,30 @@ const LocationManagementPanel = () => {
       return;
     }
 
+    if (!editingLocation) return;
+
     try {
-      // Update location via Supabase
-      toast.success('Location updated successfully');
+      updateStorageLocation(editingLocation.id, {
+        name: newLocationName.trim(),
+        address: newLocationAddress.trim() || undefined,
+        isDefault: isDefault,
+      });
       setIsEditDialogOpen(false);
       setEditingLocation(null);
       setNewLocationName('');
       setNewLocationAddress('');
       setIsDefault(false);
     } catch (error) {
-      toast.error('Failed to update location');
+      console.error('Error updating location:', error);
     }
   };
 
   const handleDeleteLocation = async (locationId: string) => {
     if (window.confirm('Are you sure you want to delete this location? This cannot be undone.')) {
       try {
-        // Delete location via Supabase
-        toast.success('Location deleted successfully');
+        deleteStorageLocation(locationId);
       } catch (error) {
-        toast.error('Failed to delete location');
+        console.error('Error deleting location:', error);
       }
     }
   };

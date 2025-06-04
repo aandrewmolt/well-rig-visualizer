@@ -64,6 +64,11 @@ const EquipmentTypeManager = () => {
     }
   };
 
+  const handleCancel = () => {
+    setIsDialogOpen(false);
+    setEditingType(null);
+  };
+
   return (
     <Card className="bg-white shadow-lg">
       <CardHeader className="pb-3">
@@ -89,10 +94,7 @@ const EquipmentTypeManager = () => {
               <EquipmentTypeForm
                 editingType={editingType}
                 onSubmit={handleSubmit}
-                onCancel={() => {
-                  setIsDialogOpen(false);
-                  setEditingType(null);
-                }}
+                onCancel={handleCancel}
               />
             </DialogContent>
           </Dialog>

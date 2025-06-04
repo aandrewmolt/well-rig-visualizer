@@ -6,6 +6,7 @@ import { useSupabaseEquipmentUtils } from '@/hooks/supabase/useSupabaseEquipment
 import { InventoryContextType } from './inventory/InventoryContextTypes';
 import { useInventoryMutations } from './inventory/useInventoryMutations';
 import { useInventoryRealtime } from './inventory/useInventoryRealtime';
+import { useInventoryUtils } from './inventory/useInventoryUtils';
 
 const InventoryContext = createContext<InventoryContextType | undefined>(undefined);
 
@@ -22,6 +23,7 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   } = useSupabaseEquipmentQueries();
 
   const supabaseUtils = useSupabaseEquipmentUtils(equipmentItems, individualEquipment);
+  const inventoryUtils = useInventoryUtils(equipmentTypes, storageLocations, equipmentItems);
   const mutations = useInventoryMutations(storageLocations);
   
   // Set up real-time subscriptions with optimistic delete handling
@@ -72,6 +74,7 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
     // Utilities - combine both utils
     ...supabaseUtils,
+    ...inventoryUtils,
 
     // Legacy compatibility methods - NO LOCAL STORAGE
     updateEquipmentTypes: mutations.updateEquipmentTypeWrapper,

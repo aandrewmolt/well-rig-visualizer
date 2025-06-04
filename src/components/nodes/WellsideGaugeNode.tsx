@@ -30,8 +30,8 @@ const WellsideGaugeNode = ({ data }: { data: any }) => {
       <div className="flex flex-col items-center gap-1">
         <Gauge className="h-5 w-5" />
         <div>
-          <h3 className="font-bold text-sm">{data.label}</h3>
-          <p className="text-xs opacity-80">Wellside Gauge</p>
+          <h3 className="font-bold text-sm">{data.label || 'Wellside Gauge'}</h3>
+          <p className="text-xs opacity-80">1502 Pressure Gauge</p>
         </div>
       </div>
     </div>

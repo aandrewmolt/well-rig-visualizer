@@ -411,8 +411,13 @@ export type Database = {
           company_computer_names: Json | null
           created_at: string
           edges: Json
+          enhanced_config: Json | null
           equipment_allocated: boolean | null
           equipment_assignment: Json | null
+          frac_baud_rate: string | null
+          frac_com_port: string | null
+          gauge_baud_rate: string | null
+          gauge_com_port: string | null
           has_wellside_gauge: boolean
           id: string
           main_box_name: string | null
@@ -428,8 +433,13 @@ export type Database = {
           company_computer_names?: Json | null
           created_at?: string
           edges?: Json
+          enhanced_config?: Json | null
           equipment_allocated?: boolean | null
           equipment_assignment?: Json | null
+          frac_baud_rate?: string | null
+          frac_com_port?: string | null
+          gauge_baud_rate?: string | null
+          gauge_com_port?: string | null
           has_wellside_gauge?: boolean
           id?: string
           main_box_name?: string | null
@@ -445,8 +455,13 @@ export type Database = {
           company_computer_names?: Json | null
           created_at?: string
           edges?: Json
+          enhanced_config?: Json | null
           equipment_allocated?: boolean | null
           equipment_assignment?: Json | null
+          frac_baud_rate?: string | null
+          frac_com_port?: string | null
+          gauge_baud_rate?: string | null
+          gauge_com_port?: string | null
           has_wellside_gauge?: boolean
           id?: string
           main_box_name?: string | null

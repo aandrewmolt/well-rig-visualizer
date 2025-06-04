@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -34,7 +33,12 @@ const Index = () => {
       mainBoxName: 'ShearStream Box',
       satelliteName: 'Starlink',
       wellsideGaugeName: 'Wellside Gauge',
-      selectedCableType: 'defaultCableType'
+      selectedCableType: 'defaultCableType',
+      fracBaudRate: '19200',
+      gaugeBaudRate: '9600',
+      fracComPort: '',
+      gaugeComPort: '',
+      enhancedConfig: {},
     };
 
     setJobs(prev => [...prev, newJob]);

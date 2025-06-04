@@ -56,7 +56,7 @@ const IndividualEquipmentManager: React.FC<IndividualEquipmentManagerProps> = ({
       name: formData.name || `${equipmentType.name} ${equipmentId}`,
       typeId: equipmentType.id,
       locationId: formData.locationId,
-      status: 'available',
+      status: 'available' as const,
       serialNumber: formData.serialNumber,
       notes: formData.notes,
       location_type: 'storage'

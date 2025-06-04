@@ -1,12 +1,13 @@
+
 import { useState, useCallback } from 'react';
 import { Node, Edge } from '@xyflow/react';
-import { useInventoryData } from './useInventoryData';
+import { useInventory } from '@/contexts/InventoryContext';
 import { useComprehensiveEquipmentTracking } from './equipment/useComprehensiveEquipmentTracking';
 import { toast } from 'sonner';
 import { EquipmentItem } from '@/types/inventory';
 
 export const useRobustEquipmentTracking = (jobId: string, nodes: Node[], edges: Edge[]) => {
-  const { data, updateEquipmentItems } = useInventoryData();
+  const { data, updateEquipmentItems } = useInventory();
   const [isProcessing, setIsProcessing] = useState(false);
   
   const { analyzeEquipmentUsage, validateEquipmentAvailability, generateEquipmentReport } = useComprehensiveEquipmentTracking(nodes, edges);
@@ -97,8 +98,8 @@ export const useRobustEquipmentTracking = (jobId: string, nodes: Node[], edges: 
     // Find available equipment at location
     const availableItem = updatedItems.find(
       item => 
-        item.typeId === typeId && 
-        item.locationId === locationId && 
+        item.type_id === typeId && 
+        item.location_id === locationId && 
         item.status === 'available'
     );
     
@@ -110,18 +111,20 @@ export const useRobustEquipmentTracking = (jobId: string, nodes: Node[], edges: 
 
     // Deduct from available
     availableItem.quantity -= quantity;
-    availableItem.lastUpdated = new Date();
+    availableItem.updated_at = new Date().toISOString();
 
     // Create deployed record
     const deployedItem: EquipmentItem = {
       id: `deployed-${typeId}-${jobId}-${Date.now()}`,
-      typeId,
-      locationId,
+      type_id: typeId,
+      location_id: locationId,
       quantity,
       status: 'deployed',
-      jobId,
-      lastUpdated: new Date(),
+      job_id: jobId,
+      updated_at: new Date().toISOString(),
+      created_at: new Date().toISOString(),
       notes: `Allocated for job diagram analysis`,
+      location_type: 'storage'
     };
 
     updatedItems.push(deployedItem);
@@ -134,12 +137,12 @@ export const useRobustEquipmentTracking = (jobId: string, nodes: Node[], edges: 
     const updatedItems: EquipmentItem[] = [];
     
     data.equipmentItems.forEach(item => {
-      if (item.status === 'deployed' && item.jobId === jobId) {
+      if (item.status === 'deployed' && item.job_id === jobId) {
         // Find corresponding available item to return quantity to
         const availableItem = data.equipmentItems.find(
           available => 
-            available.typeId === item.typeId && 
-            available.locationId === item.locationId &&
+            available.type_id === item.type_id && 
+            available.location_id === item.location_id &&
             available.status === 'available' &&
             available.id !== item.id
         );
@@ -148,7 +151,7 @@ export const useRobustEquipmentTracking = (jobId: string, nodes: Node[], edges: 
           // Update the available item quantity
           const updatedAvailableItem = updatedItems.find(ui => ui.id === availableItem.id) || availableItem;
           updatedAvailableItem.quantity += item.quantity;
-          updatedAvailableItem.lastUpdated = new Date();
+          updatedAvailableItem.updated_at = new Date().toISOString();
           
           if (!updatedItems.find(ui => ui.id === availableItem.id)) {
             updatedItems.push(updatedAvailableItem);
@@ -167,7 +170,7 @@ export const useRobustEquipmentTracking = (jobId: string, nodes: Node[], edges: 
 
   const validateInventoryConsistency = useCallback(() => {
     const deployedItems = data.equipmentItems.filter(
-      item => item.status === 'deployed' && item.jobId === jobId
+      item => item.status === 'deployed' && item.job_id === jobId
     );
 
     const usage = analyzeEquipmentUsage();
@@ -188,7 +191,7 @@ export const useRobustEquipmentTracking = (jobId: string, nodes: Node[], edges: 
     let isConsistent = true;
     Object.entries(requiredQuantities).forEach(([typeId, required]) => {
       const deployed = deployedItems
-        .filter(item => item.typeId === typeId)
+        .filter(item => item.type_id === typeId)
         .reduce((sum, item) => sum + item.quantity, 0);
       
       if (deployed !== required) {

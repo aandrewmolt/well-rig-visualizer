@@ -1,3 +1,4 @@
+
 import React, { useMemo } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
@@ -5,8 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Monitor, Satellite, Square, Plus, X, CheckCircle, AlertCircle } from 'lucide-react';
-import { useTrackedEquipment } from '@/hooks/useTrackedEquipment';
-import { TrackedEquipment } from '@/types/equipment';
+import { useInventory } from '@/contexts/InventoryContext';
+import { IndividualEquipment } from '@/types/inventory';
 
 interface CompactEquipmentSelectionPanelProps {
   selectedShearstreamBoxes: string[];
@@ -31,40 +32,33 @@ const CompactEquipmentSelectionPanel: React.FC<CompactEquipmentSelectionPanelPro
   onRemoveShearstreamBox,
   hasWellsideGauge,
 }) => {
-  const { getAvailableEquipment, trackedEquipment } = useTrackedEquipment();
+  const { data } = useInventory();
 
   const availableEquipment = useMemo(() => {
+    const available = data.individualEquipment.filter(eq => eq.status === 'available');
+    
     return {
-      ssBoxes: getAvailableEquipment('shearstream-box'),
-      starlinks: getAvailableEquipment('starlink'),
-      computers: getAvailableEquipment('customer-computer'),
+      ssBoxes: available.filter(eq => eq.equipmentId.startsWith('SS')),
+      starlinks: available.filter(eq => eq.equipmentId.startsWith('SL')),
+      computers: available.filter(eq => eq.equipmentId.startsWith('CC') || eq.equipmentId.startsWith('CT')),
     };
-  }, [getAvailableEquipment]);
+  }, [data.individualEquipment]);
 
-  const getEquipmentDisplay = (equipment: TrackedEquipment) => {
-    const formatId = (id: string) => {
-      if (equipment.name.toLowerCase().includes('computer')) {
-        return `CC-${id.padStart(3, '0')}`;
-      }
-      return `SS-${id.padStart(3, '0')}`;
-    };
-
-    return (
-      <div className="flex items-center justify-between w-full">
-        <span className="truncate text-xs font-medium">{formatId(equipment.equipmentId)}</span>
-        <Badge 
-          variant={equipment.status === 'available' ? 'default' : 'secondary'} 
-          className={`ml-1 text-xs ${equipment.status === 'available' ? 'bg-green-100 text-green-800 border-green-300' : 'bg-gray-100 text-gray-800 border-gray-300'}`}
-        >
-          <div className={`w-2 h-2 rounded-full mr-1 ${equipment.status === 'available' ? 'bg-green-500' : 'bg-gray-400'}`}></div>
-          {equipment.status}
-        </Badge>
-      </div>
-    );
-  };
+  const getEquipmentDisplay = (equipment: IndividualEquipment) => (
+    <div className="flex items-center justify-between w-full">
+      <span className="truncate text-xs font-medium">{equipment.equipmentId}</span>
+      <Badge 
+        variant={equipment.status === 'available' ? 'default' : 'secondary'} 
+        className={`ml-1 text-xs ${equipment.status === 'available' ? 'bg-green-100 text-green-800 border-green-300' : 'bg-gray-100 text-gray-800 border-gray-300'}`}
+      >
+        <div className={`w-2 h-2 rounded-full mr-1 ${equipment.status === 'available' ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+        {equipment.status}
+      </Badge>
+    </div>
+  );
 
   const getSelectedEquipment = (equipmentId: string) => {
-    return trackedEquipment.find(eq => eq.id === equipmentId);
+    return data.individualEquipment.find(eq => eq.id === equipmentId);
   };
 
   return (
@@ -211,7 +205,7 @@ const CompactEquipmentSelectionPanel: React.FC<CompactEquipmentSelectionPanelPro
               <div key={index} className="space-y-2 p-3 bg-white rounded-lg border border-gray-200 hover:border-purple-300 transition-all duration-200">
                 <div className="flex items-center gap-2">
                   <div className={`w-2 h-2 rounded-full ${selectedCustomerComputers[index] ? 'bg-green-500' : 'bg-gray-300'}`}></div>
-                  <Label className="text-xs font-medium text-gray-700">CC-{(index + 1).toString().padStart(3, '0')}</Label>
+                  <Label className="text-xs font-medium text-gray-700">Computer {index + 1}</Label>
                   {selectedCustomerComputers[index] && (
                     <CheckCircle className="h-3 w-3 text-green-500 ml-auto" />
                   )}

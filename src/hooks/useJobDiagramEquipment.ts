@@ -1,3 +1,4 @@
+
 import { useCallback } from 'react';
 import { Node } from '@xyflow/react';
 import { useInventory } from '@/contexts/InventoryContext';
@@ -44,21 +45,13 @@ export const useJobDiagramEquipment = ({
 }: UseJobDiagramEquipmentProps) => {
   const { data, updateIndividualEquipment } = useInventory();
 
-  // Get available equipment from inventory
-  const getAvailableEquipment = useCallback((typePrefix: string) => {
-    return data.individualEquipment.filter(eq => 
-      eq.equipmentId.startsWith(typePrefix) && 
-      eq.status === 'available'
-    );
-  }, [data.individualEquipment]);
-
   const deployEquipment = useCallback(async (equipmentId: string, jobId: string) => {
     try {
       await updateIndividualEquipment(equipmentId, { 
         status: 'deployed',
-        jobId: jobId
+        job_id: jobId
       });
-      toast.success(`Equipment ${equipmentId} deployed to job`);
+      toast.success(`Equipment deployed to job`);
     } catch (error) {
       console.error('Failed to deploy equipment:', error);
       toast.error('Failed to deploy equipment');
@@ -69,16 +62,16 @@ export const useJobDiagramEquipment = ({
     try {
       await updateIndividualEquipment(equipmentId, { 
         status: 'available',
-        jobId: null
+        job_id: null
       });
-      toast.success(`Equipment ${equipmentId} returned to inventory`);
+      toast.success(`Equipment returned to inventory`);
     } catch (error) {
       console.error('Failed to return equipment:', error);
       toast.error('Failed to return equipment');
     }
   }, [updateIndividualEquipment]);
 
-  // Handle equipment selection - updated for customer computers
+  // Handle equipment selection - updated for unified inventory
   const handleEquipmentSelect = useCallback((type: 'shearstream-box' | 'starlink' | 'customer-computer', equipmentId: string, index?: number) => {
     const equipment = data.individualEquipment.find(eq => eq.id === equipmentId);
     if (!equipment) return;
@@ -92,7 +85,7 @@ export const useJobDiagramEquipment = ({
       setSelectedShearstreamBoxes(newBoxes);
       deployEquipment(equipmentId, job.id);
       
-      // Update the specific SS box node with standardized format
+      // Update the specific SS box node with equipment ID
       const boxNodeId = index === 0 ? 'main-box' : `main-box-${index + 1}`;
       updateMainBoxName(boxNodeId, equipment.equipmentId, setNodes);
     } else if (type === 'starlink') {
@@ -111,10 +104,10 @@ export const useJobDiagramEquipment = ({
       setSelectedCustomerComputers(newComputers);
       deployEquipment(equipmentId, job.id);
       
-      // Keep the original ID format
+      // Update customer computer node with equipment ID
       updateCustomerComputerName(`customer-computer-${index + 1}`, equipment.equipmentId, setNodes);
       
-      // Update the node data to include isTablet flag
+      // Update the node data to include isTablet flag based on equipment ID
       const isTablet = equipment.equipmentId.startsWith('CT');
       setNodes(nodes => 
         nodes.map(node => 
@@ -167,7 +160,6 @@ export const useJobDiagramEquipment = ({
     handleEquipmentSelect,
     handleAddShearstreamBox,
     handleRemoveShearstreamBox,
-    getAvailableEquipment,
     deployEquipment,
     returnEquipment,
   };

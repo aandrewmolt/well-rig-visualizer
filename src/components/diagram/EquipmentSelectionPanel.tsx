@@ -1,3 +1,4 @@
+
 import React, { useMemo } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
@@ -5,8 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Monitor, Satellite, Square, Plus, X } from 'lucide-react';
-import { useTrackedEquipment } from '@/hooks/useTrackedEquipment';
-import { TrackedEquipment } from '@/types/equipment';
+import { useInventory } from '@/contexts/InventoryContext';
+import { IndividualEquipment } from '@/types/inventory';
 
 interface EquipmentSelectionPanelProps {
   selectedShearstreamBoxes: string[];
@@ -31,18 +32,20 @@ const EquipmentSelectionPanel: React.FC<EquipmentSelectionPanelProps> = ({
   onRemoveShearstreamBox,
   hasWellsideGauge,
 }) => {
-  const { getAvailableEquipment, trackedEquipment } = useTrackedEquipment();
+  const { data } = useInventory();
 
-  // Memoize available equipment to prevent recalculation on every render
+  // Filter available equipment by type and status
   const availableEquipment = useMemo(() => {
+    const available = data.individualEquipment.filter(eq => eq.status === 'available');
+    
     return {
-      ssBoxes: getAvailableEquipment('shearstream-box'),
-      starlinks: getAvailableEquipment('starlink'),
-      computers: getAvailableEquipment('customer-computer'),
+      ssBoxes: available.filter(eq => eq.equipmentId.startsWith('SS')),
+      starlinks: available.filter(eq => eq.equipmentId.startsWith('SL')),
+      computers: available.filter(eq => eq.equipmentId.startsWith('CC') || eq.equipmentId.startsWith('CT')),
     };
-  }, [getAvailableEquipment]);
+  }, [data.individualEquipment]);
 
-  const getEquipmentDisplay = (equipment: TrackedEquipment) => (
+  const getEquipmentDisplay = (equipment: IndividualEquipment) => (
     <div className="flex items-center justify-between w-full">
       <span>{equipment.equipmentId} - {equipment.name}</span>
       <Badge variant={equipment.status === 'available' ? 'default' : 'secondary'}>
@@ -52,7 +55,7 @@ const EquipmentSelectionPanel: React.FC<EquipmentSelectionPanelProps> = ({
   );
 
   const getSelectedEquipment = (equipmentId: string) => {
-    return trackedEquipment.find(eq => eq.id === equipmentId);
+    return data.individualEquipment.find(eq => eq.id === equipmentId);
   };
 
   return (

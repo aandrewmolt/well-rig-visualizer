@@ -1,5 +1,5 @@
 
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { useDebouncedSave } from '@/hooks/useDebouncedSave';
 import { useSupabaseJobs } from '@/hooks/useSupabaseJobs';
 import { JobEquipmentAssignment } from '@/types/equipment';
@@ -42,6 +42,8 @@ export const useJobDiagramSave = ({
   selectedCustomerComputers,
 }: UseJobDiagramSaveProps) => {
   const { saveJob } = useSupabaseJobs();
+  const lastSavedDataRef = useRef<string>('');
+  const initialLoadCompleteRef = useRef(false);
 
   // Save data preparation with enhanced edge validation
   const saveDataMemo = useMemo(() => {
@@ -64,8 +66,6 @@ export const useJobDiagramSave = ({
       data: edge.data || {},
       style: edge.style || {},
     }));
-
-    console.log('Preparing save data with', validatedEdges.length, 'validated edges');
 
     return {
       id: job.id,
@@ -100,29 +100,45 @@ export const useJobDiagramSave = ({
     selectedCustomerComputers
   ]);
 
+  // Create a stable string representation to detect actual changes
+  const currentDataString = useMemo(() => {
+    return JSON.stringify(saveDataMemo);
+  }, [saveDataMemo]);
+
   const performSave = React.useCallback(() => {
-    if (isInitialized && (nodes.length > 0 || edges.length > 0)) {
-      console.log('Saving job data to Supabase with edges:', saveDataMemo.edges.length);
-      console.log('Edge details:', saveDataMemo.edges.map(e => ({ 
-        id: e.id, 
-        type: e.type, 
-        source: e.source, 
-        target: e.target,
-        hasData: !!e.data,
-        hasStyle: !!e.style 
-      })));
+    // Only save if data has actually changed and we're not in the initial load phase
+    if (isInitialized && initialLoadCompleteRef.current && currentDataString !== lastSavedDataRef.current) {
+      console.log('Performing save - data has changed');
+      lastSavedDataRef.current = currentDataString;
       saveJob(saveDataMemo);
+    } else if (!initialLoadCompleteRef.current) {
+      console.log('Skipping save - initial load not complete');
+    } else if (currentDataString === lastSavedDataRef.current) {
+      console.log('Skipping save - no data changes detected');
     }
-  }, [isInitialized, nodes.length, edges.length, saveJob, saveDataMemo]);
+  }, [isInitialized, currentDataString, saveJob, saveDataMemo]);
 
-  const { debouncedSave, cleanup } = useDebouncedSave(performSave, 300);
+  const { debouncedSave, cleanup } = useDebouncedSave(performSave, 1000); // Increased debounce time
 
-  // Trigger debounced save whenever relevant data changes
+  // Mark initial load as complete after a short delay
   useEffect(() => {
-    if (isInitialized) {
+    if (isInitialized && !initialLoadCompleteRef.current) {
+      const timer = setTimeout(() => {
+        initialLoadCompleteRef.current = true;
+        lastSavedDataRef.current = currentDataString;
+        console.log('Initial load complete, ready for auto-save');
+      }, 2000); // Wait 2 seconds after initialization to start auto-saving
+
+      return () => clearTimeout(timer);
+    }
+  }, [isInitialized, currentDataString]);
+
+  // Trigger debounced save only when there are actual changes
+  useEffect(() => {
+    if (isInitialized && initialLoadCompleteRef.current) {
       debouncedSave();
     }
-  }, [saveDataMemo, isInitialized, debouncedSave]);
+  }, [currentDataString, isInitialized, debouncedSave]);
 
   // Cleanup on unmount
   useEffect(() => {

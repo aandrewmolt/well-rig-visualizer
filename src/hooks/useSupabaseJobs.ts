@@ -23,6 +23,7 @@ export interface JobDiagram {
 
 export const useSupabaseJobs = () => {
   const queryClient = useQueryClient();
+  let lastToastTime = 0;
 
   const { data: jobs = [], isLoading } = useQuery({
     queryKey: ['supabase-jobs'],
@@ -81,7 +82,13 @@ export const useSupabaseJobs = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['supabase-jobs'] });
-      toast.success('Job saved successfully');
+      
+      // Throttle success toasts to prevent spam (max one every 3 seconds)
+      const now = Date.now();
+      if (now - lastToastTime > 3000) {
+        toast.success('Job saved successfully');
+        lastToastTime = now;
+      }
     },
     onError: (error) => {
       console.error('Error saving job:', error);

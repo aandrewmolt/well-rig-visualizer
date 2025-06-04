@@ -1,5 +1,6 @@
 
 import { EquipmentType } from '@/types/inventory';
+import { migrateCableTypeId } from '@/utils/cableTypeMigration';
 
 export const useCableTypeService = (equipmentTypes: EquipmentType[]) => {
   
@@ -8,11 +9,16 @@ export const useCableTypeService = (equipmentTypes: EquipmentType[]) => {
   };
 
   const getCableTypeById = (typeId: string) => {
-    return equipmentTypes.find(type => type.id === typeId && type.category === 'cables');
+    // Migrate old cable type ID to new format first
+    const migratedId = migrateCableTypeId(typeId);
+    return equipmentTypes.find(type => type.id === migratedId && type.category === 'cables');
   };
 
   const getCableColor = (cableTypeId: string) => {
-    const cableType = getCableTypeById(cableTypeId);
+    // Migrate old cable type ID to new format first
+    const migratedId = migrateCableTypeId(cableTypeId);
+    const cableType = getCableTypeById(migratedId);
+    
     if (!cableType) return '#6b7280'; // Default gray
     
     const id = cableType.id;
@@ -40,7 +46,9 @@ export const useCableTypeService = (equipmentTypes: EquipmentType[]) => {
   };
 
   const getCableDisplayName = (cableTypeId: string) => {
-    const cableType = getCableTypeById(cableTypeId);
+    // Migrate old cable type ID to new format first
+    const migratedId = migrateCableTypeId(cableTypeId);
+    const cableType = getCableTypeById(migratedId);
     return cableType?.name || 'Unknown Cable';
   };
 
@@ -59,7 +67,10 @@ export const useCableTypeService = (equipmentTypes: EquipmentType[]) => {
   };
 
   const getCableLengthFromType = (cableTypeId: string): string => {
-    const cableType = getCableTypeById(cableTypeId);
+    // Migrate old cable type ID to new format first
+    const migratedId = migrateCableTypeId(cableTypeId);
+    const cableType = getCableTypeById(migratedId);
+    
     if (!cableType) return '200ft';
     
     const id = cableType.id;
@@ -73,7 +84,10 @@ export const useCableTypeService = (equipmentTypes: EquipmentType[]) => {
   };
 
   const getCableVersion = (cableTypeId: string): string | undefined => {
-    const cableType = getCableTypeById(cableTypeId);
+    // Migrate old cable type ID to new format first
+    const migratedId = migrateCableTypeId(cableTypeId);
+    const cableType = getCableTypeById(migratedId);
+    
     if (!cableType) return undefined;
     
     const id = cableType.id;

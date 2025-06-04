@@ -4,6 +4,7 @@ import { Connection, addEdge, Node } from '@xyflow/react';
 import { useInventoryData } from './useInventoryData';
 import { useCableTypeService } from './cables/useCableTypeService';
 import { useCableConnectionValidator } from './equipment/useCableConnectionValidator';
+import { migrateCableTypeId } from '@/utils/cableTypeMigration';
 import { toast } from 'sonner';
 
 export const useDiagramConnections = (
@@ -64,8 +65,11 @@ export const useDiagramConnections = (
         return;
       }
 
-      // For cable connections, validate first
-      const validation = validateConnection(sourceNode, targetNode, selectedCableType);
+      // For cable connections, migrate cable type ID first
+      const migratedCableType = selectedCableType ? migrateCableTypeId(selectedCableType) : '';
+      
+      // Validate connection
+      const validation = validateConnection(sourceNode, targetNode, migratedCableType);
       
       if (!validation.isValid) {
         toast.error(`Invalid connection: ${validation.reason}`);
@@ -83,9 +87,9 @@ export const useDiagramConnections = (
       let cableLabel = 'Cable';
       let cableColor = '#374151';
       
-      if (selectedCableType && selectedCableType !== '') {
-        cableLabel = getCableDisplayName(selectedCableType);
-        cableColor = getCableColor(selectedCableType);
+      if (migratedCableType && migratedCableType !== '') {
+        cableLabel = getCableDisplayName(migratedCableType);
+        cableColor = getCableColor(migratedCableType);
       } else {
         // Default cable types based on connection
         if (sourceNode.type === 'mainBox' || targetNode.type === 'mainBox') {
@@ -109,7 +113,7 @@ export const useDiagramConnections = (
         type: 'cable',
         label: cableLabel,
         data: {
-          cableTypeId: selectedCableType,
+          cableTypeId: migratedCableType, // Store the migrated cable type ID
           label: cableLabel,
           connectionType: 'cable'
         },

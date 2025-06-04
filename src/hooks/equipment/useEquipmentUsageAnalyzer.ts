@@ -1,6 +1,7 @@
 
 import { Node, Edge } from '@xyflow/react';
 import { useInventoryData } from '@/hooks/useInventoryData';
+import { migrateCableTypeId } from '@/utils/cableTypeMigration';
 import { toast } from 'sonner';
 
 interface EdgeData {
@@ -50,11 +51,16 @@ export const useEquipmentUsageAnalyzer = (nodes: Node[], edges: Edge[]) => {
       if (edgeData?.connectionType === 'direct') {
         usage.directConnections++;
       } else if (edgeData?.connectionType === 'cable' && typeof edgeData.cableTypeId === 'string') {
-        const cableTypeId = edgeData.cableTypeId;
-        const equipmentType = data.equipmentTypes.find(type => type.id === cableTypeId);
+        // Migrate old cable type ID to new format
+        const originalCableTypeId = edgeData.cableTypeId;
+        const migratedCableTypeId = migrateCableTypeId(originalCableTypeId);
+        
+        console.log(`Cable type migration: ${originalCableTypeId} -> ${migratedCableTypeId}`);
+        
+        const equipmentType = data.equipmentTypes.find(type => type.id === migratedCableTypeId);
         
         if (equipmentType) {
-          if (!usage.cables[cableTypeId]) {
+          if (!usage.cables[migratedCableTypeId]) {
             // Enhanced cable characteristic detection
             const name = equipmentType.name.toLowerCase();
             let length = '200ft'; // default
@@ -75,7 +81,7 @@ export const useEquipmentUsageAnalyzer = (nodes: Node[], edges: Edge[]) => {
             
             if (name.includes('reel')) category = 'reel';
 
-            usage.cables[cableTypeId] = {
+            usage.cables[migratedCableTypeId] = {
               typeName: equipmentType.name,
               quantity: 0,
               category,
@@ -83,10 +89,13 @@ export const useEquipmentUsageAnalyzer = (nodes: Node[], edges: Edge[]) => {
               version,
             };
           }
-          usage.cables[cableTypeId].quantity++;
+          usage.cables[migratedCableTypeId].quantity++;
         } else {
-          console.warn(`Cable type ${cableTypeId} not found in equipment types`);
-          toast.error(`Unknown cable type detected: ${cableTypeId}`);
+          console.warn(`Cable type ${migratedCableTypeId} (migrated from ${originalCableTypeId}) not found in equipment types`);
+          // Only show error for final migrated ID, not original
+          if (originalCableTypeId !== migratedCableTypeId) {
+            console.log(`Attempted migration from old ID ${originalCableTypeId} to ${migratedCableTypeId}`);
+          }
         }
       }
     });

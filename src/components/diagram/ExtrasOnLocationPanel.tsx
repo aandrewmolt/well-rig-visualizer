@@ -19,7 +19,7 @@ interface ExtrasOnLocationPanelProps {
     reason: string;
     addedDate: Date;
     notes?: string;
-    individualEquipmentId?: string; // Add this for individual tracking
+    individualEquipmentId?: string;
   }>;
   onAddExtra: (equipmentTypeId: string, quantity: number, reason: string, notes?: string, individualEquipmentId?: string) => void;
   onRemoveExtra: (extraId: string) => void;

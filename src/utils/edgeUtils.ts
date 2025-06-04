@@ -43,7 +43,7 @@ export const logEdgeDebugging = (
   targetNodeType?: string,
   edgeType?: string,
   connectionType?: string,
-  label?: string
+  label?: string | undefined
 ) => {
   console.log('InteractiveCableEdge debugging:', {
     id,

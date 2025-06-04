@@ -66,9 +66,6 @@ const InteractiveCableEdge: React.FC<InteractiveCableEdgeProps> = ({
   // Get current label with enhanced fallback logic
   const currentLabel = getCurrentLabel(data, currentEdge);
 
-  // Convert label to string for debugging (handle ReactNode case)
-  const labelForDebugging = typeof currentLabel === 'string' ? currentLabel : undefined;
-
   // Log debugging information
   logEdgeDebugging(
     id,
@@ -78,7 +75,7 @@ const InteractiveCableEdge: React.FC<InteractiveCableEdgeProps> = ({
     targetNode?.type,
     currentEdge.type,
     data?.connectionType || currentEdge.data?.connectionType,
-    labelForDebugging
+    currentLabel
   );
 
   // Check if this is a Y to Well connection (can toggle between 100ft and direct)

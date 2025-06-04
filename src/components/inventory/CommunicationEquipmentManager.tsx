@@ -1,13 +1,19 @@
 
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Wifi, Monitor, Tablet, Box } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Wifi, Monitor, Tablet, Box, Search, Database, Trash2 } from 'lucide-react';
 import { useInventory } from '@/contexts/InventoryContext';
 import { useDraftEquipmentManager } from '@/hooks/useDraftEquipmentManager';
+import { useEquipmentMigration } from '@/hooks/inventory/useEquipmentMigration';
+import { useInventoryDataCleanup } from '@/hooks/inventory/useInventoryDataCleanup';
+import { toast } from 'sonner';
 import CommunicationEquipmentSection from './CommunicationEquipmentSection';
 
 const CommunicationEquipmentManager: React.FC = () => {
-  const { data, addBulkIndividualEquipment } = useInventory();
+  const { data, addBulkIndividualEquipment, deleteIndividualEquipment } = useInventory();
+  const { migrateEquipmentNaming } = useEquipmentMigration();
+  const { analyzeDataConsistency } = useInventoryDataCleanup();
   
   const communicationTypes = data.equipmentTypes.filter(type => 
     type.category === 'communication' && type.requiresIndividualTracking
@@ -29,6 +35,37 @@ const CommunicationEquipmentManager: React.FC = () => {
       }
     }
   );
+
+  const handleDeleteAllCommunicationEquipment = async () => {
+    const confirm = window.confirm(
+      `Are you sure you want to delete ALL communication equipment? This cannot be undone.`
+    );
+    
+    if (!confirm) return;
+
+    try {
+      const communicationEquipment = data.individualEquipment.filter(eq => {
+        const equipmentType = data.equipmentTypes.find(type => type.id === eq.typeId);
+        return equipmentType && equipmentType.category === 'communication' && eq.status !== 'deployed';
+      });
+
+      for (const equipment of communicationEquipment) {
+        await deleteIndividualEquipment(equipment.id);
+      }
+
+      toast.success(`Deleted ${communicationEquipment.length} communication equipment items`);
+      
+      if (communicationEquipment.length < data.individualEquipment.filter(eq => {
+        const equipmentType = data.equipmentTypes.find(type => type.id === eq.typeId);
+        return equipmentType && equipmentType.category === 'communication';
+      }).length) {
+        toast.warning(`Some deployed items were not deleted`);
+      }
+    } catch (error) {
+      console.error('Failed to delete communication equipment:', error);
+      toast.error('Failed to delete communication equipment');
+    }
+  };
 
   const getEquipmentForType = (typeId: string) => {
     const existing = data.individualEquipment.filter(eq => eq.typeId === typeId);
@@ -61,6 +98,68 @@ const CommunicationEquipmentManager: React.FC = () => {
           </p>
         </CardHeader>
       </Card>
+
+      {/* Data Management Tools */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        {/* Migration Tool */}
+        <Card className="border-blue-200 bg-blue-50">
+          <CardContent className="p-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-blue-700 font-medium">Fix Equipment Naming</p>
+                <p className="text-xs text-blue-600">
+                  Update names: SS0001→ShearStream-0001, CC01→Customer Computer 01
+                </p>
+              </div>
+              <Button size="sm" onClick={migrateEquipmentNaming} variant="outline">
+                <Search className="h-3 w-3 mr-1" />
+                Fix Names
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Data Analysis Tool */}
+        <Card className="border-purple-200 bg-purple-50">
+          <CardContent className="p-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-purple-700 font-medium">Analyze Data</p>
+                <p className="text-xs text-purple-600">
+                  Check for missing equipment and data consistency
+                </p>
+              </div>
+              <Button size="sm" onClick={analyzeDataConsistency} variant="outline">
+                <Database className="h-3 w-3 mr-1" />
+                Analyze
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Delete All Tool */}
+        <Card className="border-red-200 bg-red-50">
+          <CardContent className="p-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-red-700 font-medium">Delete All Communication</p>
+                <p className="text-xs text-red-600">
+                  Remove all communication equipment (except deployed)
+                </p>
+              </div>
+              <Button 
+                size="sm" 
+                onClick={handleDeleteAllCommunicationEquipment} 
+                variant="outline"
+                className="text-red-600 hover:text-red-700"
+              >
+                <Trash2 className="h-3 w-3 mr-1" />
+                Delete All
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Priority order: SS, SL, CC, CT */}
       {['ShearStream Box', 'Starlink', 'Customer Computer', 'Customer Tablet'].map(typeName => {

@@ -7,13 +7,16 @@ export const useEquipmentIdGenerator = () => {
     
     // Correct padding for different equipment types
     if (prefix === 'SS') {
-      // ShearStream: 4 digits (SS0001, SS0010, SS0100, SS1000)
+      // ShearStream: 4 digits (SS0001, SS0002, SS0010, SS0100, SS1000)
       return `${prefix}${counter.toString().padStart(4, '0')}`;
     } else if (prefix === 'CC' || prefix === 'CT' || prefix === 'SL') {
       // Customer Computer, Customer Tablet, Starlink: 2 digits (CC01, CT01, SL01)
       return `${prefix}${counter.toString().padStart(2, '0')}`;
+    } else if (prefix === 'PG' || prefix === 'BP') {
+      // Pressure Gauge, Battery Pack: 3 digits (PG001, BP001)
+      return `${prefix}${counter.toString().padStart(3, '0')}`;
     } else {
-      // Others (CC, CT, PG, BP): 3 digits (CC001, CT001, etc.)
+      // Default: 3 digits for any other equipment
       return `${prefix}${counter.toString().padStart(3, '0')}`;
     }
   };

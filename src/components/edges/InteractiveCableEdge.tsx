@@ -63,10 +63,10 @@ const InteractiveCableEdge: React.FC<InteractiveCableEdgeProps> = ({
   const sourceNode = nodes.find(n => n.id === currentEdge.source);
   const targetNode = nodes.find(n => n.id === currentEdge.target);
 
-  // Get current label with enhanced fallback logic
-  const currentLabel = getCurrentLabel(data, currentEdge);
+  // Get current label with explicit type annotation
+  const currentLabel: string = getCurrentLabel(data, currentEdge);
 
-  // Log debugging information - properly convert currentLabel to string
+  // Log debugging information with properly typed string
   logEdgeDebugging(
     id,
     currentEdge.source,
@@ -75,7 +75,7 @@ const InteractiveCableEdge: React.FC<InteractiveCableEdgeProps> = ({
     targetNode?.type,
     currentEdge.type,
     data?.connectionType || currentEdge.data?.connectionType,
-    String(currentLabel) // Ensure it's always a string
+    currentLabel
   );
 
   // Check if this is a Y to Well connection (can toggle between 100ft and direct)
@@ -97,7 +97,7 @@ const InteractiveCableEdge: React.FC<InteractiveCableEdgeProps> = ({
       <BaseEdge path={edgePath} markerEnd={markerEnd} style={style} />
       <EdgeLabelRenderer>
         <EdgeLabel
-          label={String(currentLabel)} // Ensure label is always a string
+          label={currentLabel}
           isInteractive={isYToWellConnection}
           onToggle={handleEdgeToggle}
           labelX={labelX}

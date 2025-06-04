@@ -4,7 +4,7 @@ import { useJobPhotoUpload } from './photos/useJobPhotoUpload';
 import { useJobPhotoMutations } from './photos/useJobPhotoMutations';
 import { useJobPhotoUtils } from './photos/useJobPhotoUtils';
 
-export { JobPhoto } from './photos/types';
+export type { JobPhoto } from './photos/types';
 
 export const useJobPhotos = (jobId: string) => {
   const { photos, isLoading } = useJobPhotoQueries(jobId);

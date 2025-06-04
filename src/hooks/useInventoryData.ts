@@ -41,22 +41,30 @@ export const useInventoryData = () => {
     const initializeData = () => {
       const storedData = loadFromLocalStorage();
       if (storedData) {
+        // Merge stored data with updated defaults to ensure we have latest equipment types
+        const mergedData = {
+          ...storedData,
+          equipmentTypes: DEFAULT_EQUIPMENT_TYPES, // Always use latest equipment types
+          storageLocations: storedData.storageLocations.length > 0 ? storedData.storageLocations : DEFAULT_STORAGE_LOCATIONS,
+        };
+        
         // Enhanced cleanup and validation on initialization
-        const cleanedItems = cleanupDuplicateDeployments(storedData.equipmentItems);
+        const cleanedItems = cleanupDuplicateDeployments(mergedData.equipmentItems);
         const enhancedItems = ensureMinimumInventory(cleanedItems);
         
         // Only update if cleanup actually changed something
-        if (cleanedItems !== storedData.equipmentItems || enhancedItems !== cleanedItems) {
-          const updatedData = { ...storedData, equipmentItems: enhancedItems };
+        if (cleanedItems !== mergedData.equipmentItems || enhancedItems !== cleanedItems) {
+          const updatedData = { ...mergedData, equipmentItems: enhancedItems };
           setData(updatedData);
           saveToLocalStorage(updatedData);
           console.log('Applied data consistency fixes during initialization');
         } else {
-          setData(storedData);
+          setData(mergedData);
+          saveToLocalStorage(mergedData); // Save merged data
         }
         setSyncStatus('synced');
       } else {
-        // Initialize with default inventory (now properly separated)
+        // Initialize with default inventory
         const initialData = {
           equipmentTypes: DEFAULT_EQUIPMENT_TYPES,
           storageLocations: DEFAULT_STORAGE_LOCATIONS,
@@ -66,6 +74,7 @@ export const useInventoryData = () => {
         };
         setData(initialData);
         saveToLocalStorage(initialData);
+        console.log('Initialized with default inventory data');
       }
       setIsInitialized(true);
     };
@@ -77,7 +86,7 @@ export const useInventoryData = () => {
     const defaultData = resetToDefaultInventory();
     setData(defaultData);
     saveToLocalStorage(defaultData);
-    toast.success('Inventory reset to default with proper individual/bulk tracking separation');
+    toast.success('Inventory reset to default with proper equipment types and tracking');
   };
 
   const handleSyncData = async () => {

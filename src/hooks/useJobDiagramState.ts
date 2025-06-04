@@ -1,56 +1,162 @@
 
 import { useState, useCallback } from 'react';
 import { useNodesState, useEdgesState } from '@xyflow/react';
-import { useDiagramState } from './useDiagramState';
+import { JobEquipmentAssignment } from '@/types/equipment';
 import { useInventoryData } from './useInventoryData';
+import { useCableTypeService } from './cables/useCableTypeService';
+import { useJobPersistence } from './useJobPersistence';
 
 export const useJobDiagramState = () => {
+  const { data } = useInventoryData();
+  const { getDefaultCableType } = useCableTypeService(data.equipmentTypes);
+  
+  // React Flow state
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
-  const { data: inventoryData } = useInventoryData();
-
-  // Equipment assignment state - updated for multiple SS boxes
+  
+  // Equipment selection state
   const [selectedShearstreamBoxes, setSelectedShearstreamBoxes] = useState<string[]>([]);
   const [selectedStarlink, setSelectedStarlink] = useState<string>('');
   const [selectedCustomerComputers, setSelectedCustomerComputers] = useState<string[]>([]);
+  
+  // Cable and equipment state
+  const [selectedCableType, setSelectedCableType] = useState<string>('');
+  const [nodeIdCounter, setNodeIdCounter] = useState(1);
+  
+  // Component naming state
+  const [mainBoxName, setMainBoxName] = useState('ShearStream Box');
+  const [satelliteName, setSatelliteName] = useState('Starlink');
+  const [wellsideGaugeName, setWellsideGaugeName] = useState('Wellside Gauge');
+  const [customerComputerNames, setCustomerComputerNames] = useState<Record<string, string>>({});
+  
+  // Initialization state
+  const [isInitialized, setIsInitialized] = useState(false);
+  
+  // Equipment assignment state
+  const [equipmentAssignment, setEquipmentAssignment] = useState<JobEquipmentAssignment>({
+    shearstreamBoxIds: [],
+    customerComputerIds: []
+  });
 
-  const diagramState = useDiagramState();
-
-  // Initialize selectedCableType with first available cable if not set
+  // Initialize cable type when equipment types are available
   const initializeCableType = useCallback(() => {
-    if (!diagramState.selectedCableType && inventoryData.equipmentTypes.length > 0) {
-      const firstAvailableCable = inventoryData.equipmentTypes
-        .filter(type => type.category === 'cables')
-        .find(cableType => {
-          const availableItems = inventoryData.equipmentItems
-            .filter(item => 
-              item.typeId === cableType.id && 
-              item.status === 'available' && 
-              item.quantity > 0
-            );
-          return availableItems.length > 0;
-        });
-      
-      if (firstAvailableCable) {
-        diagramState.setSelectedCableType(firstAvailableCable.id);
+    if (!selectedCableType && data.equipmentTypes.length > 0) {
+      const defaultType = getDefaultCableType();
+      if (defaultType) {
+        setSelectedCableType(defaultType);
       }
     }
-  }, [diagramState.selectedCableType, diagramState.setSelectedCableType, inventoryData]);
+  }, [selectedCableType, data.equipmentTypes, getDefaultCableType]);
+
+  // Update functions for node labels
+  const updateMainBoxName = useCallback((name: string) => {
+    setMainBoxName(name);
+    setNodes((nds) => 
+      nds.map((node) => 
+        node.id === 'main-box' 
+          ? { ...node, data: { ...node.data, label: name } }
+          : node
+      )
+    );
+  }, [setNodes]);
+
+  const updateSatelliteName = useCallback((name: string) => {
+    setSatelliteName(name);
+    setNodes((nds) => 
+      nds.map((node) => 
+        node.id === 'satellite' 
+          ? { ...node, data: { ...node.data, label: name } }
+          : node
+      )
+    );
+  }, [setNodes]);
+
+  const updateWellsideGaugeName = useCallback((name: string) => {
+    setWellsideGaugeName(name);
+    setNodes((nds) => 
+      nds.map((node) => 
+        node.id === 'wellside-gauge' 
+          ? { ...node, data: { ...node.data, label: name } }
+          : node
+      )
+    );
+  }, [setNodes]);
+
+  const updateCustomerComputerName = useCallback((computerId: string, name: string) => {
+    setCustomerComputerNames(prev => ({ ...prev, [computerId]: name }));
+    setNodes((nds) => 
+      nds.map((node) => 
+        node.id === computerId 
+          ? { ...node, data: { ...node.data, label: name } }
+          : node
+      )
+    );
+  }, [setNodes]);
+
+  // Sync function for loading persisted data
+  const syncWithLoadedData = useCallback((jobData: any) => {
+    if (jobData.selectedCableType) {
+      setSelectedCableType(jobData.selectedCableType);
+    }
+    if (jobData.equipmentAssignment) {
+      setEquipmentAssignment(jobData.equipmentAssignment);
+      setSelectedShearstreamBoxes(jobData.equipmentAssignment.shearstreamBoxIds || []);
+      setSelectedStarlink(jobData.equipmentAssignment.starlinkId || '');
+      setSelectedCustomerComputers(jobData.equipmentAssignment.customerComputerIds || []);
+    }
+    if (jobData.mainBoxName) setMainBoxName(jobData.mainBoxName);
+    if (jobData.satelliteName) setSatelliteName(jobData.satelliteName);
+    if (jobData.wellsideGaugeName) setWellsideGaugeName(jobData.wellsideGaugeName);
+    if (jobData.customerComputerNames) setCustomerComputerNames(jobData.customerComputerNames);
+  }, []);
 
   return {
+    // React Flow state
     nodes,
     setNodes,
     onNodesChange,
     edges,
     setEdges,
     onEdgesChange,
+    
+    // Equipment selection
     selectedShearstreamBoxes,
     setSelectedShearstreamBoxes,
     selectedStarlink,
     setSelectedStarlink,
     selectedCustomerComputers,
     setSelectedCustomerComputers,
+    
+    // Cable and equipment
+    selectedCableType,
+    setSelectedCableType,
     initializeCableType,
-    ...diagramState,
+    nodeIdCounter,
+    setNodeIdCounter,
+    
+    // Component naming
+    mainBoxName,
+    setMainBoxName,
+    satelliteName,
+    setSatelliteName,
+    wellsideGaugeName,
+    setWellsideGaugeName,
+    customerComputerNames,
+    setCustomerComputerNames,
+    
+    // Initialization
+    isInitialized,
+    setIsInitialized,
+    
+    // Equipment assignment
+    equipmentAssignment,
+    setEquipmentAssignment,
+    
+    // Update functions
+    updateMainBoxName,
+    updateSatelliteName,
+    updateWellsideGaugeName,
+    updateCustomerComputerName,
+    syncWithLoadedData,
   };
 };

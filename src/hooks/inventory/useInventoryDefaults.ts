@@ -1,4 +1,3 @@
-
 import { EquipmentType, StorageLocation, EquipmentItem } from '@/types/inventory';
 
 export const DEFAULT_EQUIPMENT_TYPES: EquipmentType[] = [
@@ -53,6 +52,13 @@ export const DEFAULT_EQUIPMENT_TYPES: EquipmentType[] = [
     category: 'communication',
     requiresIndividualTracking: true,
     defaultIdPrefix: 'SS',
+  },
+  {
+    id: '13',
+    name: 'Customer Tablet',
+    category: 'communication',
+    requiresIndividualTracking: true,
+    defaultIdPrefix: 'CT',
   },
 ];
 

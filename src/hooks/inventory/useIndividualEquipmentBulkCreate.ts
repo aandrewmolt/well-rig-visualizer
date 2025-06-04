@@ -4,12 +4,14 @@ import { EquipmentType, IndividualEquipment } from '@/types/inventory';
 import { BulkCreateData } from './types/individualEquipmentTypes';
 import { toast } from '@/hooks/use-toast';
 import { DraftEquipment } from '@/hooks/useDraftEquipmentManager';
+import { useEquipmentIdGenerator } from './useEquipmentIdGenerator';
 
 export const useIndividualEquipmentBulkCreate = (
   equipmentType: EquipmentType,
   allEquipment: IndividualEquipment[],
   addBulkDraftEquipment: (equipment: DraftEquipment[], saveImmediate?: boolean) => void
 ) => {
+  const { generateEquipmentId } = useEquipmentIdGenerator();
   const [isBulkCreateOpen, setIsBulkCreateOpen] = useState(false);
   const [bulkCreateData, setBulkCreateData] = useState<BulkCreateData>({
     count: 5,
@@ -33,7 +35,7 @@ export const useIndividualEquipmentBulkCreate = (
 
     for (let i = 0; i < bulkCreateData.count; i++) {
       const number = bulkCreateData.startNumber + i;
-      const equipmentId = `${bulkCreateData.prefix}${number.toString().padStart(3, '0')}`;
+      const equipmentId = generateEquipmentId(equipmentType, number);
       
       if (existingIds.includes(equipmentId)) {
         toast({
@@ -67,7 +69,7 @@ export const useIndividualEquipmentBulkCreate = (
       startNumber: bulkCreateData.startNumber + bulkCreateData.count,
       locationId: ''
     });
-  }, [bulkCreateData, allEquipment, equipmentType, addBulkDraftEquipment]);
+  }, [bulkCreateData, allEquipment, equipmentType, addBulkDraftEquipment, generateEquipmentId]);
 
   return {
     isBulkCreateOpen,

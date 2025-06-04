@@ -6,7 +6,8 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Save, Clock } from 'lucide-react';
-import { StorageLocation } from '@/types/inventory';
+import { StorageLocation, EquipmentType } from '@/types/inventory';
+import { useEquipmentIdGenerator } from '@/hooks/inventory/useEquipmentIdGenerator';
 
 interface BulkEquipmentFormProps {
   isBulkCreateOpen: boolean;
@@ -19,7 +20,7 @@ interface BulkEquipmentFormProps {
   };
   setBulkCreateData: (data: any) => void;
   storageLocations: StorageLocation[];
-  equipmentTypeName: string;
+  equipmentType: EquipmentType;
   onBulkCreate: (saveImmediate?: boolean) => void;
 }
 
@@ -29,9 +30,14 @@ const BulkEquipmentForm: React.FC<BulkEquipmentFormProps> = ({
   bulkCreateData,
   setBulkCreateData,
   storageLocations,
-  equipmentTypeName,
+  equipmentType,
   onBulkCreate,
 }) => {
+  const { generateEquipmentId, getIdFormat } = useEquipmentIdGenerator();
+  
+  const exampleId = generateEquipmentId(equipmentType, bulkCreateData.startNumber);
+  const idFormat = getIdFormat(equipmentType);
+
   return (
     <Dialog open={isBulkCreateOpen} onOpenChange={setIsBulkCreateOpen}>
       <DialogTrigger asChild>
@@ -41,9 +47,18 @@ const BulkEquipmentForm: React.FC<BulkEquipmentFormProps> = ({
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Bulk Create {equipmentTypeName}</DialogTitle>
+          <DialogTitle>Bulk Create {equipmentType.name}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
+          <div className="p-3 bg-blue-50 border border-blue-200 rounded">
+            <p className="text-sm text-blue-700">
+              <strong>ID Format:</strong> {idFormat} (e.g., {exampleId})
+            </p>
+            <p className="text-xs text-blue-600 mt-1">
+              Will create: {exampleId} to {generateEquipmentId(equipmentType, bulkCreateData.startNumber + bulkCreateData.count - 1)}
+            </p>
+          </div>
+          
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label>Count</Label>
@@ -63,14 +78,6 @@ const BulkEquipmentForm: React.FC<BulkEquipmentFormProps> = ({
                 onChange={(e) => setBulkCreateData({...bulkCreateData, startNumber: parseInt(e.target.value) || 1})}
               />
             </div>
-          </div>
-          <div>
-            <Label>ID Prefix</Label>
-            <Input
-              value={bulkCreateData.prefix}
-              onChange={(e) => setBulkCreateData({...bulkCreateData, prefix: e.target.value})}
-              placeholder="e.g., SS-, SL-, CC-"
-            />
           </div>
           <div>
             <Label>Location</Label>

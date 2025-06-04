@@ -65,7 +65,7 @@ const InteractiveCableEdge: React.FC<InteractiveCableEdgeProps> = ({
 
   // Get current label and ensure it's a string with type guard
   const labelResult = getCurrentLabel(data, currentEdge);
-  const currentLabel = typeof labelResult === 'string' ? labelResult : 'Cable';
+  const currentLabel: string = typeof labelResult === 'string' ? labelResult : 'Cable';
 
   // Log debugging information with properly typed string
   logEdgeDebugging(

@@ -2,20 +2,24 @@
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { X, ArrowRightLeft, Package, Building } from 'lucide-react';
+import { ArrowRightLeft, Package, Building, Minus, Plus } from 'lucide-react';
 import { useInventory } from '@/contexts/InventoryContext';
 import { toast } from 'sonner';
 
 interface TransferItem {
   id: string;
   type: 'equipment' | 'individual';
+  typeId: string;
   typeName: string;
-  quantity?: number;
+  availableQuantity: number;
+  transferQuantity: number;
   name?: string;
   status: string;
+  originalItemId: string;
 }
 
 const BulkLocationTransfer = () => {
@@ -23,7 +27,7 @@ const BulkLocationTransfer = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [fromLocationId, setFromLocationId] = useState('');
   const [toLocationId, setToLocationId] = useState('');
-  const [excludedItems, setExcludedItems] = useState<Set<string>>(new Set());
+  const [transferItems, setTransferItems] = useState<TransferItem[]>([]);
   const [isTransferring, setIsTransferring] = useState(false);
 
   // Get all equipment items and individual equipment for the selected from location
@@ -32,21 +36,35 @@ const BulkLocationTransfer = () => {
 
     const items: TransferItem[] = [];
 
-    // Add equipment items
+    // Add equipment items (grouped by type)
+    const equipmentByType = new Map<string, { items: any[], typeName: string }>();
+    
     data.equipmentItems
       .filter(item => item.locationId === fromLocationId && item.quantity > 0)
       .forEach(item => {
         const equipmentType = data.equipmentTypes.find(type => type.id === item.typeId);
         if (equipmentType) {
-          items.push({
-            id: `equipment-${item.id}`,
-            type: 'equipment',
-            typeName: equipmentType.name,
-            quantity: item.quantity,
-            status: item.status,
-          });
+          if (!equipmentByType.has(item.typeId)) {
+            equipmentByType.set(item.typeId, { items: [], typeName: equipmentType.name });
+          }
+          equipmentByType.get(item.typeId)!.items.push(item);
         }
       });
+
+    // Create transfer items for equipment (one per type with total quantity)
+    equipmentByType.forEach((group, typeId) => {
+      const totalQuantity = group.items.reduce((sum, item) => sum + item.quantity, 0);
+      items.push({
+        id: `equipment-${typeId}`,
+        type: 'equipment',
+        typeId,
+        typeName: group.typeName,
+        availableQuantity: totalQuantity,
+        transferQuantity: totalQuantity, // Default to all
+        status: group.items[0].status,
+        originalItemId: group.items[0].id, // Reference for updates
+      });
+    });
 
     // Add individual equipment
     data.individualEquipment
@@ -57,9 +75,13 @@ const BulkLocationTransfer = () => {
           items.push({
             id: `individual-${item.id}`,
             type: 'individual',
+            typeId: item.typeId,
             typeName: equipmentType.name,
             name: item.name,
+            availableQuantity: 1,
+            transferQuantity: 1,
             status: item.status,
+            originalItemId: item.id,
           });
         }
       });
@@ -67,20 +89,37 @@ const BulkLocationTransfer = () => {
     return items;
   }, [fromLocationId, data]);
 
-  // Filter out excluded items
-  const itemsToTransfer = availableItems.filter(item => !excludedItems.has(item.id));
+  // Update transfer items when available items change
+  React.useEffect(() => {
+    setTransferItems(availableItems);
+  }, [availableItems]);
 
-  const handleExcludeItem = (itemId: string) => {
-    setExcludedItems(prev => new Set([...prev, itemId]));
+  const updateTransferQuantity = (itemId: string, newQuantity: number) => {
+    setTransferItems(prev => 
+      prev.map(item => 
+        item.id === itemId 
+          ? { ...item, transferQuantity: Math.max(0, Math.min(newQuantity, item.availableQuantity)) }
+          : item
+      )
+    );
   };
 
-  const handleIncludeItem = (itemId: string) => {
-    setExcludedItems(prev => {
-      const newSet = new Set(prev);
-      newSet.delete(itemId);
-      return newSet;
-    });
+  const incrementQuantity = (itemId: string) => {
+    const item = transferItems.find(i => i.id === itemId);
+    if (item && item.transferQuantity < item.availableQuantity) {
+      updateTransferQuantity(itemId, item.transferQuantity + 1);
+    }
   };
+
+  const decrementQuantity = (itemId: string) => {
+    const item = transferItems.find(i => i.id === itemId);
+    if (item && item.transferQuantity > 0) {
+      updateTransferQuantity(itemId, item.transferQuantity - 1);
+    }
+  };
+
+  const itemsToTransfer = transferItems.filter(item => item.transferQuantity > 0);
+  const totalItemsToTransfer = itemsToTransfer.reduce((sum, item) => sum + item.transferQuantity, 0);
 
   const handleTransfer = async () => {
     if (!fromLocationId || !toLocationId || itemsToTransfer.length === 0) {
@@ -101,14 +140,53 @@ const BulkLocationTransfer = () => {
       for (const item of itemsToTransfer) {
         try {
           if (item.type === 'equipment') {
-            const equipmentItemId = item.id.replace('equipment-', '');
-            await updateSingleEquipmentItem(equipmentItemId, {
-              locationId: toLocationId,
-              lastUpdated: new Date(),
-            });
+            // For equipment items, we need to handle partial transfers
+            const relevantItems = data.equipmentItems.filter(
+              equipItem => equipItem.typeId === item.typeId && equipItem.locationId === fromLocationId
+            );
+            
+            let remainingToTransfer = item.transferQuantity;
+            
+            for (const equipItem of relevantItems) {
+              if (remainingToTransfer <= 0) break;
+              
+              const transferFromThis = Math.min(remainingToTransfer, equipItem.quantity);
+              const newQuantity = equipItem.quantity - transferFromThis;
+              
+              // Update the source item
+              await updateSingleEquipmentItem(equipItem.id, {
+                quantity: newQuantity,
+                lastUpdated: new Date(),
+              });
+              
+              // Create or update item at destination
+              const existingDestItem = data.equipmentItems.find(
+                destItem => destItem.typeId === item.typeId && destItem.locationId === toLocationId
+              );
+              
+              if (existingDestItem) {
+                await updateSingleEquipmentItem(existingDestItem.id, {
+                  quantity: existingDestItem.quantity + transferFromThis,
+                  lastUpdated: new Date(),
+                });
+              } else {
+                // Create new item at destination
+                const newItemId = `item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+                await updateSingleEquipmentItem(newItemId, {
+                  id: newItemId,
+                  typeId: item.typeId,
+                  locationId: toLocationId,
+                  quantity: transferFromThis,
+                  status: 'available',
+                  lastUpdated: new Date(),
+                });
+              }
+              
+              remainingToTransfer -= transferFromThis;
+            }
           } else {
-            const individualEquipmentId = item.id.replace('individual-', '');
-            await updateIndividualEquipment(individualEquipmentId, {
+            // Individual equipment - simple location update
+            await updateIndividualEquipment(item.originalItemId, {
               location_id: toLocationId,
               lastUpdated: new Date(),
             });
@@ -123,7 +201,7 @@ const BulkLocationTransfer = () => {
       if (successCount > 0) {
         const fromLocationName = data.storageLocations.find(loc => loc.id === fromLocationId)?.name;
         const toLocationName = data.storageLocations.find(loc => loc.id === toLocationId)?.name;
-        toast.success(`Successfully transferred ${successCount} items from ${fromLocationName} to ${toLocationName}`);
+        toast.success(`Successfully transferred ${totalItemsToTransfer} items from ${fromLocationName} to ${toLocationName}`);
       }
 
       if (errorCount > 0) {
@@ -134,7 +212,7 @@ const BulkLocationTransfer = () => {
       if (errorCount === 0) {
         setFromLocationId('');
         setToLocationId('');
-        setExcludedItems(new Set());
+        setTransferItems([]);
         setIsDialogOpen(false);
       }
     } catch (error) {
@@ -146,9 +224,11 @@ const BulkLocationTransfer = () => {
   };
 
   const resetSelection = () => {
-    setFromLocationId('');
-    setToLocationId('');
-    setExcludedItems(new Set());
+    setTransferItems(availableItems.map(item => ({ ...item, transferQuantity: item.availableQuantity })));
+  };
+
+  const selectNone = () => {
+    setTransferItems(prev => prev.map(item => ({ ...item, transferQuantity: 0 })));
   };
 
   return (
@@ -163,12 +243,12 @@ const BulkLocationTransfer = () => {
             <DialogTrigger asChild>
               <Button className="bg-blue-600 hover:bg-blue-700">
                 <ArrowRightLeft className="mr-2 h-4 w-4" />
-                Transfer All Equipment
+                Transfer Equipment
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-4xl max-h-[80vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>Transfer All Equipment Between Locations</DialogTitle>
+                <DialogTitle>Transfer Equipment Between Locations</DialogTitle>
               </DialogHeader>
               
               <div className="space-y-6">
@@ -208,79 +288,86 @@ const BulkLocationTransfer = () => {
                   </div>
                 </div>
 
-                {availableItems.length > 0 && (
+                {transferItems.length > 0 && (
                   <div>
                     <div className="flex items-center justify-between mb-3">
                       <h3 className="text-lg font-medium">
-                        Equipment to Transfer ({itemsToTransfer.length} of {availableItems.length})
+                        Equipment to Transfer ({totalItemsToTransfer} of {transferItems.reduce((sum, item) => sum + item.availableQuantity, 0)})
                       </h3>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={resetSelection}
-                      >
-                        Reset Selection
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" onClick={selectNone}>
+                          Select None
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={resetSelection}>
+                          Select All
+                        </Button>
+                      </div>
                     </div>
                     
-                    <div className="grid grid-cols-1 gap-2 max-h-96 overflow-y-auto border rounded-lg p-4">
-                      {availableItems.map(item => {
-                        const isExcluded = excludedItems.has(item.id);
-                        return (
-                          <div
-                            key={item.id}
-                            className={`flex items-center justify-between p-3 border rounded-lg ${
-                              isExcluded ? 'bg-gray-50 opacity-60' : 'bg-white'
-                            }`}
-                          >
-                            <div className="flex items-center gap-3">
-                              <Package className="h-4 w-4 text-gray-500" />
-                              <div>
-                                <div className="font-medium">
-                                  {item.typeName}
-                                  {item.quantity && ` (${item.quantity}x)`}
-                                </div>
+                    <div className="grid grid-cols-1 gap-3 max-h-96 overflow-y-auto border rounded-lg p-4">
+                      {transferItems.map(item => (
+                        <div
+                          key={item.id}
+                          className="flex items-center justify-between p-3 border rounded-lg bg-white"
+                        >
+                          <div className="flex items-center gap-3">
+                            <Package className="h-4 w-4 text-gray-500" />
+                            <div>
+                              <div className="font-medium">
+                                {item.typeName}
                                 {item.name && (
-                                  <div className="text-sm text-gray-600">{item.name}</div>
+                                  <span className="text-sm text-gray-600 ml-2">({item.name})</span>
                                 )}
-                                <div className="flex items-center gap-2 mt-1">
-                                  <Badge variant="secondary" className="text-xs">
-                                    {item.type}
-                                  </Badge>
-                                  <Badge variant="outline" className="text-xs">
-                                    {item.status}
-                                  </Badge>
-                                </div>
+                              </div>
+                              <div className="flex items-center gap-2 mt-1">
+                                <Badge variant="secondary" className="text-xs">
+                                  {item.type}
+                                </Badge>
+                                <Badge variant="outline" className="text-xs">
+                                  {item.status}
+                                </Badge>
+                                <span className="text-xs text-gray-500">
+                                  Available: {item.availableQuantity}
+                                </span>
                               </div>
                             </div>
-                            
+                          </div>
+                          
+                          <div className="flex items-center gap-2">
                             <Button
                               size="sm"
-                              variant={isExcluded ? "outline" : "ghost"}
-                              onClick={() => 
-                                isExcluded 
-                                  ? handleIncludeItem(item.id)
-                                  : handleExcludeItem(item.id)
-                              }
-                              className={isExcluded ? "text-green-600" : "text-red-600 hover:text-red-700"}
+                              variant="outline"
+                              onClick={() => decrementQuantity(item.id)}
+                              disabled={item.transferQuantity <= 0}
+                              className="h-8 w-8 p-0"
                             >
-                              {isExcluded ? (
-                                <>Include</>
-                              ) : (
-                                <>
-                                  <X className="h-4 w-4" />
-                                  Exclude
-                                </>
-                              )}
+                              <Minus className="h-4 w-4" />
+                            </Button>
+                            <Input
+                              type="number"
+                              min="0"
+                              max={item.availableQuantity}
+                              value={item.transferQuantity}
+                              onChange={(e) => updateTransferQuantity(item.id, parseInt(e.target.value) || 0)}
+                              className="w-16 h-8 text-center"
+                            />
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => incrementQuantity(item.id)}
+                              disabled={item.transferQuantity >= item.availableQuantity}
+                              className="h-8 w-8 p-0"
+                            >
+                              <Plus className="h-4 w-4" />
                             </Button>
                           </div>
-                        );
-                      })}
+                        </div>
+                      ))}
                     </div>
                   </div>
                 )}
 
-                {fromLocationId && availableItems.length === 0 && (
+                {fromLocationId && transferItems.length === 0 && (
                   <div className="text-center py-8 text-gray-500">
                     <Package className="mx-auto h-12 w-12 text-gray-300 mb-2" />
                     <p>No equipment found at the selected location</p>
@@ -290,10 +377,10 @@ const BulkLocationTransfer = () => {
                 <div className="flex gap-3">
                   <Button
                     onClick={handleTransfer}
-                    disabled={!fromLocationId || !toLocationId || itemsToTransfer.length === 0 || isTransferring}
+                    disabled={!fromLocationId || !toLocationId || totalItemsToTransfer === 0 || isTransferring}
                     className="flex-1"
                   >
-                    {isTransferring ? 'Transferring...' : `Transfer ${itemsToTransfer.length} Items`}
+                    {isTransferring ? 'Transferring...' : `Transfer ${totalItemsToTransfer} Items`}
                   </Button>
                   <Button
                     variant="outline"
@@ -312,8 +399,8 @@ const BulkLocationTransfer = () => {
       <CardContent>
         <div className="text-center py-8 text-gray-500">
           <ArrowRightLeft className="mx-auto h-12 w-12 text-gray-300 mb-2" />
-          <p className="text-sm">Transfer all equipment from one location to another</p>
-          <p className="text-xs text-gray-400 mt-1">Review and exclude specific items before transferring</p>
+          <p className="text-sm">Transfer equipment between locations with granular quantity control</p>
+          <p className="text-xs text-gray-400 mt-1">Select exact quantities to transfer for each equipment type</p>
         </div>
       </CardContent>
     </Card>

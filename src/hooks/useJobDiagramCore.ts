@@ -46,11 +46,6 @@ export const useJobDiagramCore = (job: JobDiagram) => {
     syncWithLoadedData,
   } = useJobDiagramState();
 
-  // Initialize cable type
-  React.useEffect(() => {
-    initializeCableType();
-  }, [initializeCableType]);
-
   // Job initialization
   const { initializeJob } = useJobDiagramInitialization({
     job,
@@ -75,6 +70,26 @@ export const useJobDiagramCore = (job: JobDiagram) => {
     satelliteName,
     wellsideGaugeName,
   });
+
+  // Initialize cable type
+  React.useEffect(() => {
+    initializeCableType();
+  }, [initializeCableType]);
+
+  // Initialize job when job changes or when not initialized
+  React.useEffect(() => {
+    console.log('Core hook effect - job or initialization change:', { 
+      jobId: job.id, 
+      isInitialized,
+      wellCount: job.wellCount,
+      hasWellsideGauge: job.hasWellsideGauge
+    });
+    
+    if (job && !isInitialized) {
+      console.log('Triggering job initialization');
+      initializeJob();
+    }
+  }, [job, isInitialized, initializeJob]);
 
   // Diagram connections
   const { onConnect } = useDiagramConnections(selectedCableType, nodes, setEdges);

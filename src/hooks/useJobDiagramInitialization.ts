@@ -39,6 +39,8 @@ const generateWellPositions = (wellCount: number) => {
 };
 
 const createDefaultNodes = (job: JobDiagram, mainBoxName: string, satelliteName: string, wellsideGaugeName: string): Node[] => {
+  console.log('Creating default nodes for job:', job);
+  
   const wellPositions = generateWellPositions(job.wellCount);
   
   // Always create at least 1 ShearStream Box
@@ -98,6 +100,7 @@ const createDefaultNodes = (job: JobDiagram, mainBoxName: string, satelliteName:
     });
   }
 
+  console.log('Created default nodes:', newNodes);
   return newNodes;
 };
 
@@ -105,65 +108,57 @@ export const useJobDiagramInitialization = (props: UseJobDiagramInitializationPr
   const { jobs } = useSupabaseJobs();
 
   const initializeJob = useCallback(() => {
-    const loadedJob = jobs.find(j => j.id === props.job.id);
+    console.log('initializeJob called with:', { 
+      jobId: props.job.id, 
+      isInitialized: props.isInitialized,
+      wellCount: props.job.wellCount,
+      hasWellsideGauge: props.job.hasWellsideGauge
+    });
 
-    if (!loadedJob) {
-      console.warn('Job not found in Supabase, using provided job data.');
+    if (props.isInitialized) {
+      console.log('Job already initialized, skipping');
+      return;
     }
 
+    const loadedJob = jobs.find(j => j.id === props.job.id);
     const initialData = loadedJob || props.job;
 
-    if (initialData && !props.isInitialized) {
-      console.log('Initializing job with data:', initialData);
+    console.log('Using initial data:', initialData);
 
-      // Sync loaded data to state
-      props.syncWithLoadedData(initialData);
+    // Sync loaded data to state
+    props.syncWithLoadedData(initialData);
 
-      // Set initial values from loaded data
-      props.setSelectedCableType(initialData.selectedCableType || 'defaultCableType');
-      props.setSelectedShearstreamBoxes(initialData.equipmentAssignment?.shearstreamBoxIds || []);
-      props.setSelectedStarlink(initialData.equipmentAssignment?.starlinkId || '');
-      props.setSelectedCustomerComputers(initialData.equipmentAssignment?.customerComputerIds || []);
-      props.setEquipmentAssignment(initialData.equipmentAssignment || {});
+    // Set initial values from loaded data
+    props.setSelectedCableType(initialData.selectedCableType || 'defaultCableType');
+    props.setSelectedShearstreamBoxes(initialData.equipmentAssignment?.shearstreamBoxIds || []);
+    props.setSelectedStarlink(initialData.equipmentAssignment?.starlinkId || '');
+    props.setSelectedCustomerComputers(initialData.equipmentAssignment?.customerComputerIds || []);
+    props.setEquipmentAssignment(initialData.equipmentAssignment || {});
 
-      props.setMainBoxName(initialData.mainBoxName || 'ShearStream Box');
-      props.setSatelliteName(initialData.satelliteName || 'Starlink');
-      props.setWellsideGaugeName(initialData.wellsideGaugeName || 'Wellside Gauge');
-      props.setCustomerComputerNames(initialData.companyComputerNames || {});
+    props.setMainBoxName(initialData.mainBoxName || 'ShearStream Box');
+    props.setSatelliteName(initialData.satelliteName || 'Starlink');
+    props.setWellsideGaugeName(initialData.wellsideGaugeName || 'Wellside Gauge');
+    props.setCustomerComputerNames(initialData.companyComputerNames || {});
 
-      // Create default nodes if no saved nodes exist, or use saved nodes
-      const nodesToSet = (initialData.nodes && initialData.nodes.length > 0) 
-        ? initialData.nodes 
-        : createDefaultNodes(
-            initialData, 
-            initialData.mainBoxName || 'ShearStream Box',
-            initialData.satelliteName || 'Starlink', 
-            initialData.wellsideGaugeName || 'Wellside Gauge'
-          );
+    // Always create default nodes - this ensures we have the essential components
+    const defaultNodes = createDefaultNodes(
+      initialData, 
+      initialData.mainBoxName || 'ShearStream Box',
+      initialData.satelliteName || 'Starlink', 
+      initialData.wellsideGaugeName || 'Wellside Gauge'
+    );
 
-      // Always ensure we have the essential components even if loading from saved data
-      const hasMainBox = nodesToSet.some((node: any) => node.id === 'main-box');
-      const hasWells = nodesToSet.some((node: any) => node.type === 'well');
-      const hasWellsideGauge = nodesToSet.some((node: any) => node.id === 'wellside-gauge');
+    console.log('Setting nodes to:', defaultNodes);
+    props.setNodes(defaultNodes);
 
-      // If essential components are missing, create default nodes
-      if (!hasMainBox || !hasWells || (initialData.hasWellsideGauge && !hasWellsideGauge)) {
-        console.log('Essential components missing, creating default nodes');
-        const defaultNodes = createDefaultNodes(
-          initialData,
-          initialData.mainBoxName || 'ShearStream Box',
-          initialData.satelliteName || 'Starlink',
-          initialData.wellsideGaugeName || 'Wellside Gauge'
-        );
-        props.setNodes(defaultNodes);
-      } else {
-        props.setNodes(nodesToSet);
-      }
-
-      // Initialize edges
-      props.setEdges(initialData.edges && initialData.edges.length > 0 ? initialData.edges : []);
-      props.setIsInitialized(true);
-    }
+    // Initialize edges
+    props.setEdges(initialData.edges && initialData.edges.length > 0 ? initialData.edges : []);
+    
+    // Set node counter based on created nodes
+    props.setNodeIdCounter(defaultNodes.length + 1);
+    
+    props.setIsInitialized(true);
+    console.log('Job initialization completed');
   }, [props, jobs]);
 
   return { initializeJob };

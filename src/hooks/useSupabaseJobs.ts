@@ -1,8 +1,29 @@
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+
+export interface JobDiagram {
+  id: string;
+  name: string;
+  wellCount: number;
+  hasWellsideGauge: boolean;
+  nodes: any[];
+  edges: any[];
+  companyComputerNames: Record<string, string>;
+  equipmentAssignment: any;
+  equipmentAllocated: boolean;
+  mainBoxName: string;
+  satelliteName: string;
+  wellsideGaugeName: string;
+  selectedCableType: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 export const useSupabaseJobs = () => {
+  const queryClient = useQueryClient();
+
   const { data: jobs = [], isLoading } = useQuery({
     queryKey: ['supabase-jobs'],
     queryFn: async () => {
@@ -33,8 +54,77 @@ export const useSupabaseJobs = () => {
     }
   });
 
+  const saveJobMutation = useMutation({
+    mutationFn: async (jobData: Partial<JobDiagram>) => {
+      const { data, error } = await supabase
+        .from('jobs')
+        .upsert({
+          id: jobData.id,
+          name: jobData.name,
+          well_count: jobData.wellCount,
+          has_wellside_gauge: jobData.hasWellsideGauge,
+          nodes: jobData.nodes,
+          edges: jobData.edges,
+          company_computer_names: jobData.companyComputerNames,
+          equipment_assignment: jobData.equipmentAssignment,
+          equipment_allocated: jobData.equipmentAllocated,
+          main_box_name: jobData.mainBoxName,
+          satellite_name: jobData.satelliteName,
+          wellside_gauge_name: jobData.wellsideGaugeName,
+          selected_cable_type: jobData.selectedCableType,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['supabase-jobs'] });
+      toast.success('Job saved successfully');
+    },
+    onError: (error) => {
+      console.error('Error saving job:', error);
+      toast.error('Failed to save job');
+    }
+  });
+
+  const deleteJobMutation = useMutation({
+    mutationFn: async (jobId: string) => {
+      const { error } = await supabase
+        .from('jobs')
+        .delete()
+        .eq('id', jobId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['supabase-jobs'] });
+      toast.success('Job deleted successfully');
+    },
+    onError: (error) => {
+      console.error('Error deleting job:', error);
+      toast.error('Failed to delete job');
+    }
+  });
+
+  const saveJob = (jobData: Partial<JobDiagram>) => {
+    saveJobMutation.mutate(jobData);
+  };
+
+  const deleteJob = (jobId: string) => {
+    deleteJobMutation.mutate(jobId);
+  };
+
+  const getJobById = (jobId: string): JobDiagram | undefined => {
+    return jobs.find(job => job.id === jobId);
+  };
+
   return {
     jobs,
     isLoading,
+    saveJob,
+    deleteJob,
+    getJobById,
   };
 };

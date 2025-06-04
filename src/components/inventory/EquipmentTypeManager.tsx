@@ -8,7 +8,7 @@ import EquipmentTypeManagerHeader from './EquipmentTypeManagerHeader';
 import EquipmentTypeGrid from './EquipmentTypeGrid';
 
 const EquipmentTypeManager = () => {
-  const { data, createEquipmentType, updateEquipmentTypes, deleteEquipmentType } = useInventory();
+  const { data, addEquipmentType, updateEquipmentType, deleteEquipmentType } = useInventory();
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingType, setEditingType] = useState<any>(null);
@@ -59,10 +59,10 @@ const EquipmentTypeManager = () => {
   const handleSubmit = async (formData: any) => {
     try {
       if (editingType) {
-        await updateEquipmentTypes(editingType.id, formData);
+        await updateEquipmentType(editingType.id, formData);
         toast.success('Equipment type updated successfully');
       } else {
-        await createEquipmentType(formData);
+        await addEquipmentType(formData);
         toast.success('Equipment type created successfully');
       }
       setIsDialogOpen(false);

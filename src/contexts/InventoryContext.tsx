@@ -175,6 +175,28 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
   };
 
+  // Enhanced storage location update that handles default location constraint
+  const updateStorageLocationWithDefault = async (id: string, data: any): Promise<void> => {
+    try {
+      // If setting this location as default, first clear all other defaults
+      if (data.isDefault) {
+        console.log('Clearing existing default locations before setting new default...');
+        // First, clear all existing defaults
+        await Promise.all(
+          storageLocations
+            .filter(loc => loc.id !== id && loc.isDefault)
+            .map(loc => mutations.updateStorageLocation(loc.id, { ...loc, isDefault: false }))
+        );
+      }
+      
+      // Then update the target location
+      await mutations.updateStorageLocation(id, data);
+    } catch (error) {
+      console.error('Failed to update storage location:', error);
+      throw error;
+    }
+  };
+
   // Wrapper functions to ensure Promise<void> return type
   const addEquipmentTypeWrapper = async (data: any): Promise<void> => {
     await mutations.addEquipmentType(data);
@@ -186,10 +208,6 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const addStorageLocationWrapper = async (data: any): Promise<void> => {
     await mutations.addStorageLocation(data);
-  };
-
-  const updateStorageLocationWrapper = async (id: string, data: any): Promise<void> => {
-    await mutations.updateStorageLocation(id, data);
   };
 
   const addIndividualEquipmentWrapper = async (data: any): Promise<void> => {
@@ -236,7 +254,7 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     addEquipmentType: addEquipmentTypeWrapper,
     updateEquipmentType: updateEquipmentTypeWrapper,
     addStorageLocation: addStorageLocationWrapper,
-    updateStorageLocation: updateStorageLocationWrapper,
+    updateStorageLocation: updateStorageLocationWithDefault, // Use enhanced version
     addIndividualEquipment: addIndividualEquipmentWrapper,
     updateIndividualEquipment: updateIndividualEquipmentWrapper,
     
@@ -254,9 +272,9 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     getLocationName,
     getDeployedQuantityByType,
 
-    // Legacy compatibility methods
+    // Legacy compatibility methods - use enhanced storage location update
     updateEquipmentTypes: updateEquipmentTypeWrapper,
-    updateStorageLocations: updateStorageLocationWrapper,
+    updateStorageLocations: updateStorageLocationWithDefault,
     updateEquipmentItems: updateEquipmentItemWrapper,
     syncData: async () => data,
     resetToDefaultInventory: () => {},

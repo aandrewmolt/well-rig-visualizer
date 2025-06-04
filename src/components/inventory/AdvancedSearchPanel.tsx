@@ -9,10 +9,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Search, X, Filter } from 'lucide-react';
 import { useAdvancedEquipmentSearch } from '@/hooks/useAdvancedEquipmentSearch';
-import { useInventoryData } from '@/hooks/useInventoryData';
+import { useInventory } from '@/contexts/InventoryContext';
 
 const AdvancedSearchPanel: React.FC = () => {
-  const { data } = useInventoryData();
+  const { data } = useInventory();
   const {
     searchFilters,
     searchResults,
@@ -50,12 +50,12 @@ const AdvancedSearchPanel: React.FC = () => {
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             <div>
               <Label>Category</Label>
-              <Select value={searchFilters.category} onValueChange={(value) => updateFilter('category', value)}>
+              <Select value={searchFilters.category} onValueChange={(value) => updateFilter('category', value === 'all' ? '' : value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="All categories" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All categories</SelectItem>
+                  <SelectItem value="all">All categories</SelectItem>
                   {categories.map(category => (
                     <SelectItem key={category} value={category}>
                       {category.charAt(0).toUpperCase() + category.slice(1)}
@@ -67,12 +67,12 @@ const AdvancedSearchPanel: React.FC = () => {
 
             <div>
               <Label>Status</Label>
-              <Select value={searchFilters.status} onValueChange={(value) => updateFilter('status', value)}>
+              <Select value={searchFilters.status} onValueChange={(value) => updateFilter('status', value === 'all' ? '' : value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="All statuses" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All statuses</SelectItem>
+                  <SelectItem value="all">All statuses</SelectItem>
                   {statuses.map(status => (
                     <SelectItem key={status} value={status}>
                       {status.charAt(0).toUpperCase() + status.slice(1)}
@@ -84,12 +84,12 @@ const AdvancedSearchPanel: React.FC = () => {
 
             <div>
               <Label>Location</Label>
-              <Select value={searchFilters.location} onValueChange={(value) => updateFilter('location', value)}>
+              <Select value={searchFilters.location} onValueChange={(value) => updateFilter('location', value === 'all' ? '' : value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="All locations" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All locations</SelectItem>
+                  <SelectItem value="all">All locations</SelectItem>
                   {data.storageLocations.map(location => (
                     <SelectItem key={location.id} value={location.id}>
                       {location.name}
@@ -101,12 +101,12 @@ const AdvancedSearchPanel: React.FC = () => {
 
             <div>
               <Label>Equipment Type</Label>
-              <Select value={searchFilters.equipmentType} onValueChange={(value) => updateFilter('equipmentType', value)}>
+              <Select value={searchFilters.equipmentType} onValueChange={(value) => updateFilter('equipmentType', value === 'all' ? '' : value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="All types" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All types</SelectItem>
+                  <SelectItem value="all">All types</SelectItem>
                   {data.equipmentTypes.map(type => (
                     <SelectItem key={type.id} value={type.id}>
                       {type.name}

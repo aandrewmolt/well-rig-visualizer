@@ -175,6 +175,35 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
   };
 
+  // Wrapper functions to ensure Promise<void> return type
+  const addEquipmentTypeWrapper = async (data: any): Promise<void> => {
+    await mutations.addEquipmentType(data);
+  };
+
+  const updateEquipmentTypeWrapper = async (id: string, data: any): Promise<void> => {
+    await mutations.updateEquipmentType(id, data);
+  };
+
+  const addStorageLocationWrapper = async (data: any): Promise<void> => {
+    await mutations.addStorageLocation(data);
+  };
+
+  const updateStorageLocationWrapper = async (id: string, data: any): Promise<void> => {
+    await mutations.updateStorageLocation(id, data);
+  };
+
+  const addIndividualEquipmentWrapper = async (data: any): Promise<void> => {
+    await mutations.addIndividualEquipment(data);
+  };
+
+  const updateIndividualEquipmentWrapper = async (id: string, data: any): Promise<void> => {
+    await mutations.updateIndividualEquipment(id, data);
+  };
+
+  const updateEquipmentItemWrapper = async (id: string, data: any): Promise<void> => {
+    await mutations.updateEquipmentItem(id, data);
+  };
+
   const contextValue: InventoryContextType = {
     data,
     isLoading: queriesLoading || isLoading || mutations.isLoading,
@@ -186,18 +215,18 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     deleteEquipmentItem,
     deleteEquipmentType,
     
-    // All mutation operations with proper aliases
-    addEquipmentType: mutations.addEquipmentType,
-    updateEquipmentType: mutations.updateEquipmentType,
-    addStorageLocation: mutations.addStorageLocation,
-    updateStorageLocation: mutations.updateStorageLocation,
-    addIndividualEquipment: mutations.addIndividualEquipment,
-    updateIndividualEquipment: mutations.updateIndividualEquipment,
+    // All mutation operations with proper wrapper functions
+    addEquipmentType: addEquipmentTypeWrapper,
+    updateEquipmentType: updateEquipmentTypeWrapper,
+    addStorageLocation: addStorageLocationWrapper,
+    updateStorageLocation: updateStorageLocationWrapper,
+    addIndividualEquipment: addIndividualEquipmentWrapper,
+    updateIndividualEquipment: updateIndividualEquipmentWrapper,
     
     // Legacy compatibility
-    createEquipmentType: mutations.addEquipmentType,
-    createStorageLocation: mutations.addStorageLocation,
-    updateSingleIndividualEquipment: mutations.updateIndividualEquipment,
+    createEquipmentType: addEquipmentTypeWrapper,
+    createStorageLocation: addStorageLocationWrapper,
+    updateSingleIndividualEquipment: updateIndividualEquipmentWrapper,
     
     // Bulk operations
     addBulkIndividualEquipment,
@@ -206,9 +235,9 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     ...utils,
 
     // Legacy compatibility methods
-    updateEquipmentTypes: mutations.updateEquipmentType,
-    updateStorageLocations: mutations.updateStorageLocation,
-    updateEquipmentItems: mutations.updateEquipmentItem,
+    updateEquipmentTypes: updateEquipmentTypeWrapper,
+    updateStorageLocations: updateStorageLocationWrapper,
+    updateEquipmentItems: updateEquipmentItemWrapper,
     syncData: async () => data,
     resetToDefaultInventory: () => {},
     cleanupDuplicateDeployments: () => equipmentItems,

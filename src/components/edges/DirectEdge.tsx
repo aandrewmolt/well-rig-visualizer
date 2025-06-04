@@ -1,7 +1,10 @@
+
 import React, { useState } from 'react';
 import { BaseEdge, getBezierPath, EdgeLabelRenderer, useReactFlow } from '@xyflow/react';
 import { Edit } from 'lucide-react';
 import ConnectionEditorDialog from '../diagram/ConnectionEditorDialog';
+import { useInventoryData } from '@/hooks/useInventoryData';
+import { useCableTypeService } from '@/hooks/cables/useCableTypeService';
 
 const DirectEdge = ({
   id,
@@ -21,6 +24,8 @@ const DirectEdge = ({
   data,
 }: any) => {
   const { setEdges, getNodes } = useReactFlow();
+  const { data: inventoryData } = useInventoryData();
+  const { getCableColor, getCableDisplayName } = useCableTypeService(inventoryData.equipmentTypes);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   
   const [edgePath, labelX, labelY] = getBezierPath({
@@ -38,6 +43,40 @@ const DirectEdge = ({
 
   const handleEdit = () => {
     setIsEditDialogOpen(true);
+  };
+
+  const handleDirectClick = () => {
+    // Find the first available 100ft cable
+    const cable100ft = inventoryData.equipmentTypes.find(type => 
+      type.category === 'cables' && 
+      type.name.toLowerCase().includes('100ft')
+    );
+
+    if (cable100ft) {
+      // Switch to cable connection with 100ft cable
+      setEdges((edges) => 
+        edges.map((edge) => {
+          if (edge.id === id) {
+            return {
+              ...edge,
+              type: 'cable',
+              data: {
+                ...edge.data,
+                connectionType: 'cable',
+                cableTypeId: cable100ft.id,
+                label: getCableDisplayName(cable100ft.id)
+              },
+              style: {
+                stroke: getCableColor(cable100ft.id),
+                strokeWidth: 3,
+                strokeDasharray: undefined,
+              }
+            };
+          }
+          return edge;
+        })
+      );
+    }
   };
 
   const handleUpdateConnection = (
@@ -130,10 +169,13 @@ const DirectEdge = ({
           className="nodrag nopan"
         >
           <div className="flex items-center gap-2">
-            Direct
-            {data?.canSwitchType && (
-              <span className="text-xs opacity-60">(switchable)</span>
-            )}
+            <button
+              onClick={handleDirectClick}
+              className="text-purple-600 hover:text-purple-800 cursor-pointer"
+              title="Click to switch to 100ft cable"
+            >
+              Direct
+            </button>
             {selected && (
               <div className="flex gap-1">
                 <button

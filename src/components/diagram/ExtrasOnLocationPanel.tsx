@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Package, X } from 'lucide-react';
+import { Plus, Package, X, AlertTriangle } from 'lucide-react';
 import { useInventoryData } from '@/hooks/useInventoryData';
 import { toast } from 'sonner';
 
@@ -19,8 +19,9 @@ interface ExtrasOnLocationPanelProps {
     reason: string;
     addedDate: Date;
     notes?: string;
+    individualEquipmentId?: string; // Add this for individual tracking
   }>;
-  onAddExtra: (equipmentTypeId: string, quantity: number, reason: string, notes?: string) => void;
+  onAddExtra: (equipmentTypeId: string, quantity: number, reason: string, notes?: string, individualEquipmentId?: string) => void;
   onRemoveExtra: (extraId: string) => void;
 }
 
@@ -32,6 +33,7 @@ const ExtrasOnLocationPanel: React.FC<ExtrasOnLocationPanelProps> = ({
   const { data } = useInventoryData();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedEquipmentType, setSelectedEquipmentType] = useState('');
+  const [selectedIndividualEquipment, setSelectedIndividualEquipment] = useState('');
   const [quantity, setQuantity] = useState(1);
   const [reason, setReason] = useState('');
   const [notes, setNotes] = useState('');
@@ -40,20 +42,52 @@ const ExtrasOnLocationPanel: React.FC<ExtrasOnLocationPanelProps> = ({
     return data.equipmentTypes.find(type => type.id === typeId)?.name || 'Unknown';
   };
 
+  const getIndividualEquipmentName = (equipmentId: string) => {
+    return data.individualEquipment.find(eq => eq.id === equipmentId)?.name || 'Unknown';
+  };
+
+  const selectedType = data.equipmentTypes.find(type => type.id === selectedEquipmentType);
+  const requiresIndividualTracking = selectedType?.requiresIndividualTracking || false;
+
+  // Get available individual equipment for the selected type
+  const availableIndividualEquipment = data.individualEquipment.filter(
+    eq => eq.typeId === selectedEquipmentType && eq.status === 'available'
+  );
+
   const handleAddExtra = () => {
-    if (!selectedEquipmentType || !reason.trim() || quantity <= 0) {
-      toast.error('Please fill in all required fields');
+    if (!selectedEquipmentType || !reason.trim()) {
+      toast.error('Please select equipment type and provide a reason');
       return;
     }
 
-    onAddExtra(selectedEquipmentType, quantity, reason.trim(), notes.trim() || undefined);
+    if (requiresIndividualTracking) {
+      if (!selectedIndividualEquipment) {
+        toast.error('Please select a specific equipment item for individually tracked equipment');
+        return;
+      }
+      // For individually tracked equipment, quantity is always 1
+      onAddExtra(selectedEquipmentType, 1, reason.trim(), notes.trim() || undefined, selectedIndividualEquipment);
+    } else {
+      if (quantity <= 0) {
+        toast.error('Please enter a valid quantity');
+        return;
+      }
+      onAddExtra(selectedEquipmentType, quantity, reason.trim(), notes.trim() || undefined);
+    }
     
     // Reset form
     setSelectedEquipmentType('');
+    setSelectedIndividualEquipment('');
     setQuantity(1);
     setReason('');
     setNotes('');
     setIsDialogOpen(false);
+  };
+
+  const handleEquipmentTypeChange = (typeId: string) => {
+    setSelectedEquipmentType(typeId);
+    setSelectedIndividualEquipment(''); // Reset individual selection when type changes
+    setQuantity(1); // Reset quantity
   };
 
   const commonReasons = [
@@ -87,29 +121,66 @@ const ExtrasOnLocationPanel: React.FC<ExtrasOnLocationPanelProps> = ({
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium mb-1">Equipment Type</label>
-                  <Select value={selectedEquipmentType} onValueChange={setSelectedEquipmentType}>
+                  <Select value={selectedEquipmentType} onValueChange={handleEquipmentTypeChange}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select equipment type" />
                     </SelectTrigger>
                     <SelectContent>
                       {data.equipmentTypes.map(type => (
                         <SelectItem key={type.id} value={type.id}>
-                          {type.name}
+                          <div className="flex items-center gap-2">
+                            {type.name}
+                            {type.requiresIndividualTracking && (
+                              <Badge variant="outline" className="text-xs">Individual</Badge>
+                            )}
+                          </div>
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium mb-1">Quantity</label>
-                  <Input
-                    type="number"
-                    min="1"
-                    value={quantity}
-                    onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
-                  />
-                </div>
+                {requiresIndividualTracking ? (
+                  <div>
+                    <label className="block text-sm font-medium mb-1">
+                      Select Specific Equipment
+                      <AlertTriangle className="inline h-4 w-4 ml-1 text-orange-500" />
+                    </label>
+                    {availableIndividualEquipment.length > 0 ? (
+                      <Select value={selectedIndividualEquipment} onValueChange={setSelectedIndividualEquipment}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select specific equipment" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {availableIndividualEquipment.map(equipment => (
+                            <SelectItem key={equipment.id} value={equipment.id}>
+                              <div className="flex flex-col">
+                                <span className="font-medium">{equipment.equipmentId}</span>
+                                <span className="text-sm text-gray-500">{equipment.name}</span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <div className="p-3 bg-yellow-50 border border-yellow-200 rounded">
+                        <p className="text-sm text-yellow-700">
+                          No available equipment of this type found. Please ensure equipment is available in inventory.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Quantity</label>
+                    <Input
+                      type="number"
+                      min="1"
+                      value={quantity}
+                      onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
+                    />
+                  </div>
+                )}
 
                 <div>
                   <label className="block text-sm font-medium mb-1">Reason</label>
@@ -145,7 +216,11 @@ const ExtrasOnLocationPanel: React.FC<ExtrasOnLocationPanelProps> = ({
                   />
                 </div>
 
-                <Button onClick={handleAddExtra} className="w-full">
+                <Button 
+                  onClick={handleAddExtra} 
+                  className="w-full"
+                  disabled={!selectedEquipmentType || !reason.trim() || (requiresIndividualTracking && !selectedIndividualEquipment)}
+                >
                   Add Extra Equipment
                 </Button>
               </div>
@@ -165,34 +240,46 @@ const ExtrasOnLocationPanel: React.FC<ExtrasOnLocationPanelProps> = ({
         ) : (
           <div className="space-y-3">
             <h4 className="text-sm font-medium text-gray-700">Extra Equipment:</h4>
-            {extrasOnLocation.map(extra => (
-              <div key={extra.id} className="flex items-start justify-between p-3 border rounded-lg bg-yellow-50 border-yellow-200">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="font-medium">{getEquipmentTypeName(extra.equipmentTypeId)}</span>
-                    <Badge variant="secondary">{extra.quantity}x</Badge>
-                    <Badge variant="outline" className="text-xs bg-yellow-100">
-                      Extra
-                    </Badge>
+            {extrasOnLocation.map(extra => {
+              const equipmentType = data.equipmentTypes.find(type => type.id === extra.equipmentTypeId);
+              const isIndividuallyTracked = equipmentType?.requiresIndividualTracking;
+              
+              return (
+                <div key={extra.id} className="flex items-start justify-between p-3 border rounded-lg bg-yellow-50 border-yellow-200">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="font-medium">{getEquipmentTypeName(extra.equipmentTypeId)}</span>
+                      {!isIndividuallyTracked && (
+                        <Badge variant="secondary">{extra.quantity}x</Badge>
+                      )}
+                      {isIndividuallyTracked && extra.individualEquipmentId && (
+                        <Badge variant="outline" className="text-xs">
+                          {getIndividualEquipmentName(extra.individualEquipmentId)}
+                        </Badge>
+                      )}
+                      <Badge variant="outline" className="text-xs bg-yellow-100">
+                        Extra
+                      </Badge>
+                    </div>
+                    <div className="text-sm text-gray-600">
+                      <div><strong>Reason:</strong> {extra.reason}</div>
+                      <div><strong>Added:</strong> {extra.addedDate.toLocaleDateString()}</div>
+                      {extra.notes && (
+                        <div><strong>Notes:</strong> {extra.notes}</div>
+                      )}
+                    </div>
                   </div>
-                  <div className="text-sm text-gray-600">
-                    <div><strong>Reason:</strong> {extra.reason}</div>
-                    <div><strong>Added:</strong> {extra.addedDate.toLocaleDateString()}</div>
-                    {extra.notes && (
-                      <div><strong>Notes:</strong> {extra.notes}</div>
-                    )}
-                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => onRemoveExtra(extra.id)}
+                    className="h-7 w-7 p-0 ml-2"
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
                 </div>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => onRemoveExtra(extra.id)}
-                  className="h-7 w-7 p-0 ml-2"
-                >
-                  <X className="h-3 w-3" />
-                </Button>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </CardContent>

@@ -8,12 +8,19 @@ export interface ExtrasOnLocationItem {
   reason: string;
   addedDate: Date;
   notes?: string;
+  individualEquipmentId?: string; // Add this for individual tracking
 }
 
 export const useExtrasOnLocation = () => {
   const [extrasOnLocation, setExtrasOnLocation] = useState<ExtrasOnLocationItem[]>([]);
 
-  const handleAddExtra = useCallback((equipmentTypeId: string, quantity: number, reason: string, notes?: string) => {
+  const handleAddExtra = useCallback((
+    equipmentTypeId: string, 
+    quantity: number, 
+    reason: string, 
+    notes?: string, 
+    individualEquipmentId?: string
+  ) => {
     const newExtra = {
       id: `extra-${Date.now()}`,
       equipmentTypeId,
@@ -21,6 +28,7 @@ export const useExtrasOnLocation = () => {
       reason,
       addedDate: new Date(),
       notes,
+      individualEquipmentId,
     };
     setExtrasOnLocation(prev => [...prev, newExtra]);
   }, []);

@@ -1,3 +1,4 @@
+
 import { useEffect, useMemo } from 'react';
 import { IndividualEquipment, EquipmentType } from '@/types/inventory';
 import { useInventoryData } from '@/hooks/useInventoryData';

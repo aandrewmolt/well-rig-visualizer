@@ -1,111 +1,74 @@
 
-import { useState, useCallback, useMemo } from 'react';
-import { IndividualEquipment } from '@/hooks/useInventoryData';
-import { useDebouncedSave } from '@/hooks/useDebouncedSave';
-import { toast } from '@/hooks/use-toast';
-
-export interface DraftEquipment extends Omit<IndividualEquipment, 'id' | 'lastUpdated'> {
-  id?: string;
-  isNew?: boolean;
-  isDirty?: boolean;
-  lastUpdated?: Date;
-}
+import { useState, useCallback } from 'react';
+import { IndividualEquipment } from '@/types/inventory';
 
 export const useDraftEquipmentManager = (
-  originalEquipment: IndividualEquipment[],
+  existingEquipment: IndividualEquipment[],
   onSave: (equipment: IndividualEquipment[]) => void
 ) => {
-  const [draftEquipment, setDraftEquipment] = useState<DraftEquipment[]>([]);
+  const [draftEquipment, setDraftEquipment] = useState<any[]>([]);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  
-  // Use a stable reference with useMemo to prevent re-renders
-  const originalDataStable = useMemo(() => originalEquipment, [originalEquipment.length]);
 
-  const saveChanges = useCallback(() => {
-    if (!hasUnsavedChanges || draftEquipment.length === 0) return;
+  const addDraftEquipment = useCallback((equipment: any) => {
+    const newDraft = { ...equipment, id: `draft-${Date.now()}` };
+    setDraftEquipment(prev => [...prev, newDraft]);
+    setHasUnsavedChanges(true);
 
-    const finalEquipment: IndividualEquipment[] = [
-      ...originalDataStable,
-      ...draftEquipment.map(draft => ({
-        ...draft,
-        id: draft.id || `${Date.now()}-${Math.random()}`,
-        lastUpdated: new Date(),
-      } as IndividualEquipment))
-    ];
+    // Auto-save after 500ms
+    setTimeout(() => {
+      const finalEquipment = { ...newDraft, id: `saved-${Date.now()}`, lastUpdated: new Date() };
+      const updatedEquipment = [...existingEquipment, finalEquipment];
+      onSave(updatedEquipment);
+      setDraftEquipment(prev => prev.filter(draft => draft.equipmentId !== equipment.equipmentId));
+      setHasUnsavedChanges(false);
+    }, 500);
+  }, [existingEquipment, onSave]);
 
-    onSave(finalEquipment);
-    setDraftEquipment([]);
-    setHasUnsavedChanges(false);
-    toast({
-      title: "Changes saved",
-      description: `Successfully saved ${draftEquipment.length} equipment items`,
-    });
-  }, [draftEquipment, hasUnsavedChanges, onSave, originalDataStable]);
+  const addBulkDraftEquipment = useCallback((equipment: any[]) => {
+    const newDrafts = equipment.map((eq, index) => ({ ...eq, id: `draft-bulk-${Date.now()}-${index}` }));
+    setDraftEquipment(prev => [...prev, ...newDrafts]);
+    setHasUnsavedChanges(true);
 
-  // Destructure the debounced save properly
-  const { debouncedSave, cleanup } = useDebouncedSave(saveChanges, 500);
+    // Auto-save after 500ms
+    setTimeout(() => {
+      const finalEquipment = equipment.map((eq, index) => ({ 
+        ...eq, 
+        id: `saved-bulk-${Date.now()}-${index}`, 
+        lastUpdated: new Date() 
+      }));
+      const updatedEquipment = [...existingEquipment, ...finalEquipment];
+      onSave(updatedEquipment);
+      setDraftEquipment(prev => prev.filter(draft => !equipment.some(eq => eq.equipmentId === draft.equipmentId)));
+      setHasUnsavedChanges(false);
+    }, 500);
+  }, [existingEquipment, onSave]);
 
   const saveImmediately = useCallback(() => {
-    saveChanges();
-  }, [saveChanges]);
+    if (draftEquipment.length === 0) return;
 
-  const addDraftEquipment = useCallback((equipment: DraftEquipment, immediate = false) => {
-    setDraftEquipment(prev => [...prev, { ...equipment, isNew: true, isDirty: true }]);
-    setHasUnsavedChanges(true);
-    if (immediate) {
-      // Use setTimeout to ensure state is updated before save
-      setTimeout(() => saveImmediately(), 0);
-    } else {
-      debouncedSave();
-    }
-  }, [debouncedSave, saveImmediately]);
-
-  const updateDraftEquipment = useCallback((id: string, updates: Partial<DraftEquipment>) => {
-    setDraftEquipment(prev => prev.map(eq => 
-      eq.id === id ? { ...eq, ...updates, isDirty: true } : eq
-    ));
-    setHasUnsavedChanges(true);
-    debouncedSave();
-  }, [debouncedSave]);
-
-  const removeDraftEquipment = useCallback((id: string) => {
-    setDraftEquipment(prev => {
-      const newDrafts = prev.filter(eq => eq.id !== id);
-      setHasUnsavedChanges(newDrafts.length > 0);
-      return newDrafts;
-    });
-  }, []);
+    const finalEquipment = draftEquipment.map((draft, index) => ({ 
+      ...draft, 
+      id: `immediate-${Date.now()}-${index}`, 
+      lastUpdated: new Date() 
+    }));
+    const updatedEquipment = [...existingEquipment, ...finalEquipment];
+    onSave(updatedEquipment);
+    setDraftEquipment([]);
+    setHasUnsavedChanges(false);
+  }, [draftEquipment, existingEquipment, onSave]);
 
   const discardChanges = useCallback(() => {
     setDraftEquipment([]);
     setHasUnsavedChanges(false);
-    toast({
-      title: "Changes discarded",
-      description: "All unsaved changes have been discarded",
-    });
   }, []);
-
-  const addBulkDraftEquipment = useCallback((equipmentList: DraftEquipment[], immediate = false) => {
-    setDraftEquipment(prev => [...prev, ...equipmentList.map(eq => ({ ...eq, isNew: true, isDirty: true }))]);
-    setHasUnsavedChanges(true);
-    if (immediate) {
-      // Use setTimeout to ensure state is updated before save
-      setTimeout(() => saveImmediately(), 0);
-    } else {
-      debouncedSave();
-    }
-  }, [debouncedSave, saveImmediately]);
 
   return {
     draftEquipment,
     hasUnsavedChanges,
+    unsavedCount: draftEquipment.length,
     addDraftEquipment,
-    updateDraftEquipment,
-    removeDraftEquipment,
     addBulkDraftEquipment,
-    saveChanges,
     saveImmediately,
     discardChanges,
-    unsavedCount: draftEquipment.length,
   };
 };

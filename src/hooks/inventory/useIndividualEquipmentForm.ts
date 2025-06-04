@@ -1,137 +1,77 @@
+
 import { useState, useCallback } from 'react';
 import { IndividualEquipment, EquipmentType } from '@/types/inventory';
-import { FormData } from './types/individualEquipmentTypes';
-import { toast } from '@/hooks/use-toast';
-import { DraftEquipment } from '@/hooks/useDraftEquipmentManager';
-import { useEquipmentIdGenerator } from './useEquipmentIdGenerator';
+import { toast } from 'sonner';
 
 export const useIndividualEquipmentForm = (
   equipmentType: EquipmentType,
   allEquipment: IndividualEquipment[],
-  addDraftEquipment: (equipment: DraftEquipment, saveImmediate?: boolean) => void,
-  updateIndividualEquipment: (equipment: IndividualEquipment[]) => void,
-  individualEquipment: IndividualEquipment[]
+  onAddDraft: (equipment: any) => void,
+  onUpdateEquipment: (equipment: IndividualEquipment[]) => void,
+  existingEquipment: IndividualEquipment[]
 ) => {
-  const { generateEquipmentId, generateEquipmentName } = useEquipmentIdGenerator();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingEquipment, setEditingEquipment] = useState<IndividualEquipment | null>(null);
-  const [selectedPrefix, setSelectedPrefix] = useState<string>(equipmentType.defaultIdPrefix || 'CC');
-  const [formData, setFormData] = useState<FormData & { selectedPrefix?: string }>({
+  const [formData, setFormData] = useState({
     equipmentId: '',
     name: '',
     locationId: '',
     serialNumber: '',
     notes: '',
-    selectedPrefix: equipmentType.defaultIdPrefix || 'CC'
+    selectedPrefix: equipmentType.name === 'Company Computer' ? 'CC' : equipmentType.defaultIdPrefix || ''
   });
 
-  const generateNextEquipmentId = useCallback((prefix?: string) => {
-    const actualPrefix = prefix || selectedPrefix || equipmentType.defaultIdPrefix || 'EQ-';
+  const generateEquipmentId = useCallback((prefix: string, number: number) => {
+    return `${prefix}${number.toString().padStart(3, '0')}`;
+  }, []);
+
+  const generateEquipmentName = useCallback((prefix: string, id: string) => {
+    if (prefix === 'CC') return `Customer Computer ${id.replace('CC', '')}`;
+    if (prefix === 'CT') return `Customer Tablet ${id.replace('CT', '')}`;
+    if (prefix === 'SL') return `Starlink ${id.replace('SL', '')}`;
+    if (prefix === 'SS') return `ShearStream Box ${id.replace('SS', '')}`;
+    if (prefix === 'PG') return `Pressure Gauge ${id.replace('PG', '')}`;
+    return `${equipmentType.name} ${id}`;
+  }, [equipmentType.name]);
+
+  const getNextEquipmentId = useCallback((prefix: string) => {
     const existingIds = allEquipment.map(eq => eq.equipmentId);
     let counter = 1;
-    
-    // Create a temporary equipment type with the selected prefix for ID generation
-    const tempEquipmentType = { ...equipmentType, defaultIdPrefix: actualPrefix };
-    let newId = generateEquipmentId(tempEquipmentType, counter);
+    let newId = generateEquipmentId(prefix, counter);
     
     while (existingIds.includes(newId)) {
       counter++;
-      newId = generateEquipmentId(tempEquipmentType, counter);
+      newId = generateEquipmentId(prefix, counter);
     }
     
     return newId;
-  }, [allEquipment, equipmentType, generateEquipmentId, selectedPrefix]);
+  }, [allEquipment, generateEquipmentId]);
+
+  const resetForm = useCallback(() => {
+    const prefix = equipmentType.name === 'Company Computer' ? 'CC' : equipmentType.defaultIdPrefix || '';
+    const nextId = getNextEquipmentId(prefix);
+    
+    setFormData({
+      equipmentId: nextId,
+      name: generateEquipmentName(prefix, nextId),
+      locationId: '',
+      serialNumber: '',
+      notes: '',
+      selectedPrefix: prefix
+    });
+    setEditingEquipment(null);
+    setIsDialogOpen(false);
+  }, [equipmentType, getNextEquipmentId, generateEquipmentName]);
 
   const handlePrefixChange = useCallback((prefix: string) => {
-    setSelectedPrefix(prefix);
-    
-    if (!editingEquipment) {
-      // Generate new ID and name with the selected prefix
-      const tempEquipmentType = { ...equipmentType, defaultIdPrefix: prefix };
-      const newId = generateNextEquipmentId(prefix);
-      const newName = generateEquipmentName(tempEquipmentType, newId);
-      
-      setFormData(prev => ({
-        ...prev,
-        equipmentId: newId,
-        name: newName,
-        selectedPrefix: prefix
-      }));
-    }
-  }, [editingEquipment, generateNextEquipmentId, generateEquipmentName, equipmentType]);
-
-  const handleAddItemClick = useCallback(() => {
-    if (!editingEquipment) {
-      const prefix = equipmentType.name === 'Customer Computer' ? selectedPrefix : equipmentType.defaultIdPrefix;
-      const tempEquipmentType = { ...equipmentType, defaultIdPrefix: prefix };
-      const newId = generateNextEquipmentId(prefix);
-      const newName = generateEquipmentName(tempEquipmentType, newId);
-      
-      setFormData({
-        equipmentId: newId,
-        name: newName,
-        locationId: '',
-        serialNumber: '',
-        notes: '',
-        selectedPrefix: prefix
-      });
-    }
-    setIsDialogOpen(true);
-  }, [editingEquipment, generateNextEquipmentId, generateEquipmentName, equipmentType, selectedPrefix]);
-
-  const handleSubmit = useCallback((saveImmediate = false) => {
-    if (!formData.equipmentId.trim() || !formData.name.trim() || !formData.locationId) {
-      toast({
-        title: "Validation Error",
-        description: "Equipment ID, name, and location are required",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const existingEquipment = allEquipment.find(eq => 
-      eq.equipmentId === formData.equipmentId && (!editingEquipment || eq.id !== editingEquipment.id)
-    );
-    
-    if (existingEquipment) {
-      toast({
-        title: "Duplicate ID",
-        description: "Equipment ID already exists",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (editingEquipment) {
-      const updatedEquipment = individualEquipment.map(equipment =>
-        equipment.id === editingEquipment.id
-          ? { 
-              ...equipment, 
-              ...formData,
-              lastUpdated: new Date()
-            }
-          : equipment
-      );
-      updateIndividualEquipment(updatedEquipment);
-      toast({
-        title: "Equipment Updated",
-        description: "Equipment updated successfully",
-      });
-    } else {
-      const newEquipment: DraftEquipment = {
-        typeId: equipmentType.id,
-        status: 'available',
-        ...formData
-      };
-      addDraftEquipment(newEquipment, saveImmediate);
-      toast({
-        title: "Equipment Added",
-        description: saveImmediate ? "Equipment saved successfully" : "Equipment added to drafts (will auto-save in 0.5 seconds)",
-      });
-    }
-
-    resetForm();
-  }, [formData, allEquipment, editingEquipment, individualEquipment, updateIndividualEquipment, equipmentType.id, addDraftEquipment]);
+    const nextId = getNextEquipmentId(prefix);
+    setFormData(prev => ({
+      ...prev,
+      equipmentId: nextId,
+      name: generateEquipmentName(prefix, nextId),
+      selectedPrefix: prefix
+    }));
+  }, [getNextEquipmentId, generateEquipmentName]);
 
   const handleEdit = useCallback((equipment: IndividualEquipment) => {
     setEditingEquipment(equipment);
@@ -140,23 +80,63 @@ export const useIndividualEquipmentForm = (
       name: equipment.name,
       locationId: equipment.locationId,
       serialNumber: equipment.serialNumber || '',
-      notes: equipment.notes || ''
+      notes: equipment.notes || '',
+      selectedPrefix: equipment.equipmentId.substring(0, 2)
     });
     setIsDialogOpen(true);
   }, []);
 
-  const resetForm = useCallback(() => {
-    setFormData({
-      equipmentId: '',
-      name: '',
-      locationId: '',
-      serialNumber: '',
-      notes: '',
-      selectedPrefix: equipmentType.defaultIdPrefix || 'CC'
-    });
-    setEditingEquipment(null);
-    setIsDialogOpen(false);
-  }, [equipmentType.defaultIdPrefix]);
+  const handleSubmit = useCallback(async (saveImmediate = false) => {
+    if (!formData.equipmentId.trim() || !formData.name.trim() || !formData.locationId) {
+      toast.error('Equipment ID, name, and location are required');
+      return;
+    }
+
+    const existingEquipment = allEquipment.find(eq => 
+      eq.equipmentId === formData.equipmentId && (!editingEquipment || eq.id !== editingEquipment.id)
+    );
+    
+    if (existingEquipment) {
+      toast.error('Equipment ID already exists');
+      return;
+    }
+
+    try {
+      if (editingEquipment) {
+        const updatedEquipment = existingEquipment.map(eq => 
+          eq.id === editingEquipment.id 
+            ? { ...eq, ...formData, typeId: equipmentType.id, status: editingEquipment.status }
+            : eq
+        );
+        onUpdateEquipment(updatedEquipment);
+        toast.success('Equipment updated successfully');
+      } else {
+        const newEquipment = {
+          equipmentId: formData.equipmentId,
+          name: formData.name,
+          typeId: equipmentType.id,
+          locationId: formData.locationId,
+          status: 'available' as const,
+          serialNumber: formData.serialNumber,
+          notes: formData.notes
+        };
+
+        if (saveImmediate) {
+          const updatedEquipment = [...existingEquipment, { ...newEquipment, id: `new-${Date.now()}`, lastUpdated: new Date() }];
+          onUpdateEquipment(updatedEquipment);
+          toast.success('Equipment saved successfully');
+        } else {
+          onAddDraft(newEquipment);
+          toast.success('Equipment added to drafts');
+        }
+      }
+
+      resetForm();
+    } catch (error) {
+      console.error('Error saving equipment:', error);
+      toast.error('Failed to save equipment');
+    }
+  }, [formData, editingEquipment, allEquipment, equipmentType.id, existingEquipment, onUpdateEquipment, onAddDraft, resetForm]);
 
   return {
     isDialogOpen,
@@ -164,9 +144,8 @@ export const useIndividualEquipmentForm = (
     editingEquipment,
     formData,
     setFormData,
-    handleAddItemClick,
-    handleSubmit,
     handleEdit,
+    handleSubmit,
     resetForm,
     handlePrefixChange,
   };

@@ -1,89 +1,83 @@
 
 import { useState, useCallback } from 'react';
-import { EquipmentType, IndividualEquipment } from '@/types/inventory';
-import { BulkCreateData } from './types/individualEquipmentTypes';
-import { toast } from '@/hooks/use-toast';
-import { DraftEquipment } from '@/hooks/useDraftEquipmentManager';
-import { useEquipmentIdGenerator } from './useEquipmentIdGenerator';
+import { EquipmentType } from '@/types/inventory';
+import { toast } from 'sonner';
 
 export const useIndividualEquipmentBulkCreate = (
   equipmentType: EquipmentType,
-  allEquipment: IndividualEquipment[],
-  addBulkDraftEquipment: (equipment: DraftEquipment[], saveImmediate?: boolean) => void
+  allEquipment: any[],
+  onAddBulkDraft: (equipment: any[]) => void
 ) => {
-  const { generateEquipmentId, generateEquipmentName } = useEquipmentIdGenerator();
   const [isBulkCreateOpen, setIsBulkCreateOpen] = useState(false);
-  
-  // Initialize selectedPrefix for Company Computer types
-  const initialSelectedPrefix = equipmentType.name === 'Company Computer' ? 'CC' : undefined;
-  
-  const [bulkCreateData, setBulkCreateData] = useState<BulkCreateData>({
+  const [bulkCreateData, setBulkCreateData] = useState({
     count: 5,
     prefix: equipmentType.defaultIdPrefix || '',
     startNumber: 1,
     locationId: '',
-    selectedPrefix: initialSelectedPrefix
+    selectedPrefix: equipmentType.name === 'Company Computer' ? 'CC' : undefined
   });
 
-  const handleBulkCreate = useCallback((saveImmediate = false) => {
+  const generateEquipmentId = useCallback((prefix: string, number: number) => {
+    return `${prefix}${number.toString().padStart(3, '0')}`;
+  }, []);
+
+  const generateEquipmentName = useCallback((prefix: string, id: string) => {
+    if (prefix === 'CC') return `Customer Computer ${id.replace('CC', '')}`;
+    if (prefix === 'CT') return `Customer Tablet ${id.replace('CT', '')}`;
+    if (prefix === 'SL') return `Starlink ${id.replace('SL', '')}`;
+    if (prefix === 'SS') return `ShearStream Box ${id.replace('SS', '')}`;
+    if (prefix === 'PG') return `Pressure Gauge ${id.replace('PG', '')}`;
+    return `${equipmentType.name} ${id}`;
+  }, [equipmentType.name]);
+
+  const handleBulkCreate = useCallback(async (saveImmediate = false) => {
     if (!bulkCreateData.locationId || bulkCreateData.count <= 0) {
-      toast({
-        title: "Validation Error",
-        description: "Location and valid count are required",
-        variant: "destructive",
-      });
+      toast.error('Location and valid count are required');
       return;
     }
 
-    const newEquipment: DraftEquipment[] = [];
-    const existingIds = allEquipment.map(eq => eq.equipmentId);
+    const currentPrefix = equipmentType.name === 'Company Computer' 
+      ? (bulkCreateData.selectedPrefix || 'CC')
+      : equipmentType.defaultIdPrefix || '';
 
-    // Create a temporary equipment type with the selected prefix for ID generation
-    const effectiveEquipmentType = equipmentType.name === 'Company Computer' && bulkCreateData.selectedPrefix
-      ? { ...equipmentType, defaultIdPrefix: bulkCreateData.selectedPrefix }
-      : equipmentType;
+    const newEquipment = [];
+    const existingIds = allEquipment.map(eq => eq.equipmentId);
 
     for (let i = 0; i < bulkCreateData.count; i++) {
       const number = bulkCreateData.startNumber + i;
-      const equipmentId = generateEquipmentId(effectiveEquipmentType, number);
+      const equipmentId = generateEquipmentId(currentPrefix, number);
       
       if (existingIds.includes(equipmentId)) {
-        toast({
-          title: "Duplicate ID",
-          description: `Equipment ID ${equipmentId} already exists`,
-          variant: "destructive",
-        });
+        toast.error(`Equipment ID ${equipmentId} already exists`);
         return;
       }
 
-      // Use the effective equipment type for name generation
-      const equipmentName = generateEquipmentName(effectiveEquipmentType, equipmentId);
+      const equipmentName = generateEquipmentName(currentPrefix, equipmentId);
 
       newEquipment.push({
         equipmentId,
         name: equipmentName,
         typeId: equipmentType.id,
         locationId: bulkCreateData.locationId,
-        status: 'available',
+        status: 'available' as const,
       });
     }
 
-    addBulkDraftEquipment(newEquipment, saveImmediate);
-    toast({
-      title: "Bulk Creation",
-      description: saveImmediate 
-        ? `${bulkCreateData.count} equipment items saved successfully`
-        : `${bulkCreateData.count} equipment items added to drafts (will auto-save in 0.5 seconds)`,
-    });
-    setIsBulkCreateOpen(false);
-    setBulkCreateData({
-      count: 5,
-      prefix: equipmentType.defaultIdPrefix || '',
-      startNumber: bulkCreateData.startNumber + bulkCreateData.count,
-      locationId: '',
-      selectedPrefix: initialSelectedPrefix
-    });
-  }, [bulkCreateData, allEquipment, equipmentType, addBulkDraftEquipment, generateEquipmentId, generateEquipmentName, initialSelectedPrefix]);
+    try {
+      onAddBulkDraft(newEquipment);
+      toast.success(`${bulkCreateData.count} equipment items added to drafts`);
+      
+      setIsBulkCreateOpen(false);
+      setBulkCreateData(prev => ({
+        ...prev,
+        startNumber: prev.startNumber + prev.count,
+        count: 5
+      }));
+    } catch (error) {
+      console.error('Error creating bulk equipment:', error);
+      toast.error('Failed to create bulk equipment');
+    }
+  }, [bulkCreateData, equipmentType, allEquipment, generateEquipmentId, generateEquipmentName, onAddBulkDraft]);
 
   return {
     isBulkCreateOpen,

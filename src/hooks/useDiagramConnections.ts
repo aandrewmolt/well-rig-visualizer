@@ -69,36 +69,36 @@ export const useDiagramConnections = (
         return;
       }
 
-      // Check if this is a Y adapter to well connection - default to Direct
+      // Check if this is a Y adapter to well connection - default to 100ft Cable (toggleable)
       const isYToWellConnection = (
         (sourceNode.type === 'yAdapter' && targetNode.type === 'well') ||
         (sourceNode.type === 'well' && targetNode.type === 'yAdapter')
       );
 
       if (isYToWellConnection) {
-        // For Y→Well connections, default to Direct (user can click to toggle to 100ft later)
+        // For Y→Well connections, default to 100ft Cable (user can click to toggle to Direct later)
         const newEdge = {
           ...params,
           id: `edge-${params.source}-${params.target}-${Date.now()}`,
-          type: 'direct',
-          label: 'Direct Connection',
+          type: 'cable',
+          label: '100ft Cable',
           data: {
-            connectionType: 'direct',
-            label: 'Direct Connection',
+            connectionType: 'cable',
+            label: '100ft Cable',
+            cableTypeId: '1', // 100ft cable type ID
             sourceHandle: params.sourceHandle,
             targetHandle: params.targetHandle
           },
           style: {
-            stroke: '#8b5cf6',
-            strokeWidth: 4,
-            strokeDasharray: '5,5',
+            stroke: '#3b82f6',
+            strokeWidth: 3,
           },
-          animated: true,
+          animated: false,
         };
 
-        console.log('Creating Y→Well direct connection (click to toggle to 100ft):', newEdge);
+        console.log('Creating Y→Well cable connection (click to toggle to Direct):', newEdge);
         setEdges((eds) => addEdge(newEdge, eds));
-        toast.success('Direct connection established (click to toggle to 100ft cable)');
+        toast.success('100ft Cable connection established (click to toggle to Direct)');
         return;
       }
 

@@ -42,6 +42,35 @@ export const useEquipmentUsageAnalyzer = (nodes: Node[], edges: Edge[]) => {
       totalConnections: 0,
     };
 
+    // Create a fallback equipment type lookup for missing types
+    const createFallbackEquipmentType = (typeId: string, label: string) => {
+      const name = label.toLowerCase();
+      let length = '200ft'; // default
+      let category = 'cable';
+      let version = undefined;
+      
+      if (name.includes('100ft')) length = '100ft';
+      else if (name.includes('200ft')) length = '200ft';
+      else if (name.includes('300ft')) {
+        length = '300ft';
+        if (name.includes('old') || name.includes('legacy')) {
+          version = 'old (Y adapter only)';
+        } else if (name.includes('new') || name.includes('direct')) {
+          version = 'new (direct to wells)';
+        }
+      }
+      
+      if (name.includes('reel')) category = 'reel';
+
+      return {
+        id: typeId,
+        name: label,
+        category,
+        length,
+        version,
+      };
+    };
+
     // Analyze each edge for cable usage
     edges.forEach(edge => {
       usage.totalConnections++;
@@ -69,7 +98,23 @@ export const useEquipmentUsageAnalyzer = (nodes: Node[], edges: Edge[]) => {
         
         console.log(`Cable connection found: ${edge.id}, label: ${edgeData.label}, type: ${originalCableTypeId} -> ${migratedCableTypeId}`);
         
-        const equipmentType = data.equipmentTypes.find(type => type.id === migratedCableTypeId);
+        let equipmentType = data.equipmentTypes.find(type => type.id === migratedCableTypeId);
+        
+        // If equipment type not found, create a fallback
+        if (!equipmentType) {
+          console.warn(`Cable type ${migratedCableTypeId} not found in equipment types, creating fallback`);
+          const fallback = createFallbackEquipmentType(migratedCableTypeId, edgeData.label || 'Cable');
+          equipmentType = {
+            id: migratedCableTypeId,
+            name: fallback.name,
+            category: fallback.category,
+            description: null,
+            requires_individual_tracking: false,
+            default_id_prefix: null,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          };
+        }
         
         if (equipmentType) {
           if (!usage.cables[migratedCableTypeId]) {
@@ -102,8 +147,6 @@ export const useEquipmentUsageAnalyzer = (nodes: Node[], edges: Edge[]) => {
             };
           }
           usage.cables[migratedCableTypeId].quantity++;
-        } else {
-          console.warn(`Cable type ${migratedCableTypeId} (migrated from ${originalCableTypeId}) not found in equipment types`);
         }
       } else {
         // Check if this edge has a label that indicates it's a cable
@@ -124,7 +167,23 @@ export const useEquipmentUsageAnalyzer = (nodes: Node[], edges: Edge[]) => {
             cableTypeId = '4';
           }
           
-          const equipmentType = data.equipmentTypes.find(type => type.id === cableTypeId);
+          let equipmentType = data.equipmentTypes.find(type => type.id === cableTypeId);
+          
+          // If equipment type not found, create a fallback
+          if (!equipmentType) {
+            console.warn(`Cable type ${cableTypeId} not found in equipment types, creating fallback`);
+            const fallback = createFallbackEquipmentType(cableTypeId, dataLabel || edgeLabel || 'Cable');
+            equipmentType = {
+              id: cableTypeId,
+              name: fallback.name,
+              category: fallback.category,
+              description: null,
+              requires_individual_tracking: false,
+              default_id_prefix: null,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            };
+          }
           
           if (equipmentType) {
             if (!usage.cables[cableTypeId]) {

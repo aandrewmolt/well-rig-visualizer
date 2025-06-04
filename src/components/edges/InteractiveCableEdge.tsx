@@ -81,7 +81,7 @@ const InteractiveCableEdge: React.FC<InteractiveCableEdgeProps> = ({
     console.log('InteractiveCableEdge - Edge clicked:', { id, isYToWellConnection });
     
     if (isYToWellConnection) {
-      const currentType = data?.connectionType || 'cable';
+      const currentType = data?.connectionType || currentEdge.type || 'cable';
       const newType = currentType === 'direct' ? 'cable' : 'direct';
       
       console.log('InteractiveCableEdge - Toggling connection type from', currentType, 'to', newType);

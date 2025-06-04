@@ -7,43 +7,47 @@ import {
   MiniMap,
   Node,
   Edge,
+  OnNodesChange,
+  OnEdgesChange,
+  OnConnect,
+  ReactFlowProvider,
 } from '@xyflow/react';
 
-// Import node types
+import '@xyflow/react/dist/style.css';
+
+// Import all node types
+import WellNode from '@/components/nodes/WellNode';
+import YAdapterNode from '@/components/nodes/YAdapterNode';
 import MainBoxNode from '@/components/nodes/MainBoxNode';
 import SatelliteNode from '@/components/nodes/SatelliteNode';
-import WellNode from '@/components/nodes/WellNode';
-import WellsideGaugeNode from '@/components/nodes/WellsideGaugeNode';
-import YAdapterNode from '@/components/nodes/YAdapterNode';
 import CustomerComputerNode from '@/components/nodes/CustomerComputerNode';
+import WellsideGaugeNode from '@/components/nodes/WellsideGaugeNode';
 
 // Import edge types
-import CableEdge from '@/components/edges/CableEdge';
-import DirectEdge from '@/components/edges/DirectEdge';
 import InteractiveCableEdge from '@/components/edges/InteractiveCableEdge';
+import DirectEdge from '@/components/edges/DirectEdge';
 
 const nodeTypes = {
+  well: WellNode,
+  yAdapter: YAdapterNode,
   mainBox: MainBoxNode,
   satellite: SatelliteNode,
-  well: WellNode,
-  wellsideGauge: WellsideGaugeNode,
-  yAdapter: YAdapterNode,
   customerComputer: CustomerComputerNode,
+  wellsideGauge: WellsideGaugeNode,
 };
 
 const edgeTypes = {
   cable: InteractiveCableEdge,
   direct: DirectEdge,
-  smoothstep: CableEdge,
-  default: InteractiveCableEdge,
+  default: InteractiveCableEdge, // Use InteractiveCableEdge as default
 };
 
 interface JobDiagramCanvasProps {
   nodes: Node[];
   edges: Edge[];
-  onNodesChange: (changes: any) => void;
-  onEdgesChange: (changes: any) => void;
-  onConnect: (connection: any) => void;
+  onNodesChange: OnNodesChange;
+  onEdgesChange: OnEdgesChange;
+  onConnect: OnConnect;
   reactFlowWrapper: React.RefObject<HTMLDivElement>;
 }
 
@@ -56,31 +60,33 @@ const JobDiagramCanvas: React.FC<JobDiagramCanvasProps> = ({
   reactFlowWrapper,
 }) => {
   return (
-    <div className="flex-1" ref={reactFlowWrapper}>
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
-        nodeTypes={nodeTypes}
-        edgeTypes={edgeTypes}
-        fitView
-        className="bg-gradient-to-br from-blue-50 to-indigo-100"
-        defaultEdgeOptions={{
-          style: { strokeWidth: 3, stroke: '#374151' },
-          type: 'cable',
-          animated: false,
-        }}
-      >
-        <Background />
-        <Controls />
-        <MiniMap 
-          nodeStrokeColor="#374151"
-          nodeColor="#e5e7eb"
-          nodeBorderRadius={2}
-        />
-      </ReactFlow>
+    <div className="flex-1 h-full" ref={reactFlowWrapper}>
+      <ReactFlowProvider>
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onConnect={onConnect}
+          nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
+          fitView
+          className="bg-gray-50"
+          defaultEdgeOptions={{
+            type: 'cable',
+            animated: false,
+          }}
+        >
+          <Background />
+          <Controls />
+          <MiniMap 
+            nodeStrokeColor="#374151"
+            nodeColor="#f3f4f6"
+            nodeBorderRadius={8}
+            maskColor="rgba(0, 0, 0, 0.1)"
+          />
+        </ReactFlow>
+      </ReactFlowProvider>
     </div>
   );
 };

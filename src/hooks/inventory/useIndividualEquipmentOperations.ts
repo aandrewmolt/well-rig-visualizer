@@ -27,6 +27,32 @@ export const useIndividualEquipmentOperations = (
     });
   }, [individualEquipment, updateIndividualEquipment]);
 
+  const handleStatusChange = useCallback((equipmentId: string, newStatus: string) => {
+    const updatedEquipment = individualEquipment.map(eq => 
+      eq.id === equipmentId || eq.equipmentId === equipmentId
+        ? { ...eq, status: newStatus as any, lastUpdated: new Date() }
+        : eq
+    );
+    updateIndividualEquipment(updatedEquipment);
+    toast({
+      title: "Status Updated",
+      description: `Equipment status changed to ${newStatus}`,
+    });
+  }, [individualEquipment, updateIndividualEquipment]);
+
+  const handleLocationChange = useCallback((equipmentId: string, newLocationId: string) => {
+    const updatedEquipment = individualEquipment.map(eq => 
+      eq.id === equipmentId || eq.equipmentId === equipmentId
+        ? { ...eq, locationId: newLocationId, lastUpdated: new Date() }
+        : eq
+    );
+    updateIndividualEquipment(updatedEquipment);
+    toast({
+      title: "Location Updated",
+      description: "Equipment location changed successfully",
+    });
+  }, [individualEquipment, updateIndividualEquipment]);
+
   const getStatusColor = useCallback((status: string) => {
     switch (status) {
       case 'available': return 'bg-green-100 text-green-800';
@@ -44,6 +70,8 @@ export const useIndividualEquipmentOperations = (
 
   return {
     handleDelete,
+    handleStatusChange,
+    handleLocationChange,
     getStatusColor,
     getLocationName,
   };

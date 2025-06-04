@@ -13,10 +13,12 @@ const MainBoxNode = ({ id, data }: { id: string; data: any }) => {
   const [fracBaudRate, setFracBaudRate] = useState<string>(data.fracBaudRate || '19200');
   const [gaugeBaudRate, setGaugeBaudRate] = useState<string>(data.gaugeBaudRate || '9600');
 
-  // Update node data immediately when values change
+  // Enhanced update node data function with immediate persistence
   const updateNodeData = (updates: any) => {
-    setNodes((nodes) =>
-      nodes.map((node) =>
+    console.log('Enhanced MainBoxNode data update:', { id, updates, currentData: data });
+    
+    setNodes((nodes) => {
+      const updatedNodes = nodes.map((node) =>
         node.id === id
           ? {
               ...node,
@@ -26,53 +28,74 @@ const MainBoxNode = ({ id, data }: { id: string; data: any }) => {
               },
             }
           : node
-      )
-    );
+      );
+      
+      console.log('Nodes updated with COM port data:', {
+        nodeId: id,
+        updates,
+        updatedNode: updatedNodes.find(n => n.id === id)?.data
+      });
+      
+      return updatedNodes;
+    });
   };
 
-  // Handle frac data port change
+  // Enhanced frac data port change handler
   const handleFracDataPortChange = (value: string) => {
+    console.log('Enhanced frac COM port change:', { from: fracDataPort, to: value });
     setFracDataPort(value);
     updateNodeData({ fracComPort: value });
-    console.log('Updated frac COM port:', value);
   };
 
-  // Handle gauge data port change
+  // Enhanced gauge data port change handler
   const handleGaugeDataPortChange = (value: string) => {
+    console.log('Enhanced gauge COM port change:', { from: gaugeDataPort, to: value });
     setGaugeDataPort(value);
     updateNodeData({ gaugeComPort: value });
-    console.log('Updated gauge COM port:', value);
   };
 
-  // Handle frac baud rate change
+  // Enhanced frac baud rate change handler
   const handleFracBaudRateChange = (value: string) => {
+    console.log('Enhanced frac baud rate change:', { from: fracBaudRate, to: value });
     setFracBaudRate(value);
     updateNodeData({ fracBaudRate: value });
-    console.log('Updated frac baud rate:', value);
   };
 
-  // Handle gauge baud rate change
+  // Enhanced gauge baud rate change handler
   const handleGaugeBaudRateChange = (value: string) => {
+    console.log('Enhanced gauge baud rate change:', { from: gaugeBaudRate, to: value });
     setGaugeBaudRate(value);
     updateNodeData({ gaugeBaudRate: value });
-    console.log('Updated gauge baud rate:', value);
   };
 
-  // Sync state with node data when data changes (for loading saved data)
+  // Enhanced sync with node data when data changes
   useEffect(() => {
+    console.log('Enhanced MainBoxNode data sync effect:', {
+      nodeId: id,
+      dataFracComPort: data.fracComPort,
+      dataGaugeComPort: data.gaugeComPort,
+      dataFracBaudRate: data.fracBaudRate,
+      dataGaugeBaudRate: data.gaugeBaudRate,
+      currentState: { fracDataPort, gaugeDataPort, fracBaudRate, gaugeBaudRate }
+    });
+
     if (data.fracComPort !== undefined && data.fracComPort !== fracDataPort) {
+      console.log('Syncing frac COM port from data:', data.fracComPort);
       setFracDataPort(data.fracComPort);
     }
     if (data.gaugeComPort !== undefined && data.gaugeComPort !== gaugeDataPort) {
+      console.log('Syncing gauge COM port from data:', data.gaugeComPort);
       setGaugeDataPort(data.gaugeComPort);
     }
     if (data.fracBaudRate !== undefined && data.fracBaudRate !== fracBaudRate) {
+      console.log('Syncing frac baud rate from data:', data.fracBaudRate);
       setFracBaudRate(data.fracBaudRate);
     }
     if (data.gaugeBaudRate !== undefined && data.gaugeBaudRate !== gaugeBaudRate) {
+      console.log('Syncing gauge baud rate from data:', data.gaugeBaudRate);
       setGaugeBaudRate(data.gaugeBaudRate);
     }
-  }, [data.fracComPort, data.gaugeComPort, data.fracBaudRate, data.gaugeBaudRate]);
+  }, [data.fracComPort, data.gaugeComPort, data.fracBaudRate, data.gaugeBaudRate, fracDataPort, gaugeDataPort, fracBaudRate, gaugeBaudRate, id]);
 
   // Available COM ports for selection
   const comPorts = [
@@ -105,6 +128,20 @@ const MainBoxNode = ({ id, data }: { id: string; data: any }) => {
 
   const isAssigned = data.assigned && data.equipmentId;
 
+  console.log('Enhanced MainBoxNode render:', {
+    id,
+    fracDataPort,
+    gaugeDataPort,
+    fracBaudRate,
+    gaugeBaudRate,
+    dataValues: {
+      fracComPort: data.fracComPort,
+      gaugeComPort: data.gaugeComPort,
+      fracBaudRate: data.fracBaudRate,
+      gaugeBaudRate: data.gaugeBaudRate
+    }
+  });
+
   return (
     <div className="bg-slate-900 text-white rounded-lg p-4 border-2 border-slate-600 min-w-[280px] shadow-lg">
       <div className="flex items-center gap-2 mb-4">
@@ -117,7 +154,7 @@ const MainBoxNode = ({ id, data }: { id: string; data: any }) => {
         </div>
       </div>
       
-      {/* COM Port Selection with Baud Rates - Improved layout and contrast */}
+      {/* COM Port Selection with Baud Rates - Enhanced with debugging */}
       <div className="mb-4 space-y-3">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium text-slate-200 w-12">Frac:</span>

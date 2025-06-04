@@ -76,18 +76,13 @@ export const useJobDiagramSave = ({
         },
       };
 
-      console.log('Saving edge:', {
+      console.log('Saving edge with enhanced debugging:', {
         id: edge.id,
         type: edgeData.type,
         connectionType: edgeData.data.connectionType,
         label: edgeData.data.label,
         sourceHandle: edgeData.sourceHandle,
-        handles: {
-          source: edge.sourceHandle,
-          target: edge.targetHandle,
-          dataSource: edge.data?.sourceHandle,
-          dataTarget: edge.data?.targetHandle
-        }
+        originalEdge: edge
       });
 
       return edgeData;
@@ -129,12 +124,13 @@ export const useJobDiagramSave = ({
     const fracComPort = primaryMainBox?.data?.fracComPort || '';
     const gaugeComPort = primaryMainBox?.data?.gaugeComPort || '';
 
-    console.log('Saving MainBox configuration:', {
+    console.log('Enhanced COM port debugging:', {
       fracBaudRate,
       gaugeBaudRate,
       fracComPort,
       gaugeComPort,
-      mainBoxCount: mainBoxNodes.length
+      mainBoxCount: mainBoxNodes.length,
+      primaryMainBoxData: primaryMainBox?.data
     });
 
     return {
@@ -189,55 +185,53 @@ export const useJobDiagramSave = ({
 
     // Only save if data has actually changed and we're not in the initial load phase
     if (isInitialized && initialLoadCompleteRef.current && currentDataString !== lastSavedDataRef.current) {
-      console.log('Performing save - data has changed');
-      console.log('Saving nodes count:', saveDataMemo.nodes.length);
-      console.log('Saving edges count:', saveDataMemo.edges.length);
-      console.log('Edge details being saved:', saveDataMemo.edges.map(e => ({ 
-        id: e.id, 
-        type: e.type, 
-        connectionType: e.data?.connectionType,
-        sourceHandle: e.sourceHandle || e.data?.sourceHandle,
-        label: e.label || e.data?.label,
-        style: e.style 
-      })));
-      console.log('MainBox settings being saved:', {
-        fracComPort: saveDataMemo.fracComPort,
-        gaugeComPort: saveDataMemo.gaugeComPort,
-        fracBaudRate: saveDataMemo.fracBaudRate,
-        gaugeBaudRate: saveDataMemo.gaugeBaudRate
+      console.log('Performing enhanced save with debugging:', {
+        nodesCount: saveDataMemo.nodes.length,
+        edgesCount: saveDataMemo.edges.length,
+        comPorts: {
+          frac: saveDataMemo.fracComPort,
+          gauge: saveDataMemo.gaugeComPort,
+          fracBaud: saveDataMemo.fracBaudRate,
+          gaugeBaud: saveDataMemo.gaugeBaudRate
+        },
+        edgeTypes: saveDataMemo.edges.map(e => ({ id: e.id, type: e.type, connectionType: e.data?.connectionType }))
       });
       
       saveInProgressRef.current = true;
       lastSavedDataRef.current = currentDataString;
       
-      // Immediate save without delay
+      // Immediate save with enhanced debugging
       saveJob(saveDataMemo);
       saveInProgressRef.current = false;
     } else if (!initialLoadCompleteRef.current) {
       console.log('Skipping save - initial load not complete');
     } else if (currentDataString === lastSavedDataRef.current) {
       console.log('Skipping save - no data changes detected');
+    } else if (!isInitialized) {
+      console.log('Skipping save - not initialized yet');
     }
   }, [isInitialized, currentDataString, saveJob, saveDataMemo]);
 
-  const { debouncedSave, cleanup } = useDebouncedSave(performSave, 1000);
+  // Reduced debounce delay for faster user feedback
+  const { debouncedSave, cleanup } = useDebouncedSave(performSave, 500);
 
-  // Mark initial load as complete after shorter delay
+  // Mark initial load as complete after initialization
   useEffect(() => {
     if (isInitialized && !initialLoadCompleteRef.current) {
       const timer = setTimeout(() => {
         initialLoadCompleteRef.current = true;
         lastSavedDataRef.current = currentDataString;
-        console.log('Initial load complete, ready for auto-save');
-      }, 2000);
+        console.log('Initial load complete, ready for auto-save with enhanced debugging');
+      }, 1000); // Reduced from 2000
 
       return () => clearTimeout(timer);
     }
   }, [isInitialized, currentDataString]);
 
-  // Trigger debounced save
+  // Trigger debounced save with enhanced debugging
   useEffect(() => {
     if (isInitialized && initialLoadCompleteRef.current && !saveInProgressRef.current) {
+      console.log('Triggering debounced save due to data change');
       debouncedSave();
     }
   }, [currentDataString, isInitialized, debouncedSave]);
@@ -247,16 +241,29 @@ export const useJobDiagramSave = ({
     return cleanup;
   }, [cleanup]);
 
-  // Manual save function for user-triggered saves
+  // Enhanced manual save function for user-triggered saves
   const manualSave = React.useCallback(() => {
-    console.log('Manual save triggered');
+    console.log('Manual save triggered with enhanced debugging');
     lastSavedDataRef.current = ''; // Force save by clearing last saved data
     performSave();
   }, [performSave]);
 
+  // New immediate save function for critical user actions
+  const immediateSave = React.useCallback(() => {
+    console.log('Immediate save triggered for critical user action');
+    if (isInitialized) {
+      lastSavedDataRef.current = ''; // Force save
+      saveInProgressRef.current = true;
+      saveJob(saveDataMemo);
+      lastSavedDataRef.current = currentDataString;
+      saveInProgressRef.current = false;
+    }
+  }, [isInitialized, saveJob, saveDataMemo, currentDataString]);
+
   return {
     debouncedSave,
     manualSave,
+    immediateSave,
     cleanup,
   };
 };

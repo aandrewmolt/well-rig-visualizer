@@ -62,11 +62,11 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
     updateWellsideGaugeName,
   } = useJobDiagramCore(job);
 
-  const { manualSave } = useJobDiagramSave({
+  const { manualSave, immediateSave } = useJobDiagramSave({
     job,
     nodes,
     edges,
-    isInitialized: true,
+    isInitialized,
     mainBoxName,
     satelliteName,
     wellsideGaugeName,
@@ -76,6 +76,47 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
     selectedStarlink,
     selectedCustomerComputers,
   });
+
+  // Enhanced connection handler with immediate save for edge toggles
+  const enhancedOnConnect = useCallback((connection: any) => {
+    console.log('Enhanced connection handler:', connection);
+    onConnect(connection);
+    // Trigger immediate save after connection
+    setTimeout(() => immediateSave(), 100);
+  }, [onConnect, immediateSave]);
+
+  // Enhanced edges change handler to detect Y→Well toggles
+  const enhancedOnEdgesChange = useCallback((changes: any[]) => {
+    console.log('Enhanced edges change handler:', changes);
+    onEdgesChange(changes);
+    
+    // Check if this is a Y→Well toggle (edge update)
+    const hasEdgeUpdate = changes.some(change => change.type === 'reset' || 
+      (change.type === 'add' && change.item?.type === 'direct') ||
+      (change.type === 'add' && change.item?.data?.connectionType === 'direct'));
+    
+    if (hasEdgeUpdate) {
+      console.log('Detected edge toggle, triggering immediate save');
+      setTimeout(() => immediateSave(), 100);
+    }
+  }, [onEdgesChange, immediateSave]);
+
+  // Enhanced nodes change handler to detect COM port changes
+  const enhancedOnNodesChange = useCallback((changes: any[]) => {
+    console.log('Enhanced nodes change handler:', changes);
+    onNodesChange(changes);
+    
+    // Check if this includes MainBox data changes (COM ports)
+    const hasMainBoxUpdate = changes.some(change => 
+      change.type === 'reset' || 
+      (change.item && change.item.type === 'mainBox')
+    );
+    
+    if (hasMainBoxUpdate) {
+      console.log('Detected MainBox change, triggering immediate save');
+      setTimeout(() => immediateSave(), 100);
+    }
+  }, [onNodesChange, immediateSave]);
 
   const {
     validateEquipmentAllocations,
@@ -221,9 +262,9 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
         <JobDiagramCanvas
           nodes={nodes}
           edges={edges}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          onConnect={onConnect}
+          onNodesChange={enhancedOnNodesChange}
+          onEdgesChange={enhancedOnEdgesChange}
+          onConnect={enhancedOnConnect}
           reactFlowWrapper={reactFlowWrapper}
         />
       </div>

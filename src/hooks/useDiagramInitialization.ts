@@ -1,3 +1,4 @@
+
 import { useCallback } from 'react';
 import { Node } from '@xyflow/react';
 
@@ -35,15 +36,15 @@ export const useDiagramInitialization = (
     };
     initialNodes.push(mainBoxNode);
 
-    // Create initial company computer node - moved further left to prevent overlap
-    const companyComputerNode: Node = {
-      id: 'company-computer-1',
-      type: 'companyComputer',
+    // Create initial customer computer node - moved further left to prevent overlap
+    const customerComputerNode: Node = {
+      id: 'customer-computer-1',
+      type: 'customerComputer',
       position: { x: -150, y: 300 },
-      data: { label: 'Company Computer' },
+      data: { label: 'Customer Computer' },
       draggable: true,
     };
-    initialNodes.push(companyComputerNode);
+    initialNodes.push(customerComputerNode);
 
     // Create satellite node - also moved left
     const satelliteNode: Node = {

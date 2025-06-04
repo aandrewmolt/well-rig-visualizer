@@ -22,12 +22,12 @@ interface JobDiagramPanelsProps {
   setSelectedCableType: (type: string) => void;
   selectedShearstreamBoxes: string[];
   selectedStarlink: string;
-  selectedCompanyComputers: string[];
-  onEquipmentSelect: (type: 'shearstream-box' | 'starlink' | 'company-computer', equipmentId: string, index?: number) => void;
+  selectedCustomerComputers: string[];
+  onEquipmentSelect: (type: 'shearstream-box' | 'starlink' | 'customer-computer', equipmentId: string, index?: number) => void;
   onAddShearstreamBox: () => void;
   onRemoveShearstreamBox: (index: number) => void;
   addYAdapter: () => void;
-  addCompanyComputer: () => void;
+  addCustomerComputer: () => void;
   clearDiagram: () => void;
   saveDiagram: () => void;
   updateWellName: (wellId: string, newName: string) => void;
@@ -44,12 +44,12 @@ const JobDiagramPanels: React.FC<JobDiagramPanelsProps> = ({
   setSelectedCableType,
   selectedShearstreamBoxes,
   selectedStarlink,
-  selectedCompanyComputers,
+  selectedCustomerComputers,
   onEquipmentSelect,
   onAddShearstreamBox,
   onRemoveShearstreamBox,
   addYAdapter,
-  addCompanyComputer,
+  addCustomerComputer,
   clearDiagram,
   saveDiagram,
   updateWellName,
@@ -59,7 +59,7 @@ const JobDiagramPanels: React.FC<JobDiagramPanelsProps> = ({
 }) => {
   const wellNodes = nodes.filter(node => node.type === 'well');
   const wellsideGaugeNode = nodes.find(node => node.type === 'wellsideGauge');
-  const companyComputerNodes = nodes.filter(node => node.type === 'companyComputer');
+  const customerComputerNodes = nodes.filter(node => node.type === 'customerComputer');
   const shearstreamBoxNodes = nodes.filter(node => node.type === 'mainBox');
 
   return (
@@ -68,7 +68,7 @@ const JobDiagramPanels: React.FC<JobDiagramPanelsProps> = ({
         selectedCableType={selectedCableType}
         setSelectedCableType={setSelectedCableType}
         addYAdapter={addYAdapter}
-        addCompanyComputer={addCompanyComputer}
+        addCustomerComputer={addCustomerComputer}
         clearDiagram={clearDiagram}
         saveDiagram={saveDiagram}
       />
@@ -76,8 +76,8 @@ const JobDiagramPanels: React.FC<JobDiagramPanelsProps> = ({
       <CompactEquipmentSelectionPanel
         selectedShearstreamBoxes={selectedShearstreamBoxes}
         selectedStarlink={selectedStarlink}
-        selectedCompanyComputers={selectedCompanyComputers}
-        companyComputerCount={companyComputerNodes.length}
+        selectedCustomerComputers={selectedCustomerComputers}
+        customerComputerCount={customerComputerNodes.length}
         shearstreamBoxCount={shearstreamBoxNodes.length}
         onEquipmentSelect={onEquipmentSelect}
         onAddShearstreamBox={onAddShearstreamBox}

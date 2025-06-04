@@ -5,7 +5,7 @@ import { Node } from '@xyflow/react';
 export interface JobEquipmentAssignment {
   shearstreamBoxIds: string[]; // Changed to support multiple boxes
   starlinkId?: string;
-  companyComputerIds: string[];
+  customerComputerIds: string[]; // Changed from companyComputerIds
 }
 
 export const useDiagramState = () => {
@@ -15,11 +15,11 @@ export const useDiagramState = () => {
   const [mainBoxName, setMainBoxName] = useState('ShearStream Box');
   const [satelliteName, setSatelliteName] = useState('Starlink');
   const [wellsideGaugeName, setWellsideGaugeName] = useState('Wellside Gauge');
-  const [companyComputerNames, setCompanyComputerNames] = useState<Record<string, string>>({});
+  const [customerComputerNames, setCustomerComputerNames] = useState<Record<string, string>>({});
   const [isInitialized, setIsInitialized] = useState(false);
   const [equipmentAssignment, setEquipmentAssignment] = useState<JobEquipmentAssignment>({
     shearstreamBoxIds: [], // Changed to array
-    companyComputerIds: [],
+    customerComputerIds: [],
   });
 
   const updateMainBoxName = useCallback((nodeId: string, name: string, setNodes: (updater: (nodes: Node[]) => Node[]) => void) => {
@@ -32,8 +32,8 @@ export const useDiagramState = () => {
     );
   }, []);
 
-  const updateCompanyComputerName = useCallback((nodeId: string, name: string, setNodes: (updater: (nodes: Node[]) => Node[]) => void) => {
-    setCompanyComputerNames(prev => ({ ...prev, [nodeId]: name }));
+  const updateCustomerComputerName = useCallback((nodeId: string, name: string, setNodes: (updater: (nodes: Node[]) => Node[]) => void) => {
+    setCustomerComputerNames(prev => ({ ...prev, [nodeId]: name }));
     setNodes((nodes) =>
       nodes.map((node) =>
         node.id === nodeId
@@ -85,14 +85,14 @@ export const useDiagramState = () => {
     setSatelliteName,
     wellsideGaugeName,
     setWellsideGaugeName,
-    companyComputerNames,
-    setCompanyComputerNames,
+    customerComputerNames,
+    setCustomerComputerNames,
     isInitialized,
     setIsInitialized,
     equipmentAssignment,
     setEquipmentAssignment,
     updateMainBoxName,
-    updateCompanyComputerName,
+    updateCustomerComputerName,
     updateSatelliteName,
     updateWellsideGaugeName,
     syncWithLoadedData,

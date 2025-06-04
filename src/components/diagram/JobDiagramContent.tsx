@@ -30,12 +30,12 @@ interface JobDiagramContentProps {
   setSelectedCableType: (type: string) => void;
   selectedShearstreamBoxes: string[];
   selectedStarlink: string;
-  selectedCompanyComputers: string[];
-  onEquipmentSelect: (type: 'shearstream-box' | 'starlink' | 'company-computer', equipmentId: string, index?: number) => void;
+  selectedCustomerComputers: string[];
+  onEquipmentSelect: (type: 'shearstream-box' | 'starlink' | 'customer-computer', equipmentId: string, index?: number) => void;
   onAddShearstreamBox: () => void;
   onRemoveShearstreamBox: (index: number) => void;
   addYAdapter: () => void;
-  addCompanyComputer: () => void;
+  addCustomerComputer: () => void;
   clearDiagram: () => void;
   saveDiagram: () => void;
   updateWellName: (wellId: string, newName: string) => void;
@@ -56,12 +56,12 @@ const JobDiagramContent: React.FC<JobDiagramContentProps> = ({
   setSelectedCableType,
   selectedShearstreamBoxes,
   selectedStarlink,
-  selectedCompanyComputers,
+  selectedCustomerComputers,
   onEquipmentSelect,
   onAddShearstreamBox,
   onRemoveShearstreamBox,
   addYAdapter,
-  addCompanyComputer,
+  addCustomerComputer,
   clearDiagram,
   saveDiagram,
   updateWellName,
@@ -82,12 +82,12 @@ const JobDiagramContent: React.FC<JobDiagramContentProps> = ({
         setSelectedCableType={setSelectedCableType}
         selectedShearstreamBoxes={selectedShearstreamBoxes}
         selectedStarlink={selectedStarlink}
-        selectedCompanyComputers={selectedCompanyComputers}
+        selectedCustomerComputers={selectedCustomerComputers}
         onEquipmentSelect={onEquipmentSelect}
         onAddShearstreamBox={onAddShearstreamBox}
         onRemoveShearstreamBox={onRemoveShearstreamBox}
         addYAdapter={addYAdapter}
-        addCompanyComputer={addCompanyComputer}
+        addCustomerComputer={addCustomerComputer}
         clearDiagram={clearDiagram}
         saveDiagram={saveDiagram}
         updateWellName={updateWellName}
@@ -123,7 +123,7 @@ const JobDiagramContent: React.FC<JobDiagramContentProps> = ({
           setSelectedCableType={setSelectedCableType}
           addYAdapter={addYAdapter}
           onAddShearstreamBox={onAddShearstreamBox}
-          addCompanyComputer={addCompanyComputer}
+          addCustomerComputer={addCustomerComputer}
         />
 
         {/* Diagram Canvas */}

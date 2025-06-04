@@ -12,7 +12,7 @@ export const useJobDiagramState = () => {
   // Equipment assignment state - updated for multiple SS boxes
   const [selectedShearstreamBoxes, setSelectedShearstreamBoxes] = useState<string[]>([]);
   const [selectedStarlink, setSelectedStarlink] = useState<string>('');
-  const [selectedCompanyComputers, setSelectedCompanyComputers] = useState<string[]>([]);
+  const [selectedCustomerComputers, setSelectedCustomerComputers] = useState<string[]>([]);
 
   const diagramState = useDiagramState();
 
@@ -48,8 +48,8 @@ export const useJobDiagramState = () => {
     setSelectedShearstreamBoxes,
     selectedStarlink,
     setSelectedStarlink,
-    selectedCompanyComputers,
-    setSelectedCompanyComputers,
+    selectedCustomerComputers,
+    setSelectedCustomerComputers,
     initializeCableType,
     ...diagramState,
   };

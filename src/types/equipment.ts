@@ -2,7 +2,7 @@
 export interface TrackedEquipment {
   id: string;
   equipmentId: string; // User-editable ID like "SS-001", "SL-002"
-  type: 'shearstream-box' | 'starlink' | 'company-computer';
+  type: 'shearstream-box' | 'starlink' | 'customer-computer';
   name: string; // User-friendly name
   serialNumber?: string;
   purchaseDate?: Date;
@@ -28,5 +28,5 @@ export interface EquipmentDeploymentHistory {
 export interface JobEquipmentAssignment {
   shearstreamBoxIds: string[]; // Changed from shearstreamBoxId to support multiple boxes
   starlinkId?: string;
-  companyComputerIds: string[];
+  customerComputerIds: string[]; // Changed from companyComputerIds
 }

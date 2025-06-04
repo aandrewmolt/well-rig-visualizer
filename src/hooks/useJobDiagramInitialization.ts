@@ -26,11 +26,11 @@ interface UseJobDiagramInitializationProps {
   setMainBoxName: (name: string) => void;
   setSatelliteName: (name: string) => void;
   setWellsideGaugeName: (name: string) => void;
-  setCompanyComputerNames: (names: Record<string, string>) => void;
+  setCustomerComputerNames: (names: Record<string, string>) => void;
   setSelectedCableType: (type: string) => void;
   setSelectedShearstreamBoxes: (boxes: string[]) => void;
   setSelectedStarlink: (starlink: string) => void;
-  setSelectedCompanyComputers: (computers: string[]) => void;
+  setSelectedCustomerComputers: (computers: string[]) => void;
   setEquipmentAssignment: (assignment: JobEquipmentAssignment) => void;
   syncWithLoadedData: (data: any) => void;
   mainBoxName: string;
@@ -50,11 +50,11 @@ export const useJobDiagramInitialization = ({
   setMainBoxName,
   setSatelliteName,
   setWellsideGaugeName,
-  setCompanyComputerNames,
+  setCustomerComputerNames,
   setSelectedCableType,
   setSelectedShearstreamBoxes,
   setSelectedStarlink,
-  setSelectedCompanyComputers,
+  setSelectedCustomerComputers,
   setEquipmentAssignment,
   syncWithLoadedData,
   mainBoxName,
@@ -128,7 +128,7 @@ export const useJobDiagramInitialization = ({
       setMainBoxName(jobData.mainBoxName || 'ShearStream Box');
       setSatelliteName(jobData.satelliteName || 'Starlink');
       setWellsideGaugeName(jobData.wellsideGaugeName || 'Wellside Gauge');
-      setCompanyComputerNames(jobData.companyComputerNames || {});
+      setCustomerComputerNames(jobData.customerComputerNames || jobData.companyComputerNames || {});
       
       // Fix: Load selected cable type with fallback
       if (jobData.selectedCableType) {
@@ -139,7 +139,7 @@ export const useJobDiagramInitialization = ({
       if (jobData.equipmentAssignment) {
         setSelectedShearstreamBoxes(jobData.equipmentAssignment.shearstreamBoxIds || []);
         setSelectedStarlink(jobData.equipmentAssignment.starlinkId || '');
-        setSelectedCompanyComputers(jobData.equipmentAssignment.companyComputerIds || []);
+        setSelectedCustomerComputers(jobData.equipmentAssignment.customerComputerIds || jobData.equipmentAssignment.companyComputerIds || []);
         setEquipmentAssignment(jobData.equipmentAssignment);
       }
       
@@ -160,7 +160,7 @@ export const useJobDiagramInitialization = ({
     setMainBoxName, 
     setSatelliteName, 
     setWellsideGaugeName, 
-    setCompanyComputerNames, 
+    setCustomerComputerNames, 
     setSelectedCableType,
     setNodeIdCounter, 
     setIsInitialized,
@@ -170,7 +170,7 @@ export const useJobDiagramInitialization = ({
     calculateNodeIdCounter,
     setSelectedShearstreamBoxes,
     setSelectedStarlink,
-    setSelectedCompanyComputers
+    setSelectedCustomerComputers
   ]);
 
   return {

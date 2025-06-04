@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -248,14 +247,13 @@ const ExtrasOnLocationPanel: React.FC<ExtrasOnLocationPanelProps> = ({
                 <div key={extra.id} className="flex items-start justify-between p-3 border rounded-lg bg-yellow-50 border-yellow-200">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="font-medium">{getEquipmentTypeName(extra.equipmentTypeId)}</span>
-                      {!isIndividuallyTracked && (
-                        <Badge variant="secondary">{extra.quantity}x</Badge>
-                      )}
-                      {isIndividuallyTracked && extra.individualEquipmentId && (
-                        <Badge variant="outline" className="text-xs">
+                      <span className="font-medium text-lg">{getEquipmentTypeName(extra.equipmentTypeId)}</span>
+                      {isIndividuallyTracked && extra.individualEquipmentId ? (
+                        <Badge variant="secondary" className="text-sm font-bold bg-blue-100 text-blue-800">
                           {getIndividualEquipmentName(extra.individualEquipmentId)}
                         </Badge>
+                      ) : (
+                        <Badge variant="secondary" className="text-sm">{extra.quantity}x</Badge>
                       )}
                       <Badge variant="outline" className="text-xs bg-yellow-100">
                         Extra

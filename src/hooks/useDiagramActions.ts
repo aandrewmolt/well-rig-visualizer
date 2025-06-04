@@ -1,4 +1,3 @@
-
 import { useCallback } from 'react';
 import { Node, getNodesBounds, getViewportForBounds } from '@xyflow/react';
 import { toast } from 'sonner';
@@ -83,13 +82,22 @@ export const useDiagramActions = (
   const addCompanyComputer = useCallback(() => {
     setNodes((nds) => {
       const existingComputers = nds.filter(node => node.type === 'companyComputer');
+      const existingBoxes = nds.filter(node => node.type === 'mainBox');
       const newComputerNumber = existingComputers.length + 1;
+      
+      // Position Customer Computers at top-left of ShearStream boxes with proper spacing
+      // First computer goes above the first box, subsequent ones offset to avoid overlap
+      const baseX = 50; // Same as first ShearStream box X position
+      const baseY = 20; // Above the ShearStream boxes (which start at y: 100)
       
       const newComputer: Node = {
         id: `customer-computer-${newComputerNumber}`,
         type: 'companyComputer',
-        // Position further left with more spacing to prevent overlap
-        position: { x: -150 + (existingComputers.length * 200), y: 300 + (existingComputers.length * 150) },
+        // Position at top-left area with horizontal spacing to prevent overlap
+        position: { 
+          x: baseX + (existingComputers.length * 180), // Horizontal spacing between computers
+          y: baseY 
+        },
         data: { 
           label: 'Customer Computer', // Generic label until equipment is assigned
           equipmentId: null,

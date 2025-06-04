@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Node } from '@xyflow/react';
 import { Button } from '@/components/ui/button';
@@ -98,9 +97,8 @@ const JobDiagramContent: React.FC<JobDiagramContentProps> = ({
 
       {/* Diagram Section */}
       <div className="relative bg-white rounded-lg border shadow-sm">
-        {/* Top Controls Bar */}
-        <div className="absolute top-4 left-4 right-4 z-20 flex justify-between items-center">
-          {/* Photos Button */}
+        {/* Top Controls Bar - Photos Button moved to left side to avoid zoom controls */}
+        <div className="absolute top-4 left-4 z-20">
           <Sheet open={isPhotosPanelOpen} onOpenChange={setIsPhotosPanelOpen}>
             <SheetTrigger asChild>
               <Button
@@ -116,18 +114,16 @@ const JobDiagramContent: React.FC<JobDiagramContentProps> = ({
               <JobPhotoPanel jobId={job.id} jobName={job.name} />
             </SheetContent>
           </Sheet>
-
-          {/* Floating Diagram Controls */}
-          <div className="flex gap-2">
-            <FloatingDiagramControls
-              selectedCableType={selectedCableType}
-              setSelectedCableType={setSelectedCableType}
-              addYAdapter={addYAdapter}
-              onAddShearstreamBox={onAddShearstreamBox}
-              addCustomerComputer={addCustomerComputer}
-            />
-          </div>
         </div>
+
+        {/* Quick Controls - Now as horizontal toolbar at top */}
+        <FloatingDiagramControls
+          selectedCableType={selectedCableType}
+          setSelectedCableType={setSelectedCableType}
+          addYAdapter={addYAdapter}
+          onAddShearstreamBox={onAddShearstreamBox}
+          addCustomerComputer={addCustomerComputer}
+        />
 
         {/* Diagram Canvas */}
         <div className="h-[600px]">

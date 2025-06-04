@@ -1,10 +1,6 @@
-
-import { useEffect, useCallback, useMemo } from 'react';
+import { useCallback } from 'react';
 import { Node } from '@xyflow/react';
-import { useJobPersistence } from './useJobPersistence';
-import { useInventoryData } from './useInventoryData';
-import { useDiagramInitialization } from './useDiagramInitialization';
-import { JobEquipmentAssignment } from '@/types/equipment';
+import { useSupabaseJobs as useJobStorage } from '@/hooks/useSupabaseJobs';
 
 interface Job {
   id: string;
@@ -16,10 +12,10 @@ interface Job {
 
 interface UseJobDiagramInitializationProps {
   job: Job;
-  nodes: Node[];
+  nodes: any[];
   edges: any[];
   isInitialized: boolean;
-  setNodes: (nodes: Node[]) => void;
+  setNodes: (nodes: any[]) => void;
   setEdges: (edges: any[]) => void;
   setNodeIdCounter: (counter: number) => void;
   setIsInitialized: (initialized: boolean) => void;
@@ -31,156 +27,118 @@ interface UseJobDiagramInitializationProps {
   setSelectedShearstreamBoxes: (boxes: string[]) => void;
   setSelectedStarlink: (starlink: string) => void;
   setSelectedCustomerComputers: (computers: string[]) => void;
-  setEquipmentAssignment: (assignment: JobEquipmentAssignment) => void;
+  setEquipmentAssignment: (assignment: any) => void;
   syncWithLoadedData: (data: any) => void;
   mainBoxName: string;
   satelliteName: string;
   wellsideGaugeName: string;
 }
 
-export const useJobDiagramInitialization = ({
-  job,
-  nodes,
-  edges,
-  isInitialized,
-  setNodes,
-  setEdges,
-  setNodeIdCounter,
-  setIsInitialized,
-  setMainBoxName,
-  setSatelliteName,
-  setWellsideGaugeName,
-  setCustomerComputerNames,
-  setSelectedCableType,
-  setSelectedShearstreamBoxes,
-  setSelectedStarlink,
-  setSelectedCustomerComputers,
-  setEquipmentAssignment,
-  syncWithLoadedData,
-  mainBoxName,
-  satelliteName,
-  wellsideGaugeName,
-}: UseJobDiagramInitializationProps) => {
-  const { data: inventoryData } = useInventoryData();
-  const { jobData } = useJobPersistence(job.id);
+// Function to generate well positions based on wellCount
+const generateWellPositions = (wellCount: number) => {
+  const positions = [];
+  for (let i = 0; i < wellCount; i++) {
+    const x = 75 + (i % 5) * 150; // 5 wells per row
+    const y = 450 + Math.floor(i / 5) * 150; // Adjust y position for each row
+    positions.push({ x, y });
+  }
+  return positions;
+};
 
-  const { initializeJob } = useDiagramInitialization(
-    job,
-    mainBoxName,
-    satelliteName,
-    wellsideGaugeName,
-    isInitialized,
-    setNodes,
-    setEdges,
-    setNodeIdCounter,
-    setIsInitialized
-  );
+export const useJobDiagramInitialization = (props: UseJobDiagramInitializationProps) => {
+  const { useSupabaseJobs } = useJobStorage();
+  const { jobs } = useSupabaseJobs();
 
-  // Calculate proper node ID counter from existing nodes
-  const calculateNodeIdCounter = useCallback((nodeList: any[]) => {
-    let maxId = 0;
-    nodeList.forEach(node => {
-      const matches = node.id.match(/\d+/g);
-      if (matches) {
-        const numbers = matches.map(Number);
-        maxId = Math.max(maxId, ...numbers);
-      }
-    });
-    return maxId + 1;
-  }, []);
+  const initializeJob = useCallback(() => {
+    const loadedJob = jobs.find(j => j.id === props.job.id);
 
-  const restoreEdgesStyling = useCallback((edgeList: any[], selectedCableType: string) => {
-    const getEdgeColor = (cableTypeId: string) => {
-      const cableType = inventoryData.equipmentTypes.find(type => type.id === cableTypeId);
-      const cableName = cableType?.name || '';
-      const lowerName = cableName.toLowerCase();
-      if (lowerName.includes('100ft')) return '#ef4444';
-      if (lowerName.includes('200ft')) return '#3b82f6';
-      if (lowerName.includes('300ft')) return '#10b981';
-      return '#6b7280';
-    };
-
-    return edgeList.map(edgeItem => {
-      return {
-        ...edgeItem,
-        type: edgeItem.type || 'cable',
-        style: edgeItem.style || {
-          stroke: getEdgeColor(edgeItem.data?.cableTypeId || selectedCableType),
-          strokeWidth: 3,
-        },
-        data: edgeItem.data || { cableTypeId: selectedCableType, label: 'Cable' }
-      };
-    });
-  }, [inventoryData.equipmentTypes]);
-
-  // Load persisted data on mount - single effect to prevent conflicts
-  useEffect(() => {
-    if (jobData && !isInitialized) {
-      // Sync state with loaded data first
-      syncWithLoadedData(jobData);
-      
-      // Restore nodes and edges with proper styling
-      const restoredEdges = restoreEdgesStyling(jobData.edges || [], jobData.selectedCableType || '');
-      setNodes(jobData.nodes || []);
-      setEdges(restoredEdges);
-      
-      // Update state variables
-      setMainBoxName(jobData.mainBoxName || 'ShearStream Box');
-      setSatelliteName(jobData.satelliteName || 'Starlink');
-      setWellsideGaugeName(jobData.wellsideGaugeName || 'Wellside Gauge');
-      // Support both old and new property names for backward compatibility
-      setCustomerComputerNames(jobData.customerComputerNames || jobData.company_computer_names || {});
-      
-      // Fix: Load selected cable type with fallback
-      if (jobData.selectedCableType) {
-        setSelectedCableType(jobData.selectedCableType);
-      }
-      
-      // Load equipment assignment - updated for multiple SS boxes with migration support
-      if (jobData.equipmentAssignment) {
-        const assignment = jobData.equipmentAssignment;
-        setSelectedShearstreamBoxes(assignment.shearstreamBoxIds || []);
-        setSelectedStarlink(assignment.starlinkId || '');
-        // Support migration from old companyComputerIds to new customerComputerIds
-        setSelectedCustomerComputers(assignment.customerComputerIds || assignment.company_computer_ids || []);
-        setEquipmentAssignment({
-          shearstreamBoxIds: assignment.shearstreamBoxIds || [],
-          starlinkId: assignment.starlinkId,
-          customerComputerIds: assignment.customerComputerIds || assignment.company_computer_ids || []
-        });
-      }
-      
-      // Calculate proper node ID counter from existing nodes
-      const calculatedCounter = calculateNodeIdCounter(jobData.nodes || []);
-      setNodeIdCounter(calculatedCounter);
-      
-      setIsInitialized(true);
-    } else if (!jobData && !isInitialized) {
-      initializeJob();
+    if (!loadedJob) {
+      console.warn('Job not found in Supabase, using provided job data.');
     }
-  }, [
-    jobData, 
-    isInitialized, 
-    initializeJob, 
-    setNodes, 
-    setEdges, 
-    setMainBoxName, 
-    setSatelliteName, 
-    setWellsideGaugeName, 
-    setCustomerComputerNames, 
-    setSelectedCableType,
-    setNodeIdCounter, 
-    setIsInitialized,
-    syncWithLoadedData,
-    restoreEdgesStyling,
-    setEquipmentAssignment,
-    calculateNodeIdCounter,
-    setSelectedShearstreamBoxes,
-    setSelectedStarlink,
-    setSelectedCustomerComputers
-  ]);
 
-  return {
-    initializeJob,
-  };
+    const initialData = loadedJob || props.job;
+
+    if (initialData && !props.isInitialized) {
+      console.log('Initializing job with data:', initialData);
+
+      // Sync loaded data to state
+      props.syncWithLoadedData(initialData);
+
+      // Set initial values from loaded data
+      props.setSelectedCableType(initialData.selectedCableType || 'defaultCableType');
+      props.setSelectedShearstreamBoxes(initialData.equipmentAssignment?.shearstreamBoxIds || []);
+      props.setSelectedStarlink(initialData.equipmentAssignment?.starlinkId || '');
+      props.setSelectedCustomerComputers(initialData.equipmentAssignment?.customerComputerIds || []);
+      props.setEquipmentAssignment(initialData.equipmentAssignment || {});
+
+      props.setMainBoxName(initialData.mainBoxName || 'ShearStream Box');
+      props.setSatelliteName(initialData.satelliteName || 'Starlink');
+      props.setWellsideGaugeName(initialData.wellsideGaugeName || 'Wellside Gauge');
+      props.setCustomerComputerNames(initialData.companyComputerNames || {});
+
+      const wellPositions = generateWellPositions(props.job.wellCount);
+    
+    // Create nodes with updated positioning
+    const newNodes: Node[] = [
+      // Main ShearStream Box
+      {
+        id: 'main-box',
+        type: 'mainBox',
+        position: { x: 50, y: 100 },
+        data: { 
+          label: props.mainBoxName || 'ShearStream Box',
+          boxNumber: 1,
+          equipmentId: null,
+          assigned: false
+        },
+        draggable: true,
+      },
+      // Starlink Satellite - moved up for better compactness
+      {
+        id: 'satellite',
+        type: 'satellite',
+        position: { x: 400, y: 50 }, // Moved up from y: 100 to y: 50
+        data: { 
+          label: props.satelliteName || 'Starlink',
+          equipmentId: null,
+          assigned: false
+        },
+        draggable: true,
+      },
+      // Wells
+      ...wellPositions.map((pos, index) => ({
+        id: `well-${index + 1}`,
+        type: 'well',
+        position: pos,
+        data: { 
+          label: `Well ${index + 1}`,
+          wellNumber: index + 1,
+          color: '#3b82f6'
+        },
+        draggable: true,
+      })),
+    ];
+
+    // Add wellside gauge if needed
+    if (props.job.hasWellsideGauge) {
+      newNodes.push({
+        id: 'wellside-gauge',
+        type: 'wellsideGauge',
+        position: { x: 600, y: 300 },
+        data: { 
+          label: props.wellsideGaugeName || 'Wellside Gauge',
+          color: '#10b981'
+        },
+        draggable: true,
+      });
+    }
+
+      // Initialize nodes and edges
+      props.setNodes(initialData.nodes && initialData.nodes.length > 0 ? initialData.nodes : newNodes);
+      props.setEdges(initialData.edges && initialData.edges.length > 0 ? initialData.edges : []);
+      props.setIsInitialized(true);
+    }
+  }, [props, jobs]);
+
+  return { initializeJob };
 };

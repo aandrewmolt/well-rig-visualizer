@@ -36,36 +36,38 @@ const FloatingDiagramControls: React.FC<FloatingDiagramControlsProps> = ({
     });
 
   return (
-    <Card className="absolute top-4 right-4 z-20 bg-white/95 backdrop-blur-sm border shadow-lg">
-      <CardContent className="p-3 space-y-2">
-        <div className="text-xs font-medium text-gray-600 mb-2">Quick Controls</div>
-        
-        {/* Cable Type Selector */}
-        <div className="space-y-1">
-          <label className="text-xs text-gray-500">Cable Type</label>
-          <Select value={selectedCableType} onValueChange={setSelectedCableType}>
-            <SelectTrigger className="h-8 w-40 text-xs">
-              <SelectValue placeholder="Select cable" />
-            </SelectTrigger>
-            <SelectContent>
-              {availableCables.map((cable) => (
-                <SelectItem key={cable.id} value={cable.id} className="text-xs">
-                  {cable.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+    <Card className="absolute top-4 left-1/2 transform -translate-x-1/2 z-20 bg-white/95 backdrop-blur-sm border shadow-lg">
+      <CardContent className="p-3">
+        <div className="flex items-center gap-4">
+          {/* Cable Type Selector */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-medium text-gray-600">Cable:</span>
+            <Select value={selectedCableType} onValueChange={setSelectedCableType}>
+              <SelectTrigger className="h-8 w-32 text-xs">
+                <SelectValue placeholder="Select cable" />
+              </SelectTrigger>
+              <SelectContent>
+                {availableCables.map((cable) => (
+                  <SelectItem key={cable.id} value={cable.id} className="text-xs">
+                    {cable.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-        {/* Quick Action Buttons */}
-        <div className="space-y-1">
-          <div className="text-xs text-gray-500">Add Components</div>
-          <div className="grid grid-cols-1 gap-1">
+          {/* Divider */}
+          <div className="h-6 w-px bg-gray-300" />
+
+          {/* Quick Action Buttons */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-medium text-gray-600">Add:</span>
+            
             <Button
               onClick={addYAdapter}
               size="sm"
               variant="outline"
-              className="h-8 text-xs justify-start"
+              className="h-8 text-xs px-3"
             >
               <Zap className="h-3 w-3 mr-1" />
               Y-Adapter
@@ -75,7 +77,7 @@ const FloatingDiagramControls: React.FC<FloatingDiagramControlsProps> = ({
               onClick={onAddShearstreamBox}
               size="sm"
               variant="outline"
-              className="h-8 text-xs justify-start"
+              className="h-8 text-xs px-3"
             >
               <Plus className="h-3 w-3 mr-1" />
               SS Box
@@ -85,7 +87,7 @@ const FloatingDiagramControls: React.FC<FloatingDiagramControlsProps> = ({
               onClick={addCustomerComputer}
               size="sm"
               variant="outline"
-              className="h-8 text-xs justify-start"
+              className="h-8 text-xs px-3"
             >
               <Monitor className="h-3 w-3 mr-1" />
               Computer

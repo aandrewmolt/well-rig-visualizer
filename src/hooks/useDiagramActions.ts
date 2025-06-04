@@ -27,6 +27,7 @@ export const useDiagramActions = (
       type: 'yAdapter',
       position: { x: 250 + (nodeIdCounter * 30), y: 200 + (nodeIdCounter * 30) },
       data: { label: 'Y Adapter' },
+      deletable: true, // Make deletable
     };
     
     setNodes((nds) => [...nds, newYAdapter]);
@@ -56,7 +57,8 @@ export const useDiagramActions = (
           equipmentId: null,
           assigned: false
         },
-        draggable: true, // Make boxes draggable
+        draggable: true,
+        deletable: true, // Make deletable
       };
       
       setNodeIdCounter(nodeIdCounter + 1);
@@ -81,8 +83,7 @@ export const useDiagramActions = (
 
   const addCompanyComputer = useCallback(() => {
     setNodes((nds) => {
-      const existingComputers = nds.filter(node => node.type === 'companyComputer');
-      const existingBoxes = nds.filter(node => node.type === 'mainBox');
+      const existingComputers = nds.filter(node => node.type === 'customerComputer'); // Fixed node type
       const newComputerNumber = existingComputers.length + 1;
       
       // Position Customer Computers at top-left of ShearStream boxes with proper spacing
@@ -92,7 +93,7 @@ export const useDiagramActions = (
       
       const newComputer: Node = {
         id: `customer-computer-${newComputerNumber}`,
-        type: 'companyComputer',
+        type: 'customerComputer', // Fixed node type
         // Position at top-left area with horizontal spacing to prevent overlap
         position: { 
           x: baseX + (existingComputers.length * 180), // Horizontal spacing between computers
@@ -105,6 +106,7 @@ export const useDiagramActions = (
           isTablet: false
         },
         draggable: true,
+        deletable: true, // Make deletable
       };
       
       setNodeIdCounter(nodeIdCounter + 1);

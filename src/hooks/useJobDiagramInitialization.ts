@@ -27,12 +27,30 @@ interface UseJobDiagramInitializationProps {
   wellsideGaugeName: string;
 }
 
-// Function to generate well positions based on wellCount
+// Well colors for unique identification
+const wellColors = [
+  '#3b82f6', // blue
+  '#10b981', // emerald
+  '#f59e0b', // amber
+  '#ef4444', // red
+  '#8b5cf6', // violet
+  '#f97316', // orange
+  '#06b6d4', // cyan
+  '#84cc16', // lime
+  '#ec4899', // pink
+  '#6366f1', // indigo
+];
+
+// Function to generate well positions on the right side
 const generateWellPositions = (wellCount: number) => {
   const positions = [];
+  const startX = 750; // Right side positioning
+  const startY = 150; // Starting Y position
+  const verticalSpacing = 150; // Space between wells vertically
+  
   for (let i = 0; i < wellCount; i++) {
-    const x = 75 + (i % 5) * 150; // 5 wells per row
-    const y = 450 + Math.floor(i / 5) * 150; // Adjust y position for each row
+    const x = startX;
+    const y = startY + (i * verticalSpacing);
     positions.push({ x, y });
   }
   return positions;
@@ -43,12 +61,12 @@ const createDefaultNodes = (job: JobDiagram, mainBoxName: string, satelliteName:
   
   const wellPositions = generateWellPositions(job.wellCount);
   
-  // Always create at least 1 ShearStream Box
+  // Always create at least 1 ShearStream Box in the center
   const newNodes: Node[] = [
     {
       id: 'main-box',
       type: 'mainBox',
-      position: { x: 50, y: 100 },
+      position: { x: 400, y: 250 }, // Center position
       data: { 
         label: mainBoxName || 'ShearStream Box',
         boxNumber: 1,
@@ -56,22 +74,24 @@ const createDefaultNodes = (job: JobDiagram, mainBoxName: string, satelliteName:
         assigned: false
       },
       draggable: true,
+      deletable: true, // Make deletable
     },
-    // Starlink Satellite
+    // Starlink Satellite on the left
     {
       id: 'satellite',
       type: 'satellite',
-      position: { x: 400, y: 50 },
+      position: { x: 150, y: 450 }, // Left side position
       data: { 
         label: satelliteName || 'Starlink',
         equipmentId: null,
         assigned: false
       },
       draggable: true,
+      deletable: true, // Make deletable
     },
   ];
 
-  // Always create wells based on wellCount
+  // Create wells with unique colors on the right side
   wellPositions.forEach((pos, index) => {
     newNodes.push({
       id: `well-${index + 1}`,
@@ -80,23 +100,26 @@ const createDefaultNodes = (job: JobDiagram, mainBoxName: string, satelliteName:
       data: { 
         label: `Well ${index + 1}`,
         wellNumber: index + 1,
-        color: '#3b82f6'
+        color: wellColors[index % wellColors.length] // Assign unique colors
       },
       draggable: true,
+      deletable: true, // Make deletable
     });
   });
 
-  // Add wellside gauge if selected
+  // Add wellside gauge if selected - position below the wells
   if (job.hasWellsideGauge) {
+    const lastWellY = wellPositions.length > 0 ? wellPositions[wellPositions.length - 1].y : 150;
     newNodes.push({
       id: 'wellside-gauge',
       type: 'wellsideGauge',
-      position: { x: 600, y: 300 },
+      position: { x: 750, y: lastWellY + 150 }, // Below the last well
       data: { 
         label: wellsideGaugeName || 'Wellside Gauge',
-        color: '#10b981'
+        color: '#10b981' // Green color
       },
       draggable: true,
+      deletable: true, // Make deletable
     });
   }
 

@@ -3,20 +3,13 @@ import React from 'react';
 import '@xyflow/react/dist/style.css';
 import JobDiagramContent from './diagram/JobDiagramContent';
 import { useJobDiagramHooks } from '@/hooks/useJobDiagramHooks';
-
-interface Job {
-  id: string;
-  name: string;
-  wellCount: number;
-  hasWellsideGauge: boolean;
-  createdAt: Date;
-}
+import { JobDiagram } from '@/hooks/useSupabaseJobs';
 
 interface JobDiagramProps {
-  job: Job;
+  job: JobDiagram;
 }
 
-const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
+const JobDiagramComponent: React.FC<JobDiagramProps> = ({ job }) => {
   const {
     reactFlowWrapper,
     nodes,
@@ -71,4 +64,4 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
   );
 };
 
-export default JobDiagram;
+export default JobDiagramComponent;

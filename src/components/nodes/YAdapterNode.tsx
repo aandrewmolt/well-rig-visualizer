@@ -14,8 +14,11 @@ const YAdapterNode = ({ id, data }: { id: string; data: any }) => {
     const edges = getEdges();
     const incomingEdge = edges.find(edge => edge.target === id);
     
+    console.log('YAdapter debugging - incoming edge:', incomingEdge);
+    
     if (incomingEdge) {
       const sourceHandle = incomingEdge.sourceHandle;
+      console.log('YAdapter debugging - sourceHandle detected:', sourceHandle);
       
       // Map pressure ports to their port numbers
       const portMapping = {
@@ -27,16 +30,40 @@ const YAdapterNode = ({ id, data }: { id: string; data: any }) => {
       
       if (sourceHandle && portMapping[sourceHandle as keyof typeof portMapping]) {
         const mapping = portMapping[sourceHandle as keyof typeof portMapping];
+        console.log('YAdapter debugging - setting ports from mapping:', mapping);
         setTopPortNumber(mapping.top);
         setBottomPortNumber(mapping.bottom);
+      } else {
+        console.warn('YAdapter debugging - no valid sourceHandle found, checking edge data...');
+        
+        // Fallback: check if edge data contains sourceHandle info
+        if (incomingEdge.data?.sourceHandle) {
+          const fallbackHandle = incomingEdge.data.sourceHandle;
+          console.log('YAdapter debugging - using fallback sourceHandle:', fallbackHandle);
+          if (portMapping[fallbackHandle as keyof typeof portMapping]) {
+            const mapping = portMapping[fallbackHandle as keyof typeof portMapping];
+            setTopPortNumber(mapping.top);
+            setBottomPortNumber(mapping.bottom);
+          }
+        } else {
+          // Further fallback: check source node type and try to determine port
+          const sourceNode = getNodes().find(node => node.id === incomingEdge.source);
+          console.log('YAdapter debugging - source node:', sourceNode);
+          
+          // Default to P1 mapping if we can't determine the exact port
+          console.log('YAdapter debugging - using default P1 mapping as fallback');
+        }
       }
+    } else {
+      console.log('YAdapter debugging - no incoming edge found');
     }
-  }, [id, getEdges]);
+  }, [id, getEdges, getNodes]);
 
   const swapPortNumbers = () => {
     const tempTop = topPortNumber;
     setTopPortNumber(bottomPortNumber);
     setBottomPortNumber(tempTop);
+    console.log('YAdapter debugging - ports swapped:', { top: bottomPortNumber, bottom: tempTop });
   };
 
   return (

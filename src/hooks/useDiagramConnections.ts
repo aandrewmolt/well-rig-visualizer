@@ -29,6 +29,8 @@ export const useDiagramConnections = (
         target: targetNode.type,
         sourceId: params.source,
         targetId: params.target,
+        sourceHandle: params.sourceHandle,
+        targetHandle: params.targetHandle,
         selectedCableType
       });
 
@@ -49,7 +51,9 @@ export const useDiagramConnections = (
           label: 'Direct Connection',
           data: {
             connectionType: 'direct',
-            label: 'Direct Connection'
+            label: 'Direct Connection',
+            sourceHandle: params.sourceHandle, // Store sourceHandle in data
+            targetHandle: params.targetHandle
           },
           style: {
             stroke: '#10b981',
@@ -115,7 +119,9 @@ export const useDiagramConnections = (
         data: {
           cableTypeId: migratedCableType, // Store the migrated cable type ID
           label: cableLabel,
-          connectionType: 'cable'
+          connectionType: 'cable',
+          sourceHandle: params.sourceHandle, // Ensure sourceHandle is stored in data
+          targetHandle: params.targetHandle
         },
         style: {
           stroke: cableColor,
@@ -123,7 +129,11 @@ export const useDiagramConnections = (
         },
       };
 
-      console.log('Creating cable connection:', newEdge);
+      console.log('Creating cable connection with sourceHandle:', {
+        edge: newEdge,
+        sourceHandle: params.sourceHandle,
+        edgeData: newEdge.data
+      });
       setEdges((eds) => addEdge(newEdge, eds));
       toast.success(`Connected with ${cableLabel}`);
     },

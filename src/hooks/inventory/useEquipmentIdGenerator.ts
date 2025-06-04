@@ -19,31 +19,35 @@ export const useEquipmentIdGenerator = () => {
   };
 
   const generateEquipmentName = (equipmentType: EquipmentType, id: string): string => {
+    // Extract number part consistently
+    const prefix = id.substring(0, 2);
+    const numberPart = id.substring(2);
+    
     if (equipmentType.name === 'Customer Computer') {
-      return `Customer Computer ${id.replace('CC', '')}`;
+      return `Customer Computer ${numberPart}`;
     }
     
     if (equipmentType.name === 'Customer Tablet') {
-      return `Customer Tablet ${id.replace('CT', '')}`;
+      return `Customer Tablet ${numberPart}`;
     }
     
     if (equipmentType.name === 'Starlink') {
-      return `Starlink-${id.replace('SL', '')}`;
+      return `Starlink-${numberPart}`;
     }
     
     if (equipmentType.name === 'ShearStream Box') {
-      return `ShearStream-${id.replace('SS', '')}`;
+      return `ShearStream-${numberPart}`;
     }
     
     if (equipmentType.name === '1502 Pressure Gauge') {
-      return `Pressure Gauge ${id.replace('PG', '')}`;
+      return `Pressure Gauge ${numberPart}`;
     }
     
     if (equipmentType.name === 'Battery Pack') {
-      return `Battery Pack ${id.replace('BP', '')}`;
+      return `Battery Pack ${numberPart}`;
     }
     
-    return `${equipmentType.name} ${id}`;
+    return `${equipmentType.name} ${numberPart}`;
   };
 
   const getIdFormat = (equipmentType: EquipmentType): string => {

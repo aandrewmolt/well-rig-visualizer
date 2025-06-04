@@ -4,10 +4,10 @@ import { Node, Edge } from '@xyflow/react';
 import { useInventory } from '@/contexts/InventoryContext';
 import { useComprehensiveEquipmentTracking } from './equipment/useComprehensiveEquipmentTracking';
 import { toast } from 'sonner';
-import { EquipmentItem } from '@/types/inventory';
+import { IndividualEquipment } from '@/types/inventory';
 
 export const useRobustEquipmentTracking = (jobId: string, nodes: Node[], edges: Edge[]) => {
-  const { data, updateEquipmentItems } = useInventory();
+  const { data, updateIndividualEquipment } = useInventory();
   const [isProcessing, setIsProcessing] = useState(false);
   
   const { analyzeEquipmentUsage, validateEquipmentAvailability, generateEquipmentReport } = useComprehensiveEquipmentTracking(nodes, edges);
@@ -36,20 +36,32 @@ export const useRobustEquipmentTracking = (jobId: string, nodes: Node[], edges: 
         toast.warning(`Equipment allocation warnings: ${validation.warnings.join(', ')}`);
       }
 
-      const updatedItems = [...data.equipmentItems];
       const allocatedItems: string[] = [];
 
-      // Allocate cables with precise tracking
+      // Allocate individual equipment items based on analysis
       Object.entries(usage.cables).forEach(([typeId, details]) => {
         if (details.quantity > 0) {
-          const success = allocateEquipmentType(updatedItems, typeId, details.quantity, locationId, jobId);
-          if (success) {
+          // Find available equipment of this type
+          const availableEquipment = data.individualEquipment.filter(
+            eq => eq.typeId === typeId && eq.locationId === locationId && eq.status === 'available'
+          );
+
+          if (availableEquipment.length >= details.quantity) {
+            // Deploy the required quantity
+            for (let i = 0; i < details.quantity; i++) {
+              updateIndividualEquipment(availableEquipment[i].id, {
+                status: 'deployed',
+                jobId: jobId
+              });
+            }
             allocatedItems.push(`${details.quantity}x ${details.typeName}`);
+          } else {
+            toast.error(`Insufficient ${details.typeName} at selected location`);
           }
         }
       });
 
-      // Allocate other equipment
+      // Allocate other equipment types
       const equipmentAllocations = [
         { typeId: '7', quantity: usage.gauges, name: 'Pressure Gauges' },
         { typeId: '9', quantity: usage.adapters, name: 'Y Adapters' },
@@ -59,15 +71,23 @@ export const useRobustEquipmentTracking = (jobId: string, nodes: Node[], edges: 
 
       equipmentAllocations.forEach(({ typeId, quantity, name }) => {
         if (quantity > 0) {
-          const success = allocateEquipmentType(updatedItems, typeId, quantity, locationId, jobId);
-          if (success) {
+          const availableEquipment = data.individualEquipment.filter(
+            eq => eq.typeId === typeId && eq.locationId === locationId && eq.status === 'available'
+          );
+
+          if (availableEquipment.length >= quantity) {
+            for (let i = 0; i < quantity; i++) {
+              updateIndividualEquipment(availableEquipment[i].id, {
+                status: 'deployed',
+                jobId: jobId
+              });
+            }
             allocatedItems.push(`${quantity}x ${name}`);
+          } else {
+            toast.error(`Insufficient ${name} at selected location`);
           }
         }
       });
-
-      // Update inventory
-      updateEquipmentItems(updatedItems);
 
       // Provide detailed feedback
       if (allocatedItems.length > 0) {
@@ -86,91 +106,28 @@ export const useRobustEquipmentTracking = (jobId: string, nodes: Node[], edges: 
     } finally {
       setIsProcessing(false);
     }
-  }, [jobId, nodes, edges, data.equipmentItems, updateEquipmentItems]);
-
-  const allocateEquipmentType = (
-    updatedItems: EquipmentItem[], 
-    typeId: string, 
-    quantity: number, 
-    locationId: string, 
-    jobId: string
-  ): boolean => {
-    // Find available equipment at location
-    const availableItem = updatedItems.find(
-      item => 
-        item.type_id === typeId && 
-        item.location_id === locationId && 
-        item.status === 'available'
-    );
-    
-    if (!availableItem || availableItem.quantity < quantity) {
-      const equipmentType = data.equipmentTypes.find(type => type.id === typeId);
-      toast.error(`Insufficient ${equipmentType?.name || 'equipment'} at selected location`);
-      return false;
-    }
-
-    // Deduct from available
-    availableItem.quantity -= quantity;
-    availableItem.updated_at = new Date().toISOString();
-
-    // Create deployed record
-    const deployedItem: EquipmentItem = {
-      id: `deployed-${typeId}-${jobId}-${Date.now()}`,
-      type_id: typeId,
-      location_id: locationId,
-      quantity,
-      status: 'deployed',
-      job_id: jobId,
-      updated_at: new Date().toISOString(),
-      created_at: new Date().toISOString(),
-      notes: `Allocated for job diagram analysis`,
-      location_type: 'storage'
-    };
-
-    updatedItems.push(deployedItem);
-    return true;
-  };
+  }, [jobId, nodes, edges, data.individualEquipment, updateIndividualEquipment]);
 
   const returnAllJobEquipment = useCallback(() => {
     console.log(`Returning all equipment for job ${jobId}`);
     
-    const updatedItems: EquipmentItem[] = [];
-    
-    data.equipmentItems.forEach(item => {
-      if (item.status === 'deployed' && item.job_id === jobId) {
-        // Find corresponding available item to return quantity to
-        const availableItem = data.equipmentItems.find(
-          available => 
-            available.type_id === item.type_id && 
-            available.location_id === item.location_id &&
-            available.status === 'available' &&
-            available.id !== item.id
-        );
+    const deployedEquipment = data.individualEquipment.filter(
+      item => item.status === 'deployed' && item.jobId === jobId
+    );
 
-        if (availableItem) {
-          // Update the available item quantity
-          const updatedAvailableItem = updatedItems.find(ui => ui.id === availableItem.id) || availableItem;
-          updatedAvailableItem.quantity += item.quantity;
-          updatedAvailableItem.updated_at = new Date().toISOString();
-          
-          if (!updatedItems.find(ui => ui.id === availableItem.id)) {
-            updatedItems.push(updatedAvailableItem);
-          }
-        }
-        // Don't add the deployed item back (effectively removing it)
-      } else {
-        // Keep all other items
-        updatedItems.push(item);
-      }
+    deployedEquipment.forEach(item => {
+      updateIndividualEquipment(item.id, {
+        status: 'available',
+        jobId: null
+      });
     });
 
-    updateEquipmentItems(updatedItems);
     toast.success('All equipment returned to storage');
-  }, [jobId, data.equipmentItems, updateEquipmentItems]);
+  }, [jobId, data.individualEquipment, updateIndividualEquipment]);
 
   const validateInventoryConsistency = useCallback(() => {
-    const deployedItems = data.equipmentItems.filter(
-      item => item.status === 'deployed' && item.job_id === jobId
+    const deployedItems = data.individualEquipment.filter(
+      item => item.status === 'deployed' && item.jobId === jobId
     );
 
     const usage = analyzeEquipmentUsage();
@@ -191,8 +148,8 @@ export const useRobustEquipmentTracking = (jobId: string, nodes: Node[], edges: 
     let isConsistent = true;
     Object.entries(requiredQuantities).forEach(([typeId, required]) => {
       const deployed = deployedItems
-        .filter(item => item.type_id === typeId)
-        .reduce((sum, item) => sum + item.quantity, 0);
+        .filter(item => item.typeId === typeId)
+        .length;
       
       if (deployed !== required) {
         isConsistent = false;
@@ -200,7 +157,7 @@ export const useRobustEquipmentTracking = (jobId: string, nodes: Node[], edges: 
     });
 
     return isConsistent;
-  }, [jobId, data.equipmentItems, analyzeEquipmentUsage]);
+  }, [jobId, data.individualEquipment, analyzeEquipmentUsage]);
 
   return {
     performComprehensiveAllocation,

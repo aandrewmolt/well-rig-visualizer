@@ -1,4 +1,3 @@
-
 import { useCallback } from 'react';
 import { useInventory } from '@/contexts/InventoryContext';
 import { useEquipmentIdGenerator } from './useEquipmentIdGenerator';
@@ -22,15 +21,38 @@ export const useEquipmentMigration = () => {
         let newEquipmentId = equipment.equipmentId;
         let newName = equipment.name;
 
-        // Remove dashes from equipment IDs
+        // Remove dashes from equipment IDs and ensure consistent padding
         if (equipment.equipmentId.includes('-')) {
           newEquipmentId = equipment.equipmentId.replace(/-/g, '');
           needsUpdate = true;
         }
 
-        // Fix naming for specific equipment types
+        // Ensure consistent zero padding for all equipment types
+        const prefix = newEquipmentId.substring(0, 2);
+        const numberPart = newEquipmentId.substring(2);
+        
+        if (prefix === 'SS') {
+          // ShearStream: 4 digits (SS0001)
+          const paddedNumber = numberPart.padStart(4, '0');
+          newEquipmentId = `${prefix}${paddedNumber}`;
+        } else if (prefix === 'SL') {
+          // Starlink: 2 digits (SL01)
+          const paddedNumber = numberPart.padStart(2, '0');
+          newEquipmentId = `${prefix}${paddedNumber}`;
+        } else {
+          // Others (CC, CT, PG, BP): 3 digits (CC001, CT001, etc.)
+          const paddedNumber = numberPart.padStart(3, '0');
+          newEquipmentId = `${prefix}${paddedNumber}`;
+        }
+
+        if (newEquipmentId !== equipment.equipmentId) {
+          needsUpdate = true;
+        }
+
+        // Fix naming for specific equipment types with consistent zero padding
         if (equipmentType.name === 'ShearStream Box') {
-          const expectedName = generateEquipmentName(equipmentType, newEquipmentId);
+          const numberPart = newEquipmentId.replace('SS', '');
+          const expectedName = `ShearStream-${numberPart}`;
           if (equipment.name !== expectedName && 
               (equipment.name.includes('Alpha') || equipment.name.includes('Beta') || 
                equipment.name.includes('Gamma') || equipment.name.includes('Unit'))) {
@@ -40,7 +62,8 @@ export const useEquipmentMigration = () => {
         }
 
         if (equipmentType.name === 'Starlink') {
-          const expectedName = generateEquipmentName(equipmentType, newEquipmentId);
+          const numberPart = newEquipmentId.replace('SL', '');
+          const expectedName = `Starlink-${numberPart}`;
           if (equipment.name !== expectedName && 
               (equipment.name.includes('Terminal') || equipment.name.includes('1') || equipment.name.includes('2'))) {
             newName = expectedName;
@@ -49,10 +72,29 @@ export const useEquipmentMigration = () => {
         }
 
         if (equipmentType.name === 'Customer Computer') {
-          const expectedName = generateEquipmentName(equipmentType, newEquipmentId);
+          const numberPart = newEquipmentId.replace('CC', '');
+          const expectedName = `Customer Computer ${numberPart}`;
           if (equipment.name !== expectedName && 
               (equipment.name.includes('Field') || equipment.name.includes('Laptop') || 
                equipment.name.includes('Dell') || equipment.name.includes('Lenovo'))) {
+            newName = expectedName;
+            needsUpdate = true;
+          }
+        }
+
+        if (equipmentType.name === 'Customer Tablet') {
+          const numberPart = newEquipmentId.replace('CT', '');
+          const expectedName = `Customer Tablet ${numberPart}`;
+          if (equipment.name !== expectedName) {
+            newName = expectedName;
+            needsUpdate = true;
+          }
+        }
+
+        if (equipmentType.name === '1502 Pressure Gauge') {
+          const numberPart = newEquipmentId.replace('PG', '');
+          const expectedName = `Pressure Gauge ${numberPart}`;
+          if (equipment.name !== expectedName) {
             newName = expectedName;
             needsUpdate = true;
           }
@@ -78,7 +120,7 @@ export const useEquipmentMigration = () => {
           });
         }
 
-        toast.success(`Updated ${updates.length} equipment items with correct naming`);
+        toast.success(`Updated ${updates.length} equipment items with consistent naming`);
         console.log('Equipment migration completed successfully');
       } else {
         toast.info('No equipment items needed migration');
@@ -89,7 +131,7 @@ export const useEquipmentMigration = () => {
       console.error('Failed to migrate equipment naming:', error);
       toast.error('Failed to migrate equipment naming');
     }
-  }, [data.individualEquipment, data.equipmentTypes, updateIndividualEquipment, generateEquipmentName]);
+  }, [data.individualEquipment, data.equipmentTypes, updateIndividualEquipment]);
 
   return {
     migrateEquipmentNaming

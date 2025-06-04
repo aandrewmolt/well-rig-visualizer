@@ -53,13 +53,6 @@ export const DEFAULT_EQUIPMENT_TYPES: EquipmentType[] = [
     requiresIndividualTracking: true,
     defaultIdPrefix: 'SS',
   },
-  {
-    id: '13',
-    name: 'Customer Tablet',
-    category: 'communication',
-    requiresIndividualTracking: true,
-    defaultIdPrefix: 'CT',
-  },
 ];
 
 export const DEFAULT_STORAGE_LOCATIONS: StorageLocation[] = [

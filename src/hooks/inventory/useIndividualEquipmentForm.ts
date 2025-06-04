@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { IndividualEquipment, EquipmentType } from '@/types/inventory';
 import { FormData } from './types/individualEquipmentTypes';
@@ -63,7 +62,7 @@ export const useIndividualEquipmentForm = (
 
   const handleAddItemClick = useCallback(() => {
     if (!editingEquipment) {
-      const prefix = equipmentType.name === 'Company Computer' ? selectedPrefix : equipmentType.defaultIdPrefix;
+      const prefix = equipmentType.name === 'Customer Computer' ? selectedPrefix : equipmentType.defaultIdPrefix;
       const tempEquipmentType = { ...equipmentType, defaultIdPrefix: prefix };
       const newId = generateNextEquipmentId(prefix);
       const newName = generateEquipmentName(tempEquipmentType, newId);

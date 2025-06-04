@@ -1,4 +1,3 @@
-
 import { useInventoryData, EquipmentType } from '../useInventoryData';
 import { useAuditTrail } from '../useAuditTrail';
 import { toast } from 'sonner';

@@ -1,4 +1,3 @@
-
 import { useCallback } from 'react';
 import { Node } from '@xyflow/react';
 import { useTrackedEquipment } from './useTrackedEquipment';
@@ -15,14 +14,14 @@ interface UseJobDiagramEquipmentProps {
   job: Job;
   selectedShearstreamBoxes: string[];
   selectedStarlink: string;
-  selectedCompanyComputers: string[];
+  selectedCustomerComputers: string[];
   setSelectedShearstreamBoxes: (boxes: string[]) => void;
   setSelectedStarlink: (starlink: string) => void;
-  setSelectedCompanyComputers: (computers: string[]) => void;
+  setSelectedCustomerComputers: (computers: string[]) => void;
   setNodes: (updater: (nodes: Node[]) => Node[]) => void;
   updateMainBoxName: (nodeId: string, name: string, setNodes: (updater: (nodes: Node[]) => Node[]) => void) => void;
   updateSatelliteName: (name: string, setNodes: (updater: (nodes: Node[]) => Node[]) => void) => void;
-  updateCompanyComputerName: (nodeId: string, name: string, setNodes: (updater: (nodes: Node[]) => Node[]) => void) => void;
+  updateCustomerComputerName: (nodeId: string, name: string, setNodes: (updater: (nodes: Node[]) => Node[]) => void) => void;
   addShearstreamBox: () => void;
   removeShearstreamBox: (boxId: string) => void;
 }
@@ -31,21 +30,21 @@ export const useJobDiagramEquipment = ({
   job,
   selectedShearstreamBoxes,
   selectedStarlink,
-  selectedCompanyComputers,
+  selectedCustomerComputers,
   setSelectedShearstreamBoxes,
   setSelectedStarlink,
-  setSelectedCompanyComputers,
+  setSelectedCustomerComputers,
   setNodes,
   updateMainBoxName,
   updateSatelliteName,
-  updateCompanyComputerName,
+  updateCustomerComputerName,
   addShearstreamBox,
   removeShearstreamBox,
 }: UseJobDiagramEquipmentProps) => {
   const { trackedEquipment, deployEquipment, returnEquipment } = useTrackedEquipment();
 
   // Handle equipment selection - updated for multiple SS boxes
-  const handleEquipmentSelect = useCallback((type: 'shearstream-box' | 'starlink' | 'company-computer', equipmentId: string, index?: number) => {
+  const handleEquipmentSelect = useCallback((type: 'shearstream-box' | 'starlink' | 'customer-computer', equipmentId: string, index?: number) => {
     const equipment = trackedEquipment.find(eq => eq.id === equipmentId);
     if (!equipment) return;
 
@@ -69,34 +68,47 @@ export const useJobDiagramEquipment = ({
       setSelectedStarlink(equipmentId);
       deployEquipment(equipmentId, job.id, job.name, equipment.name);
       updateSatelliteName(equipment.equipmentId, setNodes);
-    } else if (type === 'company-computer' && index !== undefined) {
-      const newComputers = [...selectedCompanyComputers];
+    } else if (type === 'customer-computer' && index !== undefined) {
+      const newComputers = [...selectedCustomerComputers];
       if (newComputers[index]) {
         returnEquipment(newComputers[index]);
       }
       newComputers[index] = equipmentId;
-      setSelectedCompanyComputers(newComputers);
+      setSelectedCustomerComputers(newComputers);
       deployEquipment(equipmentId, job.id, job.name, equipment.name);
       
-      // Update computer node with standardized CC format
-      const standardizedId = `CC-${equipment.equipmentId.padStart(3, '0')}`;
-      updateCompanyComputerName(`company-computer-${index + 1}`, standardizedId, setNodes);
+      // Keep the original ID prefix (CC or CT)
+      const prefix = equipment.equipmentId.startsWith('CT') ? 'CT' : 'CC';
+      const equipmentNumber = equipment.equipmentId.replace(/^\D+/g, '');
+      const standardizedId = `${prefix}-${equipmentNumber.padStart(3, '0')}`;
+      
+      // Pass isTablet info to the node
+      updateCustomerComputerName(`customer-computer-${index + 1}`, standardizedId, setNodes);
+      
+      // Update the node data to include isTablet flag
+      setNodes(nodes => 
+        nodes.map(node => 
+          node.id === `customer-computer-${index + 1}`
+            ? { ...node, data: { ...node.data, isTablet: prefix === 'CT', equipmentId: standardizedId }}
+            : node
+        )
+      );
     }
   }, [
     trackedEquipment, 
     selectedShearstreamBoxes, 
     selectedStarlink, 
-    selectedCompanyComputers, 
+    selectedCustomerComputers, 
     returnEquipment, 
     deployEquipment, 
     job, 
     updateMainBoxName, 
     updateSatelliteName, 
-    updateCompanyComputerName, 
+    updateCustomerComputerName, 
     setNodes,
     setSelectedShearstreamBoxes,
     setSelectedStarlink,
-    setSelectedCompanyComputers
+    setSelectedCustomerComputers
   ]);
 
   // Handle adding/removing SS boxes

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -49,8 +48,8 @@ const IndividualEquipmentForm: React.FC<IndividualEquipmentFormProps> = ({
     setIsFormOpen(true);
   };
 
-  // Show prefix selector for Company Computer types
-  const showPrefixSelector = equipmentType.name === 'Company Computer';
+  // Show prefix selector for Customer Computer types
+  const showPrefixSelector = equipmentType.name === 'Customer Computer';
   const prefixOptions = showPrefixSelector ? [
     { value: 'CC', label: 'CC - Customer Computer' },
     { value: 'CT', label: 'CT - Customer Tablet' }
@@ -88,13 +87,13 @@ const IndividualEquipmentForm: React.FC<IndividualEquipmentFormProps> = ({
         <div className="space-y-4">
           {showPrefixSelector && !editingEquipment && (
             <div>
-              <Label>Equipment Type</Label>
+              <Label>Device Type</Label>
               <Select 
                 value={formData.selectedPrefix || 'CC'} 
                 onValueChange={handlePrefixSelectionChange}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select equipment type" />
+                  <SelectValue placeholder="Select device type" />
                 </SelectTrigger>
                 <SelectContent>
                   {prefixOptions.map(option => (

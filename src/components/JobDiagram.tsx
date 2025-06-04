@@ -28,12 +28,12 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
     setSelectedCableType,
     selectedShearstreamBoxes,
     selectedStarlink,
-    selectedCompanyComputers,
+    selectedCustomerComputers,
     handleEquipmentSelect,
     handleAddShearstreamBox,
     handleRemoveShearstreamBox,
     addYAdapter,
-    addCompanyComputer,
+    addCustomerComputer,
     clearDiagram,
     saveDiagram,
     updateWellName,
@@ -55,12 +55,12 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
       setSelectedCableType={setSelectedCableType}
       selectedShearstreamBoxes={selectedShearstreamBoxes}
       selectedStarlink={selectedStarlink}
-      selectedCompanyComputers={selectedCompanyComputers}
+      selectedCustomerComputers={selectedCustomerComputers}
       onEquipmentSelect={handleEquipmentSelect}
       onAddShearstreamBox={handleAddShearstreamBox}
       onRemoveShearstreamBox={handleRemoveShearstreamBox}
       addYAdapter={addYAdapter}
-      addCompanyComputer={addCompanyComputer}
+      addCustomerComputer={addCustomerComputer}
       clearDiagram={clearDiagram}
       saveDiagram={saveDiagram}
       updateWellName={updateWellName}

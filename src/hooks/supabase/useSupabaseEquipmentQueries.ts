@@ -1,4 +1,3 @@
-
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { EquipmentType, StorageLocation, EquipmentItem, IndividualEquipment } from '@/types/inventory';
@@ -6,18 +5,11 @@ import { EquipmentType, StorageLocation, EquipmentItem, IndividualEquipment } fr
 // Default equipment types with proper individual tracking
 const DEFAULT_EQUIPMENT_TYPES: Omit<EquipmentType, 'id'>[] = [
   {
-    name: 'Company Computer',
+    name: 'Customer Computer',
     category: 'communication',
-    description: 'Customer computers for data collection',
+    description: 'Customer computers and tablets for data collection',
     requiresIndividualTracking: true,
     defaultIdPrefix: 'CC'
-  },
-  {
-    name: 'Customer Tablet',
-    category: 'communication', 
-    description: 'Customer tablets for monitoring',
-    requiresIndividualTracking: true,
-    defaultIdPrefix: 'CT'
   },
   {
     name: 'Starlink',

@@ -7,12 +7,21 @@ const WellNode = ({ data }: { data: any }) => {
   const backgroundColor = data.color || '#3b82f6';
   const borderColor = data.color === '#3b82f6' ? '#2563eb' : data.color;
   
+  // Handle white wells - make text black and add black border
+  const isWhiteWell = backgroundColor === '#ffffff' || backgroundColor === '#FFFFFF';
+  const textColor = isWhiteWell ? '#000000' : '#ffffff';
+  const finalBorderColor = isWhiteWell ? '#000000' : borderColor;
+  const borderWidth = isWhiteWell ? '2px' : '2px';
+  
   return (
     <div 
-      className="text-white rounded-lg p-4 border-2 min-w-[120px] text-center relative"
+      className="rounded-lg p-4 min-w-[120px] text-center relative"
       style={{ 
         backgroundColor,
-        borderColor,
+        borderColor: finalBorderColor,
+        borderWidth,
+        borderStyle: 'solid',
+        color: textColor,
       }}
     >
       <Handle
@@ -20,7 +29,7 @@ const WellNode = ({ data }: { data: any }) => {
         position={Position.Left}
         style={{
           left: -8,
-          backgroundColor: borderColor,
+          backgroundColor: finalBorderColor,
           border: '2px solid white',
           width: 12,
           height: 12,

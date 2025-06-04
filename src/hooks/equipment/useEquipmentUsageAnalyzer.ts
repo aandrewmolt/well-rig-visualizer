@@ -46,7 +46,7 @@ export const useEquipmentUsageAnalyzer = (nodes: Node[], edges: Edge[]) => {
     const createFallbackEquipmentType = (typeId: string, label: string) => {
       const name = label.toLowerCase();
       let length = '200ft'; // default
-      let category = 'cable';
+      let category: 'cables' | 'gauges' | 'adapters' | 'communication' | 'power' | 'other' = 'cables';
       let version = undefined;
       
       if (name.includes('100ft')) length = '100ft';
@@ -60,7 +60,7 @@ export const useEquipmentUsageAnalyzer = (nodes: Node[], edges: Edge[]) => {
         }
       }
       
-      if (name.includes('reel')) category = 'reel';
+      if (name.includes('reel')) category = 'other';
 
       return {
         id: typeId,
@@ -121,7 +121,7 @@ export const useEquipmentUsageAnalyzer = (nodes: Node[], edges: Edge[]) => {
             // Enhanced cable characteristic detection
             const name = equipmentType.name.toLowerCase();
             let length = '200ft'; // default
-            let category = 'cable';
+            let category = 'cables';
             let version = undefined;
             
             if (name.includes('100ft')) length = '100ft';
@@ -189,7 +189,7 @@ export const useEquipmentUsageAnalyzer = (nodes: Node[], edges: Edge[]) => {
             if (!usage.cables[cableTypeId]) {
               const name = equipmentType.name.toLowerCase();
               let length = '200ft';
-              let category = 'cable';
+              let category = 'cables';
               let version = undefined;
               
               if (name.includes('100ft')) length = '100ft';

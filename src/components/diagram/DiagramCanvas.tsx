@@ -1,3 +1,4 @@
+
 import React from 'react';
 import {
   ReactFlow,
@@ -50,6 +51,15 @@ const DiagramCanvas: React.FC<DiagramCanvasProps> = ({
   onConnect,
   reactFlowWrapper,
 }) => {
+  // Enhanced logging for debugging
+  React.useEffect(() => {
+    console.log('DiagramCanvas rendered with:', {
+      nodeCount: nodes.length,
+      edgeCount: edges.length,
+      edges: edges.map(e => ({ id: e.id, type: e.type, source: e.source, target: e.target }))
+    });
+  }, [nodes, edges]);
+
   return (
     <Card className="bg-white shadow-lg">
       <CardContent className="p-1">
@@ -65,6 +75,8 @@ const DiagramCanvas: React.FC<DiagramCanvasProps> = ({
             fitView
             attributionPosition="bottom-left"
             style={{ backgroundColor: '#f8fafc' }}
+            deleteKeyCode={null} // Prevent accidental deletion
+            multiSelectionKeyCode={null} // Simplify selection
           >
             <Controls position="top-left" />
             <MiniMap 

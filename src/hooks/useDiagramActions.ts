@@ -1,7 +1,8 @@
+
 import { useCallback } from 'react';
-import { Node } from '@xyflow/react';
+import { Node, getNodesBounds, getViewportForBounds } from '@xyflow/react';
 import { toast } from 'sonner';
-import html2canvas from 'html2canvas';
+import { toPng, toJpeg, toSvg } from 'html-to-image';
 
 interface Job {
   id: string;
@@ -135,26 +136,84 @@ export const useDiagramActions = (
     toast.success('Diagram cleared!');
   }, [setIsInitialized, setNodes, setEdges, initializeJob]);
 
+  const downloadImage = useCallback((dataUrl: string, format: string) => {
+    const link = document.createElement('a');
+    link.download = `${job.name}-cable-diagram.${format}`;
+    link.href = dataUrl;
+    link.click();
+  }, [job.name]);
+
   const saveDiagram = useCallback(async () => {
-    if (!reactFlowWrapper.current) return;
+    if (!reactFlowWrapper.current) {
+      toast.error('Diagram container not found');
+      return;
+    }
+    
+    const loadingToast = toast.loading('Exporting diagram...');
     
     try {
-      const canvas = await html2canvas(reactFlowWrapper.current, {
+      // Find the ReactFlow viewport element that contains the actual diagram
+      const reactFlowElement = reactFlowWrapper.current.querySelector('.react-flow__viewport');
+      
+      if (!reactFlowElement) {
+        toast.error('Diagram viewport not found');
+        return;
+      }
+
+      // Configuration for better SVG and canvas rendering
+      const config = {
+        quality: 1,
+        pixelRatio: 2,
         backgroundColor: '#ffffff',
-        scale: 2,
-      });
+        cacheBust: true,
+        filter: (node: Element) => {
+          // Include all elements but exclude controls and attribution
+          if (node.classList) {
+            return !node.classList.contains('react-flow__controls') && 
+                   !node.classList.contains('react-flow__attribution');
+          }
+          return true;
+        },
+        style: {
+          transform: 'scale(1)',
+          transformOrigin: 'top left',
+        }
+      };
+
+      // Try html-to-image library which handles SVG better than html2canvas
+      const dataUrl = await toPng(reactFlowElement as HTMLElement, config);
       
-      const link = document.createElement('a');
-      link.download = `${job.name}-cable-diagram.png`;
-      link.href = canvas.toDataURL();
-      link.click();
+      downloadImage(dataUrl, 'png');
+      toast.success('Diagram exported successfully!');
       
-      toast.success('Diagram saved successfully!');
     } catch (error) {
-      toast.error('Failed to save diagram');
-      console.error('Save error:', error);
+      console.error('Export error:', error);
+      
+      // Fallback to html2canvas if html-to-image fails
+      try {
+        const html2canvas = (await import('html2canvas')).default;
+        
+        const canvas = await html2canvas(reactFlowWrapper.current, {
+          backgroundColor: '#ffffff',
+          scale: 2,
+          useCORS: true,
+          allowTaint: true,
+          foreignObjectRendering: true,
+          logging: false,
+        });
+        
+        const dataUrl = canvas.toDataURL('image/png');
+        downloadImage(dataUrl, 'png');
+        toast.success('Diagram exported successfully (fallback method)!');
+        
+      } catch (fallbackError) {
+        console.error('Fallback export error:', fallbackError);
+        toast.error('Failed to export diagram. Please try again.');
+      }
+    } finally {
+      toast.dismiss(loadingToast);
     }
-  }, [job.name, reactFlowWrapper]);
+  }, [job.name, reactFlowWrapper, downloadImage]);
 
   return {
     addYAdapter,

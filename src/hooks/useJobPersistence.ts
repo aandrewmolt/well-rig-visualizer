@@ -43,8 +43,57 @@ export const useJobPersistence = (jobId: string) => {
     return true;
   };
 
+  const validateEdgeData = (edge: any): boolean => {
+    // Ensure edge has required properties for proper rendering
+    return edge && 
+           typeof edge.id === 'string' && 
+           typeof edge.source === 'string' && 
+           typeof edge.target === 'string';
+  };
+
+  const sanitizeEdgeData = (edges: any[]): Edge[] => {
+    return edges.map((edge) => {
+      if (!validateEdgeData(edge)) {
+        console.warn('Invalid edge data found, attempting to fix:', edge);
+        return {
+          ...edge,
+          id: edge.id || `edge-${Date.now()}-${Math.random()}`,
+          source: edge.source || '',
+          target: edge.target || '',
+          type: edge.type || 'cable',
+        };
+      }
+
+      // Ensure proper styling for cable edges
+      const sanitizedEdge = {
+        ...edge,
+        type: edge.type || 'cable',
+        data: edge.data || {},
+      };
+
+      // Restore cable edge styling based on cable type
+      if (sanitizedEdge.type === 'cable' && sanitizedEdge.data.cableType) {
+        const getEdgeColor = (cableType: string) => {
+          if (cableType.toLowerCase().includes('100ft')) return '#ef4444';
+          if (cableType.toLowerCase().includes('200ft')) return '#3b82f6';
+          if (cableType.toLowerCase().includes('300ft')) return '#10b981';
+          return '#6b7280';
+        };
+
+        sanitizedEdge.style = {
+          ...sanitizedEdge.style,
+          stroke: getEdgeColor(sanitizedEdge.data.cableType),
+          strokeWidth: 3,
+        };
+      }
+
+      return sanitizedEdge;
+    }).filter(edge => validateEdgeData(edge));
+  };
+
   const saveJobData = (data: Partial<JobData>) => {
     console.log('Saving job data with keys:', Object.keys(data));
+    console.log('Edges being saved:', data.edges?.length || 0, data.edges);
     
     const updated: JobData = {
       ...jobData,
@@ -63,47 +112,65 @@ export const useJobPersistence = (jobId: string) => {
       companyComputerIds: [] 
     };
     updated.nodes = updated.nodes || [];
-    updated.edges = updated.edges || [];
+    updated.edges = sanitizeEdgeData(updated.edges || []);
     
     setJobData(updated);
     
     try {
+      // Create backup in case primary save fails
+      const backupKey = `job-backup-${jobId}`;
+      const primaryKey = `job-${jobId}`;
+      
       const serialized = JSON.stringify(updated);
-      localStorage.setItem(`job-${jobId}`, serialized);
-      console.log('Successfully saved job data to localStorage with equipment assignment');
+      
+      // Save to primary location
+      localStorage.setItem(primaryKey, serialized);
+      
+      // Save backup copy
+      localStorage.setItem(backupKey, serialized);
+      
+      console.log('Successfully saved job data to localStorage with', updated.edges.length, 'edges');
+      console.log('Edge details:', updated.edges.map(e => ({ id: e.id, type: e.type, source: e.source, target: e.target })));
     } catch (error) {
       console.error('Failed to save job data to localStorage:', error);
     }
   };
 
   const loadJobData = () => {
-    const stored = localStorage.getItem(`job-${jobId}`);
+    const primaryKey = `job-${jobId}`;
+    const backupKey = `job-backup-${jobId}`;
+    
+    let stored = localStorage.getItem(primaryKey);
+    let isBackup = false;
+    
+    // Try backup if primary fails
+    if (!stored) {
+      stored = localStorage.getItem(backupKey);
+      isBackup = true;
+      if (stored) {
+        console.log('Loading from backup storage');
+      }
+    }
+    
     if (stored) {
       try {
         const parsed = JSON.parse(stored);
         
         if (!validateJobData(parsed)) {
           console.warn('Invalid job data found, clearing...');
-          localStorage.removeItem(`job-${jobId}`);
+          localStorage.removeItem(primaryKey);
+          localStorage.removeItem(backupKey);
           return null;
         }
         
         // Convert date string back to Date object
         parsed.lastUpdated = new Date(parsed.lastUpdated);
         
-        // Ensure edge styling is preserved
+        // Sanitize and restore edges with proper validation
         if (parsed.edges) {
-          parsed.edges = parsed.edges.map((edge: any) => ({
-            ...edge,
-            type: edge.type || 'cable',
-            style: edge.style || {
-              stroke: edge.data?.cableType === '100ft' ? '#ef4444' : 
-                     edge.data?.cableType === '200ft' ? '#3b82f6' : 
-                     edge.data?.cableType === '300ft' ? '#10b981' : '#6b7280',
-              strokeWidth: 3,
-            },
-            data: edge.data || { cableType: '200ft', label: '200ft' }
-          }));
+          console.log('Raw edges from storage:', parsed.edges.length, parsed.edges);
+          parsed.edges = sanitizeEdgeData(parsed.edges);
+          console.log('Sanitized edges:', parsed.edges.length, parsed.edges);
         }
         
         // Ensure equipment assignment exists with new structure
@@ -123,12 +190,13 @@ export const useJobPersistence = (jobId: string) => {
           parsed.equipmentAssignment.companyComputerIds = parsed.equipmentAssignment.companyComputerIds || [];
         }
         
-        console.log('Successfully loaded job data from localStorage with equipment assignment');
+        console.log(`Successfully loaded job data from ${isBackup ? 'backup' : 'primary'} storage with ${parsed.edges.length} edges`);
         setJobData(parsed);
         return parsed;
       } catch (error) {
         console.error('Failed to parse stored job data:', error);
-        localStorage.removeItem(`job-${jobId}`);
+        localStorage.removeItem(primaryKey);
+        localStorage.removeItem(backupKey);
       }
     }
     return null;

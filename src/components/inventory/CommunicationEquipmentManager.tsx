@@ -14,6 +14,7 @@ const CommunicationEquipmentManager: React.FC = () => {
   const { data, addBulkIndividualEquipment, deleteIndividualEquipment } = useInventory();
   const { migrateEquipmentNaming } = useEquipmentMigration();
   const { analyzeDataConsistency } = useInventoryDataCleanup();
+  const [deletingAll, setDeletingAll] = useState(false);
   
   const communicationTypes = data.equipmentTypes.filter(type => 
     type.category === 'communication' && type.requiresIndividualTracking
@@ -43,27 +44,46 @@ const CommunicationEquipmentManager: React.FC = () => {
     
     if (!confirm) return;
 
+    setDeletingAll(true);
+
     try {
       const communicationEquipment = data.individualEquipment.filter(eq => {
         const equipmentType = data.equipmentTypes.find(type => type.id === eq.typeId);
         return equipmentType && equipmentType.category === 'communication' && eq.status !== 'deployed';
       });
 
+      // Delete items one by one with small delays to prevent race conditions
+      let deletedCount = 0;
       for (const equipment of communicationEquipment) {
-        await deleteIndividualEquipment(equipment.id);
+        try {
+          await deleteIndividualEquipment(equipment.id);
+          deletedCount++;
+          // Small delay to prevent overwhelming the database
+          await new Promise(resolve => setTimeout(resolve, 100));
+        } catch (error) {
+          console.error(`Failed to delete equipment ${equipment.equipmentId}:`, error);
+        }
       }
 
-      toast.success(`Deleted ${communicationEquipment.length} communication equipment items`);
+      toast.success(`Deleted ${deletedCount} communication equipment items`);
       
-      if (communicationEquipment.length < data.individualEquipment.filter(eq => {
+      if (deletedCount < communicationEquipment.length) {
+        toast.warning(`${communicationEquipment.length - deletedCount} items could not be deleted`);
+      }
+
+      const deployedCount = data.individualEquipment.filter(eq => {
         const equipmentType = data.equipmentTypes.find(type => type.id === eq.typeId);
-        return equipmentType && equipmentType.category === 'communication';
-      }).length) {
-        toast.warning(`Some deployed items were not deleted`);
+        return equipmentType && equipmentType.category === 'communication' && eq.status === 'deployed';
+      }).length;
+
+      if (deployedCount > 0) {
+        toast.info(`${deployedCount} deployed items were not deleted`);
       }
     } catch (error) {
       console.error('Failed to delete communication equipment:', error);
       toast.error('Failed to delete communication equipment');
+    } finally {
+      setDeletingAll(false);
     }
   };
 
@@ -152,9 +172,14 @@ const CommunicationEquipmentManager: React.FC = () => {
                 onClick={handleDeleteAllCommunicationEquipment} 
                 variant="outline"
                 className="text-red-600 hover:text-red-700"
+                disabled={deletingAll}
               >
-                <Trash2 className="h-3 w-3 mr-1" />
-                Delete All
+                {deletingAll ? (
+                  <div className="h-3 w-3 mr-1 animate-spin rounded-full border-2 border-red-600 border-t-transparent" />
+                ) : (
+                  <Trash2 className="h-3 w-3 mr-1" />
+                )}
+                {deletingAll ? 'Deleting...' : 'Delete All'}
               </Button>
             </div>
           </CardContent>

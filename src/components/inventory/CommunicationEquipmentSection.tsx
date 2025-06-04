@@ -3,8 +3,10 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Package, Plus, Users, ChevronDown, ChevronRight } from 'lucide-react';
+import { Package, Plus, Users, ChevronDown, ChevronRight, Edit2, Trash2 } from 'lucide-react';
 import { EquipmentType, IndividualEquipment, StorageLocation } from '@/types/inventory';
+import { useInventory } from '@/contexts/InventoryContext';
+import { toast } from 'sonner';
 import IndividualEquipmentForm from './IndividualEquipmentForm';
 import BulkEquipmentCreationDialog from './BulkEquipmentCreationDialog';
 
@@ -23,9 +25,11 @@ const CommunicationEquipmentSection: React.FC<CommunicationEquipmentSectionProps
   onAddEquipment,
   onBulkAdd,
 }) => {
+  const { deleteIndividualEquipment } = useInventory();
   const [isExpanded, setIsExpanded] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isBulkDialogOpen, setIsBulkDialogOpen] = useState(false);
+  const [deletingItems, setDeletingItems] = useState<Set<string>>(new Set());
   const [formData, setFormData] = useState({
     equipmentId: '',
     name: '',
@@ -70,6 +74,45 @@ const CommunicationEquipmentSection: React.FC<CommunicationEquipmentSectionProps
 
     onAddEquipment(newItem);
     resetForm();
+  };
+
+  const handleDelete = async (item: IndividualEquipment) => {
+    if (item.status === 'deployed') {
+      toast.error('Cannot delete deployed equipment. Please return equipment first.');
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Are you sure you want to delete "${item.name}" (${item.equipmentId})? This action cannot be undone.`
+    );
+
+    if (!confirmed) return;
+
+    // Add to deleting set to show loading state
+    setDeletingItems(prev => new Set(prev).add(item.id));
+
+    try {
+      // Optimistic update - remove from UI immediately
+      const event = new CustomEvent('equipment-deleted', { detail: item.id });
+      window.dispatchEvent(event);
+
+      await deleteIndividualEquipment(item.id);
+      toast.success(`Deleted ${item.name} successfully`);
+    } catch (error) {
+      console.error('Failed to delete equipment:', error);
+      toast.error('Failed to delete equipment');
+      
+      // Restore item in UI on error
+      const event = new CustomEvent('equipment-delete-failed', { detail: item.id });
+      window.dispatchEvent(event);
+    } finally {
+      // Remove from deleting set
+      setDeletingItems(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(item.id);
+        return newSet;
+      });
+    }
   };
 
   const resetForm = () => {
@@ -142,24 +185,60 @@ const CommunicationEquipmentSection: React.FC<CommunicationEquipmentSectionProps
         <CardContent className="pt-0">
           {equipment.length > 0 ? (
             <div className="grid grid-cols-1 gap-2 max-h-64 overflow-y-auto">
-              {equipment.map(item => (
-                <div key={item.id} className="flex justify-between items-center text-sm p-2 bg-gray-50 rounded">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium">{item.equipmentId}</span>
-                    <span className="text-gray-600">{item.name}</span>
+              {equipment.map(item => {
+                const isDeleting = deletingItems.has(item.id);
+                return (
+                  <div key={item.id} className="flex justify-between items-center text-sm p-2 bg-gray-50 rounded">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">{item.equipmentId}</span>
+                      <span className="text-gray-600">{item.name}</span>
+                      {item.serialNumber && (
+                        <span className="text-xs text-gray-500">S/N: {item.serialNumber}</span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge 
+                        variant={item.status === 'available' ? 'default' : 'outline'}
+                        className={`text-xs ${
+                          item.status === 'available' ? 'bg-green-100 text-green-800' :
+                          item.status === 'deployed' ? 'bg-blue-100 text-blue-800' :
+                          'bg-red-100 text-red-800'
+                        }`}
+                      >
+                        {item.status}
+                      </Badge>
+                      <div className="flex gap-1">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            // This would trigger edit functionality if implemented
+                            console.log('Edit clicked for:', item);
+                          }}
+                          className="h-6 w-6 p-0"
+                          title="Edit equipment"
+                        >
+                          <Edit2 className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleDelete(item)}
+                          disabled={item.status === 'deployed' || isDeleting}
+                          className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
+                          title="Delete equipment"
+                        >
+                          {isDeleting ? (
+                            <div className="h-3 w-3 animate-spin rounded-full border-2 border-red-600 border-t-transparent" />
+                          ) : (
+                            <Trash2 className="h-3 w-3" />
+                          )}
+                        </Button>
+                      </div>
+                    </div>
                   </div>
-                  <Badge 
-                    variant={item.status === 'available' ? 'default' : 'outline'}
-                    className={`text-xs ${
-                      item.status === 'available' ? 'bg-green-100 text-green-800' :
-                      item.status === 'deployed' ? 'bg-blue-100 text-blue-800' :
-                      'bg-red-100 text-red-800'
-                    }`}
-                  >
-                    {item.status}
-                  </Badge>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <div className="text-center py-6 text-gray-500">

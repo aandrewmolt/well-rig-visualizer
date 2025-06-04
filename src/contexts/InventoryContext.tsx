@@ -26,15 +26,20 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const mutations = useInventoryMutations(storageLocations);
   const utils = useInventoryUtils(equipmentTypes, storageLocations, equipmentItems);
   
-  // Set up real-time subscriptions
-  useInventoryRealtime(refetch);
+  // Set up real-time subscriptions with optimistic delete handling
+  const { optimisticDeletes } = useInventoryRealtime(refetch);
 
-  // Combined data object
+  // Filter out optimistically deleted items
+  const filteredIndividualEquipment = individualEquipment.filter(
+    item => !optimisticDeletes.has(item.id)
+  );
+
+  // Combined data object with filtered equipment
   const data: InventoryData = {
     equipmentTypes,
     storageLocations,
     equipmentItems,
-    individualEquipment,
+    individualEquipment: filteredIndividualEquipment,
     lastSync: new Date(),
   };
 

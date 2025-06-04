@@ -46,14 +46,30 @@ const DirectEdge = ({
   };
 
   const handleDirectClick = () => {
-    // Find the first available 100ft cable
-    const cable100ft = inventoryData.equipmentTypes.find(type => 
-      type.category === 'cables' && 
-      type.name.toLowerCase().includes('100ft')
+    // Find the first available cable (prioritize shorter ones first)
+    const availableCables = inventoryData.equipmentTypes.filter(type => 
+      type.category === 'cables'
     );
 
-    if (cable100ft) {
-      // Switch to cable connection with 100ft cable
+    // Sort by preference: 100ft first, then 200ft, then 300ft, then others
+    const sortedCables = availableCables.sort((a, b) => {
+      const aName = a.name.toLowerCase();
+      const bName = b.name.toLowerCase();
+      
+      if (aName.includes('100ft')) return -1;
+      if (bName.includes('100ft')) return 1;
+      if (aName.includes('200ft')) return -1;
+      if (bName.includes('200ft')) return 1;
+      if (aName.includes('300ft')) return -1;
+      if (bName.includes('300ft')) return 1;
+      
+      return 0;
+    });
+
+    const firstAvailableCable = sortedCables[0];
+
+    if (firstAvailableCable) {
+      // Switch to cable connection with the first available cable
       setEdges((edges) => 
         edges.map((edge) => {
           if (edge.id === id) {
@@ -63,11 +79,11 @@ const DirectEdge = ({
               data: {
                 ...edge.data,
                 connectionType: 'cable',
-                cableTypeId: cable100ft.id,
-                label: getCableDisplayName(cable100ft.id)
+                cableTypeId: firstAvailableCable.id,
+                label: getCableDisplayName(firstAvailableCable.id)
               },
               style: {
-                stroke: getCableColor(cable100ft.id),
+                stroke: getCableColor(firstAvailableCable.id),
                 strokeWidth: 3,
                 strokeDasharray: undefined,
               }
@@ -106,7 +122,7 @@ const DirectEdge = ({
                 label: 'Cable'
               },
               style: {
-                stroke: '#ef4444', // Red for 100ft cables
+                stroke: getCableColor(cableTypeId),
                 strokeWidth: 3,
                 strokeDasharray: undefined,
               }
@@ -172,7 +188,7 @@ const DirectEdge = ({
             <button
               onClick={handleDirectClick}
               className="text-purple-600 hover:text-purple-800 cursor-pointer"
-              title="Click to switch to 100ft cable"
+              title="Click to switch to cable"
             >
               Direct
             </button>

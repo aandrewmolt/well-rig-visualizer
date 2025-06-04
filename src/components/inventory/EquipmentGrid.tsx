@@ -39,6 +39,11 @@ const EquipmentGrid: React.FC<EquipmentGridProps> = ({
     );
   }
 
+  const handleEditClick = (item: IndividualEquipment) => {
+    console.log('Edit button clicked for:', item);
+    onEdit(item);
+  };
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {equipment.map(item => {
@@ -57,7 +62,12 @@ const EquipmentGrid: React.FC<EquipmentGridProps> = ({
                 <p className="text-sm text-gray-600">{item.name}</p>
               </div>
               <div className="flex space-x-1">
-                <Button size="sm" variant="outline" onClick={() => onEdit(item)}>
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  onClick={() => handleEditClick(item)}
+                  title="Edit equipment"
+                >
                   <Edit2 className="h-3 w-3" />
                 </Button>
                 <Button 
@@ -66,6 +76,7 @@ const EquipmentGrid: React.FC<EquipmentGridProps> = ({
                   onClick={() => onDelete(item.id)}
                   disabled={item.status === 'deployed'}
                   className="text-red-600 hover:text-red-700"
+                  title="Delete equipment"
                 >
                   <Trash2 className="h-3 w-3" />
                 </Button>

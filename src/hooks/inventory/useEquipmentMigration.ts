@@ -9,7 +9,7 @@ export const useEquipmentMigration = () => {
 
   const migrateEquipmentNaming = useCallback(async () => {
     try {
-      console.log('Starting comprehensive equipment naming migration...');
+      console.log('Starting aggressive equipment naming migration...');
       
       const updates = [];
       
@@ -27,122 +27,93 @@ export const useEquipmentMigration = () => {
           needsUpdate = true;
         }
 
-        // Extract prefix and number part
+        // Extract prefix and number part for ID formatting
         const prefix = newEquipmentId.substring(0, 2);
-        const numberPart = newEquipmentId.substring(2);
+        let numberPart = newEquipmentId.substring(2);
+        
+        // Convert number part to integer and back to ensure it's clean
+        const numberInt = parseInt(numberPart) || 1;
         
         // Fix zero padding based on correct rules
         if (prefix === 'SS') {
           // ShearStream: 4 digits (SS0001)
-          const paddedNumber = numberPart.padStart(4, '0');
-          newEquipmentId = `${prefix}${paddedNumber}`;
+          newEquipmentId = `${prefix}${numberInt.toString().padStart(4, '0')}`;
         } else if (prefix === 'CC' || prefix === 'CT' || prefix === 'SL') {
           // Customer Computer, Customer Tablet, Starlink: 2 digits (CC01, CT01, SL01)
-          const paddedNumber = numberPart.padStart(2, '0');
-          newEquipmentId = `${prefix}${paddedNumber}`;
+          newEquipmentId = `${prefix}${numberInt.toString().padStart(2, '0')}`;
         } else {
           // Others (PG, BP): 3 digits (PG001, BP001)
-          const paddedNumber = numberPart.padStart(3, '0');
-          newEquipmentId = `${prefix}${paddedNumber}`;
+          newEquipmentId = `${prefix}${numberInt.toString().padStart(3, '0')}`;
         }
 
         if (newEquipmentId !== equipment.equipmentId) {
           needsUpdate = true;
         }
 
-        // Comprehensive name fixing for all equipment types
+        // AGGRESSIVE name fixing - check for ANY old naming patterns
+        const oldNamePatterns = [
+          'Alpha', 'Beta', 'Gamma', 'Delta', 'Echo', 'Foxtrot', 'Golf', 'Hotel',
+          'Unit', 'Terminal', 'Field', 'Laptop', 'Dell', 'Lenovo', 'HP', 'Computer',
+          'Tablet', 'iPad', 'Surface', 'Android', 'Gauge', 'Pressure', '1502',
+          'Battery', 'Pack', 'Power', 'Box', 'Dish', 'Sat'
+        ];
+
+        const hasOldNaming = oldNamePatterns.some(pattern => 
+          equipment.name.toLowerCase().includes(pattern.toLowerCase())
+        );
+
+        // Generate correct names based on equipment type and new ID
         if (equipmentType.name === 'ShearStream Box') {
           const numberPart = newEquipmentId.replace('SS', '');
-          const expectedName = `ShearStream-${numberPart}`;
-          if (equipment.name !== expectedName && 
-              (equipment.name.includes('Alpha') || equipment.name.includes('Beta') || 
-               equipment.name.includes('Gamma') || equipment.name.includes('Unit') ||
-               equipment.name.includes('Delta') || equipment.name.includes('Echo') ||
-               equipment.name.includes('Foxtrot') || equipment.name.includes('Golf') ||
-               equipment.name.includes('Hotel') || equipment.name.includes('Box'))) {
-            newName = expectedName;
-            needsUpdate = true;
-          }
-        }
-
-        if (equipmentType.name === 'Starlink') {
+          newName = `ShearStream-${numberPart}`;
+          needsUpdate = true;
+        } else if (equipmentType.name === 'Starlink') {
           const numberPart = newEquipmentId.replace('SL', '');
-          const expectedName = `Starlink-${numberPart}`;
-          if (equipment.name !== expectedName && 
-              (equipment.name.includes('Terminal') || equipment.name.includes('1') || 
-               equipment.name.includes('2') || equipment.name.includes('3') ||
-               equipment.name.includes('Dish') || equipment.name.includes('Sat'))) {
-            newName = expectedName;
-            needsUpdate = true;
-          }
-        }
-
-        if (equipmentType.name === 'Customer Computer') {
+          newName = `Starlink-${numberPart}`;
+          needsUpdate = true;
+        } else if (equipmentType.name === 'Customer Computer') {
           const numberPart = newEquipmentId.replace('CC', '');
-          const expectedName = `Customer Computer ${numberPart}`;
-          if (equipment.name !== expectedName && 
-              (equipment.name.includes('Field') || equipment.name.includes('Laptop') || 
-               equipment.name.includes('Dell') || equipment.name.includes('Lenovo') ||
-               equipment.name.includes('HP') || equipment.name.includes('Computer'))) {
-            newName = expectedName;
-            needsUpdate = true;
-          }
-        }
-
-        if (equipmentType.name === 'Customer Tablet') {
+          newName = `Customer Computer ${numberPart}`;
+          needsUpdate = true;
+        } else if (equipmentType.name === 'Customer Tablet') {
           const numberPart = newEquipmentId.replace('CT', '');
-          const expectedName = `Customer Tablet ${numberPart}`;
-          if (equipment.name !== expectedName &&
-              (equipment.name.includes('Tablet') || equipment.name.includes('iPad') ||
-               equipment.name.includes('Surface') || equipment.name.includes('Android'))) {
-            newName = expectedName;
-            needsUpdate = true;
-          }
-        }
-
-        if (equipmentType.name === '1502 Pressure Gauge') {
+          newName = `Customer Tablet ${numberPart}`;
+          needsUpdate = true;
+        } else if (equipmentType.name === '1502 Pressure Gauge') {
           const numberPart = newEquipmentId.replace('PG', '');
-          const expectedName = `Pressure Gauge ${numberPart}`;
-          if (equipment.name !== expectedName &&
-              (equipment.name.includes('Gauge') || equipment.name.includes('Pressure') ||
-               equipment.name.includes('1502'))) {
-            newName = expectedName;
-            needsUpdate = true;
-          }
-        }
-
-        if (equipmentType.name === 'Battery Pack') {
+          newName = `Pressure Gauge ${numberPart}`;
+          needsUpdate = true;
+        } else if (equipmentType.name === 'Battery Pack') {
           const numberPart = newEquipmentId.replace('BP', '');
-          const expectedName = `Battery Pack ${numberPart}`;
-          if (equipment.name !== expectedName &&
-              (equipment.name.includes('Battery') || equipment.name.includes('Pack') ||
-               equipment.name.includes('Power'))) {
-            newName = expectedName;
-            needsUpdate = true;
-          }
+          newName = `Battery Pack ${numberPart}`;
+          needsUpdate = true;
         }
 
         if (needsUpdate) {
           updates.push({
             id: equipment.id,
             equipmentId: newEquipmentId,
-            name: newName
+            name: newName,
+            originalName: equipment.name,
+            originalId: equipment.equipmentId
           });
         }
       }
 
       if (updates.length > 0) {
         console.log(`Updating ${updates.length} equipment items...`);
+        console.log('Updates:', updates);
         
         // Update each equipment item
         for (const update of updates) {
+          console.log(`Updating ${update.originalId} (${update.originalName}) -> ${update.equipmentId} (${update.name})`);
           await updateIndividualEquipment(update.id, {
             equipmentId: update.equipmentId,
             name: update.name
           });
         }
 
-        toast.success(`Updated ${updates.length} equipment items with consistent naming and zero padding`);
+        toast.success(`Updated ${updates.length} equipment items with correct naming and IDs`);
         console.log('Equipment migration completed successfully');
       } else {
         toast.info('No equipment items needed migration');

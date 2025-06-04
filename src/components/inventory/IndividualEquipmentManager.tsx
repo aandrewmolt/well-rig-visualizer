@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Loader2, Search, Database } from 'lucide-react';
+import { Loader2, Search, Database, Trash2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useSupabaseInventory } from '@/hooks/useSupabaseInventory';
@@ -8,6 +8,8 @@ import { EquipmentType, StorageLocation } from '@/types/inventory';
 import { useIndividualEquipmentManager } from '@/hooks/inventory/useIndividualEquipmentManager';
 import { useEquipmentMigration } from '@/hooks/inventory/useEquipmentMigration';
 import { useInventoryDataCleanup } from '@/hooks/inventory/useInventoryDataCleanup';
+import { useInventory } from '@/contexts/InventoryContext';
+import { toast } from 'sonner';
 import IndividualEquipmentForm from './IndividualEquipmentForm';
 import BulkEquipmentCreationDialog from './BulkEquipmentCreationDialog';
 import EquipmentGrid from './EquipmentGrid';
@@ -27,6 +29,7 @@ const IndividualEquipmentManager: React.FC<IndividualEquipmentManagerProps> = ({
   onDraftCountChange,
 }) => {
   const { isLoading } = useSupabaseInventory();
+  const { deleteIndividualEquipment } = useInventory();
   const { migrateEquipmentNaming } = useEquipmentMigration();
   const { analyzeDataConsistency } = useInventoryDataCleanup();
   
@@ -34,6 +37,35 @@ const IndividualEquipmentManager: React.FC<IndividualEquipmentManagerProps> = ({
     equipmentType!,
     onDraftCountChange
   );
+
+  const handleDeleteAllEquipment = async () => {
+    if (!equipmentType) return;
+    
+    const confirm = window.confirm(
+      `Are you sure you want to delete ALL ${equipmentType.name} equipment? This cannot be undone.`
+    );
+    
+    if (!confirm) return;
+
+    try {
+      const equipmentToDelete = manager.individualEquipment.filter(eq => 
+        eq.status !== 'deployed' // Don't delete deployed equipment
+      );
+
+      for (const equipment of equipmentToDelete) {
+        await deleteIndividualEquipment(equipment.id);
+      }
+
+      toast.success(`Deleted ${equipmentToDelete.length} ${equipmentType.name} items`);
+      
+      if (equipmentToDelete.length < manager.individualEquipment.length) {
+        toast.warning(`${manager.individualEquipment.length - equipmentToDelete.length} deployed items were not deleted`);
+      }
+    } catch (error) {
+      console.error('Failed to delete equipment:', error);
+      toast.error('Failed to delete equipment');
+    }
+  };
 
   // Show loading state while data is being fetched
   if (isLoading || !equipmentType) {
@@ -84,9 +116,6 @@ const IndividualEquipmentManager: React.FC<IndividualEquipmentManagerProps> = ({
 
   // Create a wrapper function that matches the expected signature
   const handleBulkCreateWrapper = (equipment: any[]) => {
-    // The bulk creation dialog will pass the equipment array,
-    // but our hook's handleBulkCreate expects no parameters
-    // and handles the bulk creation internally
     manager.handleBulkCreate();
   };
 
@@ -100,7 +129,7 @@ const IndividualEquipmentManager: React.FC<IndividualEquipmentManagerProps> = ({
       />
 
       {/* Data Management Tools */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         {/* Migration Tool */}
         <Card className="border-blue-200 bg-blue-50">
           <CardContent className="p-3">
@@ -108,7 +137,7 @@ const IndividualEquipmentManager: React.FC<IndividualEquipmentManagerProps> = ({
               <div>
                 <p className="text-sm text-blue-700 font-medium">Fix Equipment Naming</p>
                 <p className="text-xs text-blue-600">
-                  Update equipment names and IDs with correct zero padding (SS0001, CC01, etc.)
+                  Update names: SS0001→ShearStream-0001, CC01→Customer Computer 01
                 </p>
               </div>
               <Button size="sm" onClick={migrateEquipmentNaming} variant="outline">
@@ -126,12 +155,35 @@ const IndividualEquipmentManager: React.FC<IndividualEquipmentManagerProps> = ({
               <div>
                 <p className="text-sm text-purple-700 font-medium">Analyze Data</p>
                 <p className="text-xs text-purple-600">
-                  Check for missing CC equipment and data consistency issues
+                  Check for missing equipment and data consistency
                 </p>
               </div>
               <Button size="sm" onClick={analyzeDataConsistency} variant="outline">
                 <Database className="h-3 w-3 mr-1" />
                 Analyze
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Delete All Tool */}
+        <Card className="border-red-200 bg-red-50">
+          <CardContent className="p-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-red-700 font-medium">Delete All Equipment</p>
+                <p className="text-xs text-red-600">
+                  Remove all {equipmentType.name} items (except deployed)
+                </p>
+              </div>
+              <Button 
+                size="sm" 
+                onClick={handleDeleteAllEquipment} 
+                variant="outline"
+                className="text-red-600 hover:text-red-700"
+              >
+                <Trash2 className="h-3 w-3 mr-1" />
+                Delete All
               </Button>
             </div>
           </CardContent>

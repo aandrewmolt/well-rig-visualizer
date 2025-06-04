@@ -45,7 +45,12 @@ const IndividualEquipmentForm: React.FC<IndividualEquipmentFormProps> = ({
   onReset,
   onPrefixChange,
 }) => {
-  const prefixOptions = ['CC', 'EQ', equipmentType.defaultIdPrefix].filter(Boolean);
+  const prefixOptions = ['CC', 'CT', 'SL', 'PG', 'BP', equipmentType.defaultIdPrefix].filter(Boolean);
+
+  const handleCancel = () => {
+    onReset();
+    setIsFormOpen(false);
+  };
 
   return (
     <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
@@ -83,21 +88,21 @@ const IndividualEquipmentForm: React.FC<IndividualEquipmentFormProps> = ({
             <Input
               value={formData.equipmentId}
               onChange={(e) => setFormData(prev => ({ ...prev, equipmentId: e.target.value }))}
-              placeholder="Auto-generated if empty"
+              placeholder="e.g., SS0001, CC01, SL01"
             />
           </div>
 
           <div>
-            <Label htmlFor="name">Name</Label>
+            <Label htmlFor="name">Equipment Name</Label>
             <Input
               value={formData.name}
               onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-              placeholder="Auto-generated if empty"
+              placeholder="e.g., ShearStream-0001, Customer Computer 01, Starlink-01"
             />
           </div>
 
           <div>
-            <Label htmlFor="locationId">Location</Label>
+            <Label htmlFor="locationId">Location *</Label>
             <Select value={formData.locationId} onValueChange={(value) => setFormData(prev => ({ ...prev, locationId: value }))}>
               <SelectTrigger>
                 <SelectValue placeholder="Select location" />
@@ -131,15 +136,28 @@ const IndividualEquipmentForm: React.FC<IndividualEquipmentFormProps> = ({
           </div>
 
           <div className="flex gap-2">
-            <Button onClick={() => onSubmit(false)}>
-              Add to Draft
-            </Button>
-            <Button variant="outline" onClick={() => onSubmit(true)}>
-              Save Immediately
-            </Button>
-            <Button variant="outline" onClick={onReset}>
-              Cancel
-            </Button>
+            {editingEquipment ? (
+              <>
+                <Button onClick={() => onSubmit(true)}>
+                  Update Equipment
+                </Button>
+                <Button variant="outline" onClick={handleCancel}>
+                  Cancel
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button onClick={() => onSubmit(false)}>
+                  Add to Draft
+                </Button>
+                <Button variant="outline" onClick={() => onSubmit(true)}>
+                  Save Immediately
+                </Button>
+                <Button variant="outline" onClick={handleCancel}>
+                  Cancel
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </DialogContent>

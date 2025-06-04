@@ -6,12 +6,13 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Save, Clock } from 'lucide-react';
-import { StorageLocation } from '@/types/inventory';
+import { StorageLocation, IndividualEquipment, EquipmentType } from '@/types/inventory';
 
 interface IndividualEquipmentFormProps {
-  isDialogOpen: boolean;
-  setIsDialogOpen: (open: boolean) => void;
-  editingEquipment: any;
+  isFormOpen: boolean;
+  setIsFormOpen: (open: boolean) => void;
+  editingEquipment: IndividualEquipment | null;
+  setEditingEquipment: (equipment: IndividualEquipment) => void;
   formData: {
     equipmentId: string;
     name: string;
@@ -20,25 +21,34 @@ interface IndividualEquipmentFormProps {
     notes: string;
   };
   setFormData: (data: any) => void;
+  equipmentType: EquipmentType;
   storageLocations: StorageLocation[];
+  allEquipment: IndividualEquipment[];
   onSubmit: (saveImmediate?: boolean) => void;
-  onAddItemClick: () => void;
+  onReset: () => void;
 }
 
 const IndividualEquipmentForm: React.FC<IndividualEquipmentFormProps> = ({
-  isDialogOpen,
-  setIsDialogOpen,
+  isFormOpen,
+  setIsFormOpen,
   editingEquipment,
   formData,
   setFormData,
   storageLocations,
   onSubmit,
-  onAddItemClick,
+  onReset,
 }) => {
+  const handleAddItemClick = () => {
+    if (!editingEquipment) {
+      onReset();
+    }
+    setIsFormOpen(true);
+  };
+
   return (
-    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+    <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
       <DialogTrigger asChild>
-        <Button size="sm" onClick={onAddItemClick}>
+        <Button size="sm" onClick={handleAddItemClick}>
           <Plus className="mr-2 h-4 w-4" />
           Add Item
         </Button>
@@ -55,7 +65,7 @@ const IndividualEquipmentForm: React.FC<IndividualEquipmentFormProps> = ({
             <Input
               value={formData.equipmentId}
               onChange={(e) => setFormData({...formData, equipmentId: e.target.value})}
-              placeholder="e.g., SS-001, SL-002"
+              placeholder="e.g., SS001, SL01"
             />
           </div>
           <div>

@@ -129,6 +129,7 @@ const EquipmentTypeCard: React.FC<EquipmentTypeCardProps> = ({
         <div className="mt-4 border-t pt-4">
           <IndividualEquipmentManager 
             equipmentType={type}
+            storageLocations={storageLocations}
             onDraftCountChange={(count) => onDraftCountChange(type.id, count)}
           />
         </div>

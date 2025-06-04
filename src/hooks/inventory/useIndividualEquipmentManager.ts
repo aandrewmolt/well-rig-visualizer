@@ -78,8 +78,15 @@ export const useIndividualEquipmentManager = (
     hasUnsavedChanges,
     unsavedCount,
     
-    // Form management
-    ...formHook,
+    // Form management - properly expose all form hook properties
+    isFormOpen: formHook.isDialogOpen,
+    setIsFormOpen: formHook.setIsDialogOpen,
+    editingEquipment: formHook.editingEquipment,
+    setEditingEquipment: formHook.handleEdit,
+    formData: formHook.formData,
+    setFormData: formHook.setFormData,
+    handleSubmit: formHook.handleSubmit,
+    resetForm: formHook.resetForm,
     
     // Bulk creation
     ...bulkCreateHook,

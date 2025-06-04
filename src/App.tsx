@@ -10,9 +10,8 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import MainDashboard from "./pages/MainDashboard";
 import CableJobs from "./pages/CableJobs";
-import Inventory from "./pages/Inventory";
-import InventorySettings from "./pages/InventorySettings";
 import EquipmentInventory from "./pages/EquipmentInventory";
+import InventorySettings from "./pages/InventorySettings";
 
 const queryClient = new QueryClient();
 
@@ -40,11 +39,8 @@ const App = () => (
                   <EquipmentInventory />
                 </ProtectedRoute>
               } />
-              <Route path="/inventory" element={
-                <ProtectedRoute>
-                  <Inventory />
-                </ProtectedRoute>
-              } />
+              {/* Redirect old inventory routes to equipment-inventory */}
+              <Route path="/inventory" element={<Navigate to="/equipment-inventory" replace />} />
               <Route path="/inventory/settings" element={
                 <ProtectedRoute>
                   <InventorySettings />

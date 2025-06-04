@@ -28,6 +28,7 @@ import CustomerComputerNode from '@/components/nodes/CustomerComputerNode';
 import DiagramControls from '@/components/diagram/DiagramControls';
 import WellConfigurationPanel from '@/components/diagram/WellConfigurationPanel';
 import EquipmentSelectionPanel from '@/components/diagram/EquipmentSelectionPanel';
+import ExtrasOnLocationPanel from '@/components/diagram/ExtrasOnLocationPanel';
 
 const nodeTypes = {
   mainBox: MainBoxNode,
@@ -162,8 +163,6 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
             selectedShearstreamBoxes={selectedShearstreamBoxes}
             selectedStarlink={selectedStarlink}
             selectedCustomerComputers={selectedCustomerComputers}
-            nodes={nodes}
-            setNodes={setNodes}
             updateMainBoxName={updateMainBoxName}
             updateSatelliteName={updateSatelliteName}
             updateCustomerComputerName={updateCustomerComputerName}
@@ -176,6 +175,12 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
             updateWellColor={updateWellColor}
             updateWellsideGaugeName={updateWellsideGaugeName}
             updateWellsideGaugeColor={updateWellsideGaugeColor}
+          />
+
+          {/* Extras on Location Panel */}
+          <ExtrasOnLocationPanel 
+            jobId={job.id}
+            jobName={job.name}
           />
         </div>
 

@@ -51,9 +51,9 @@ export const useEquipmentUsageAnalyzer = (nodes: Node[], edges: Edge[]) => {
       // Only count as direct connection if explicitly marked as direct
       if (edgeData?.connectionType === 'direct' || edge.type === 'direct') {
         usage.directConnections++;
-        console.log(`Direct connection found: ${edge.id}`, edgeData);
+        console.log(`Direct connection found (no cable used): ${edge.id}`, edgeData);
       } else if (edgeData?.connectionType === 'cable' && typeof edgeData.cableTypeId === 'string') {
-        // Only count cables if explicitly marked as cable with a valid cableTypeId
+        // Count ALL cables when connectionType is 'cable', regardless of type (including 100ft)
         const originalCableTypeId = edgeData.cableTypeId;
         const migratedCableTypeId = migrateCableTypeId(originalCableTypeId);
         
@@ -135,7 +135,7 @@ export const useEquipmentUsageAnalyzer = (nodes: Node[], edges: Edge[]) => {
         } else {
           // No cable type ID and not explicitly marked as cable = direct connection
           usage.directConnections++;
-          console.log(`Inferred direct connection: ${edge.id}`);
+          console.log(`Inferred direct connection (no cable used): ${edge.id}`);
         }
       }
     });
@@ -151,6 +151,7 @@ export const useEquipmentUsageAnalyzer = (nodes: Node[], edges: Edge[]) => {
           usage.adapters++;
           break;
         case 'companyComputer':
+        case 'customerComputer':
           usage.computers++;
           break;
         case 'satellite':

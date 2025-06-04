@@ -52,7 +52,7 @@ export const useDiagramConnections = (
           data: {
             connectionType: 'direct',
             label: 'Direct Connection',
-            sourceHandle: params.sourceHandle, // Store sourceHandle in data
+            sourceHandle: params.sourceHandle,
             targetHandle: params.targetHandle
           },
           style: {
@@ -66,6 +66,39 @@ export const useDiagramConnections = (
         console.log('Creating direct connection:', newEdge);
         setEdges((eds) => addEdge(newEdge, eds));
         toast.success('Direct connection established');
+        return;
+      }
+
+      // Check if this is a Y adapter to well connection - default to Direct
+      const isYToWellConnection = (
+        (sourceNode.type === 'yAdapter' && targetNode.type === 'well') ||
+        (sourceNode.type === 'well' && targetNode.type === 'yAdapter')
+      );
+
+      if (isYToWellConnection) {
+        // For Y→Well connections, default to Direct (user can click to toggle to 100ft later)
+        const newEdge = {
+          ...params,
+          id: `edge-${params.source}-${params.target}-${Date.now()}`,
+          type: 'direct',
+          label: 'Direct Connection',
+          data: {
+            connectionType: 'direct',
+            label: 'Direct Connection',
+            sourceHandle: params.sourceHandle,
+            targetHandle: params.targetHandle
+          },
+          style: {
+            stroke: '#8b5cf6',
+            strokeWidth: 4,
+            strokeDasharray: '5,5',
+          },
+          animated: true,
+        };
+
+        console.log('Creating Y→Well direct connection (click to toggle to 100ft):', newEdge);
+        setEdges((eds) => addEdge(newEdge, eds));
+        toast.success('Direct connection established (click to toggle to 100ft cable)');
         return;
       }
 
@@ -117,10 +150,10 @@ export const useDiagramConnections = (
         type: 'cable',
         label: cableLabel,
         data: {
-          cableTypeId: migratedCableType, // Store the migrated cable type ID
+          cableTypeId: migratedCableType,
           label: cableLabel,
           connectionType: 'cable',
-          sourceHandle: params.sourceHandle, // Ensure sourceHandle is stored in data
+          sourceHandle: params.sourceHandle,
           targetHandle: params.targetHandle
         },
         style: {

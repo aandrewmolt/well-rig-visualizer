@@ -5,14 +5,18 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Package, MapPin, AlertTriangle, CheckCircle, RotateCcw, Activity, Clock, Search, Filter, Wrench } from 'lucide-react';
+import { Package, MapPin, AlertTriangle, CheckCircle, RotateCcw, Activity, Clock, Search, Filter, Wrench, Plus, Settings } from 'lucide-react';
 import { useSupabaseInventory } from '@/hooks/useSupabaseInventory';
 import { useSupabaseJobs } from '@/hooks/useSupabaseJobs';
 import { useMaintenanceTracking } from '@/hooks/inventory/useMaintenanceTracking';
 import JobDeploymentsSummary from './JobDeploymentsSummary';
 import MaintenanceAlertPanel from './MaintenanceAlertPanel';
 
-const InventoryDashboard = () => {
+interface InventoryDashboardProps {
+  onSwitchToTab?: (tab: string) => void;
+}
+
+const InventoryDashboard: React.FC<InventoryDashboardProps> = ({ onSwitchToTab }) => {
   const { data, isLoading } = useSupabaseInventory();
   const { jobs } = useSupabaseJobs();
   const { maintenanceAlerts, criticalCount, totalAlertsCount } = useMaintenanceTracking(data.individualEquipment);
@@ -107,6 +111,25 @@ const InventoryDashboard = () => {
           </div>
         </div>
         <div className="flex gap-2">
+          {onSwitchToTab && (
+            <>
+              <Button 
+                onClick={() => onSwitchToTab('equipment-types')}
+                className="flex items-center gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                Add Equipment
+              </Button>
+              <Button 
+                onClick={() => onSwitchToTab('equipment-types')}
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                <Settings className="h-4 w-4" />
+                Manage Types
+              </Button>
+            </>
+          )}
           <Button 
             onClick={resetToDefaultInventory}
             variant="outline"
@@ -117,6 +140,55 @@ const InventoryDashboard = () => {
           </Button>
         </div>
       </div>
+
+      {/* Quick Actions Card */}
+      {onSwitchToTab && (
+        <Card className="bg-blue-50 border-blue-200">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Plus className="h-5 w-5" />
+              Quick Actions
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Button 
+                onClick={() => onSwitchToTab('equipment-types')}
+                className="h-auto p-4 flex flex-col items-center gap-2"
+                variant="outline"
+              >
+                <Settings className="h-6 w-6" />
+                <div className="text-center">
+                  <div className="font-medium">Create Equipment Types</div>
+                  <div className="text-xs text-gray-500">CC, SL, SS boxes</div>
+                </div>
+              </Button>
+              <Button 
+                onClick={() => onSwitchToTab('equipment-types')}
+                className="h-auto p-4 flex flex-col items-center gap-2"
+                variant="outline"
+              >
+                <Package className="h-6 w-6" />
+                <div className="text-center">
+                  <div className="font-medium">Bulk Add Equipment</div>
+                  <div className="text-xs text-gray-500">Multiple items at once</div>
+                </div>
+              </Button>
+              <Button 
+                onClick={() => onSwitchToTab('storage-locations')}
+                className="h-auto p-4 flex flex-col items-center gap-2"
+                variant="outline"
+              >
+                <MapPin className="h-6 w-6" />
+                <div className="text-center">
+                  <div className="font-medium">Manage Locations</div>
+                  <div className="text-xs text-gray-500">Storage facilities</div>
+                </div>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Advanced Search and Filters */}
       <Card>

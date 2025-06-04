@@ -7,7 +7,7 @@ import { useDraftEquipmentManager } from '@/hooks/useDraftEquipmentManager';
 import CommunicationEquipmentSection from './CommunicationEquipmentSection';
 
 const CommunicationEquipmentManager: React.FC = () => {
-  const { data, updateIndividualEquipment } = useInventory();
+  const { data, addBulkIndividualEquipment } = useInventory();
   
   const communicationTypes = data.equipmentTypes.filter(type => 
     type.category === 'communication' && type.requiresIndividualTracking
@@ -19,8 +19,14 @@ const CommunicationEquipmentManager: React.FC = () => {
     addBulkDraftEquipment,
   } = useDraftEquipmentManager(
     data.individualEquipment, 
-    (equipment) => {
-      updateIndividualEquipment(equipment);
+    async (equipment) => {
+      // Handle bulk equipment addition properly
+      if (Array.isArray(equipment)) {
+        await addBulkIndividualEquipment(equipment);
+      } else {
+        // Single equipment item - this shouldn't happen in this context but handle it
+        await addBulkIndividualEquipment([equipment]);
+      }
     }
   );
 

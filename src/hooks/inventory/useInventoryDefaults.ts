@@ -2,7 +2,7 @@
 import { EquipmentType, StorageLocation, EquipmentItem } from '@/types/inventory';
 
 export const useInventoryDefaults = () => {
-  // Updated equipment types with separate 300ft cable variants
+  // Updated equipment types with separate 300ft cable variants and added Customer Tablet
   const DEFAULT_EQUIPMENT_TYPES: EquipmentType[] = [
     // Cables
     {
@@ -69,6 +69,22 @@ export const useInventoryDefaults = () => {
       requiresIndividualTracking: true,
       defaultIdPrefix: 'CC-',
       description: 'Customer-provided computer equipment'
+    },
+    {
+      id: '14',
+      name: 'Customer Tablet',
+      category: 'communication',
+      requiresIndividualTracking: true,
+      defaultIdPrefix: 'CT-',
+      description: 'Customer-provided tablet equipment'
+    },
+    {
+      id: '15',
+      name: 'ShearStream Box',
+      category: 'communication',
+      requiresIndividualTracking: true,
+      defaultIdPrefix: 'SS-',
+      description: 'ShearStream data collection box'
     },
     
     // Power Equipment

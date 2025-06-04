@@ -13,7 +13,7 @@ import EquipmentHistoryViewer from '@/components/inventory/EquipmentHistoryViewe
 import EquipmentReportsExporter from '@/components/inventory/EquipmentReportsExporter';
 import MaintenanceSchedulePanel from '@/components/inventory/MaintenanceSchedulePanel';
 import DataSetupVerifier from '@/components/inventory/DataSetupVerifier';
-import IndividualEquipmentManager from '@/components/inventory/IndividualEquipmentManager';
+import CommunicationEquipmentManager from '@/components/inventory/CommunicationEquipmentManager';
 import { useDefaultDataSetup } from '@/hooks/useDefaultDataSetup';
 import { useInventory } from '@/contexts/InventoryContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -44,9 +44,6 @@ const EquipmentInventory = () => {
       </div>
     );
   }
-
-  // Get the first equipment type that supports individual tracking, or fallback to the first type
-  const individualEquipmentType = data.equipmentTypes.find(type => type.requiresIndividualTracking) || data.equipmentTypes[0];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -129,21 +126,7 @@ const EquipmentInventory = () => {
             </TabsContent>
 
             <TabsContent value="individual">
-              {individualEquipmentType ? (
-                <IndividualEquipmentManager 
-                  equipmentType={individualEquipmentType} 
-                  storageLocations={data.storageLocations}
-                  onDraftCountChange={() => {}}
-                />
-              ) : (
-                <div className="text-center p-8">
-                  <Users className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No Equipment Types Found</h3>
-                  <p className="text-gray-600 mb-4">
-                    Please add equipment types first to manage individual equipment items.
-                  </p>
-                </div>
-              )}
+              <CommunicationEquipmentManager />
             </TabsContent>
 
             <TabsContent value="locations">

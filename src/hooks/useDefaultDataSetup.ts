@@ -4,12 +4,14 @@ import { useSupabaseInventory } from './useSupabaseInventory';
 import { toast } from 'sonner';
 
 const DEFAULT_EQUIPMENT_TYPES = [
-  { name: 'Customer Computer', category: 'communication' as const, description: 'Customer computer for job sites', requiresIndividualTracking: false },
-  { name: 'Starlink', category: 'communication' as const, description: 'Satellite internet equipment', requiresIndividualTracking: true, defaultIdPrefix: 'STL' },
-  { name: 'ShearStream Box', category: 'communication' as const, description: 'Main streaming box', requiresIndividualTracking: true, defaultIdPrefix: 'SSB' },
+  { name: 'Customer Computer', category: 'communication' as const, description: 'Customer computer for job sites', requiresIndividualTracking: true, defaultIdPrefix: 'CC' },
+  { name: 'Customer Tablet', category: 'communication' as const, description: 'Customer tablet for job sites', requiresIndividualTracking: true, defaultIdPrefix: 'CT' },
+  { name: 'Starlink', category: 'communication' as const, description: 'Satellite internet equipment', requiresIndividualTracking: true, defaultIdPrefix: 'SL' },
+  { name: 'ShearStream Box', category: 'communication' as const, description: 'Main streaming box', requiresIndividualTracking: true, defaultIdPrefix: 'SS' },
   { name: '100ft Cable', category: 'cables' as const, description: '100 foot cable', requiresIndividualTracking: false },
   { name: '200ft Cable', category: 'cables' as const, description: '200 foot cable', requiresIndividualTracking: false },
-  { name: '300ft Cable', category: 'cables' as const, description: '300 foot cable', requiresIndividualTracking: false },
+  { name: '300ft Cable (Old)', category: 'cables' as const, description: '300 foot cable - older version', requiresIndividualTracking: false },
+  { name: '300ft Cable (New)', category: 'cables' as const, description: '300 foot cable - newer version', requiresIndividualTracking: false },
   { name: '1502 Pressure Gauge', category: 'gauges' as const, description: 'Pressure gauge for monitoring', requiresIndividualTracking: true, defaultIdPrefix: 'PG' },
   { name: 'Y Adapter Cable', category: 'adapters' as const, description: 'Y adapter cable', requiresIndividualTracking: false }
 ];

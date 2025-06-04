@@ -2,7 +2,7 @@
 import { EquipmentType, StorageLocation, EquipmentItem } from '@/types/inventory';
 
 export const useInventoryDefaults = () => {
-  // Updated equipment types with separate 300ft cable variants and added Customer Tablet
+  // Updated equipment types with correct naming and no duplicates
   const DEFAULT_EQUIPMENT_TYPES: EquipmentType[] = [
     // Cables
     {
@@ -40,7 +40,7 @@ export const useInventoryDefaults = () => {
       name: '1502 Pressure Gauge',
       category: 'gauges',
       requiresIndividualTracking: true,
-      defaultIdPrefix: 'PG-',
+      defaultIdPrefix: 'PG',
       description: 'Precision pressure measurement gauge'
     },
     
@@ -53,13 +53,13 @@ export const useInventoryDefaults = () => {
       description: 'Y-shaped adapter cable for connections'
     },
     
-    // Communication Equipment
+    // Communication Equipment - Fixed prefixes (no dashes)
     {
       id: '10',
       name: 'Starlink',
       category: 'communication',
       requiresIndividualTracking: true,
-      defaultIdPrefix: 'SL-',
+      defaultIdPrefix: 'SL',
       description: 'Satellite internet communication device'
     },
     {
@@ -67,7 +67,7 @@ export const useInventoryDefaults = () => {
       name: 'Customer Computer',
       category: 'communication',
       requiresIndividualTracking: true,
-      defaultIdPrefix: 'CC-',
+      defaultIdPrefix: 'CC',
       description: 'Customer-provided computer equipment'
     },
     {
@@ -75,7 +75,7 @@ export const useInventoryDefaults = () => {
       name: 'Customer Tablet',
       category: 'communication',
       requiresIndividualTracking: true,
-      defaultIdPrefix: 'CT-',
+      defaultIdPrefix: 'CT',
       description: 'Customer-provided tablet equipment'
     },
     {
@@ -83,7 +83,7 @@ export const useInventoryDefaults = () => {
       name: 'ShearStream Box',
       category: 'communication',
       requiresIndividualTracking: true,
-      defaultIdPrefix: 'SS-',
+      defaultIdPrefix: 'SS',
       description: 'ShearStream data collection box'
     },
     
@@ -100,7 +100,7 @@ export const useInventoryDefaults = () => {
       name: 'Battery Pack',
       category: 'power',
       requiresIndividualTracking: true,
-      defaultIdPrefix: 'BP-',
+      defaultIdPrefix: 'BP',
       description: 'Rechargeable battery pack'
     }
   ];

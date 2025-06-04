@@ -1,19 +1,29 @@
-
 import { EquipmentType } from '@/types/inventory';
 
 export const useEquipmentIdGenerator = () => {
   const generateEquipmentId = (equipmentType: EquipmentType, counter: number): string => {
     const prefix = equipmentType.defaultIdPrefix || '';
-    return `${prefix}${counter.toString().padStart(3, '0')}`;
+    
+    // Different padding for different equipment types
+    if (prefix === 'SS') {
+      // ShearStream: 4 digits (SS0001)
+      return `${prefix}${counter.toString().padStart(4, '0')}`;
+    } else if (prefix === 'SL') {
+      // Starlink: 2 digits (SL01)
+      return `${prefix}${counter.toString().padStart(2, '0')}`;
+    } else {
+      // Others (CC, CT, PG, BP): 3 digits (CC001, CT001, etc.)
+      return `${prefix}${counter.toString().padStart(3, '0')}`;
+    }
   };
 
   const generateEquipmentName = (equipmentType: EquipmentType, id: string): string => {
     if (equipmentType.name === 'Customer Computer') {
-      // Check if it's a tablet (CT prefix) or computer (CC prefix)
-      if (id.startsWith('CT')) {
-        return `Customer Tablet ${id.replace('CT', '')}`;
-      }
       return `Customer Computer ${id.replace('CC', '')}`;
+    }
+    
+    if (equipmentType.name === 'Customer Tablet') {
+      return `Customer Tablet ${id.replace('CT', '')}`;
     }
     
     if (equipmentType.name === 'Starlink') {
@@ -21,11 +31,15 @@ export const useEquipmentIdGenerator = () => {
     }
     
     if (equipmentType.name === 'ShearStream Box') {
-      return `ShearStream Box ${id.replace('SS', '')}`;
+      return `ShearStream ${id.replace('SS', '')}`;
     }
     
     if (equipmentType.name === '1502 Pressure Gauge') {
       return `Pressure Gauge ${id.replace('PG', '')}`;
+    }
+    
+    if (equipmentType.name === 'Battery Pack') {
+      return `Battery Pack ${id.replace('BP', '')}`;
     }
     
     return `${equipmentType.name} ${id}`;
@@ -33,7 +47,14 @@ export const useEquipmentIdGenerator = () => {
 
   const getIdFormat = (equipmentType: EquipmentType): string => {
     const prefix = equipmentType.defaultIdPrefix || '';
-    return `${prefix}XXX (e.g., ${prefix}001)`;
+    
+    if (prefix === 'SS') {
+      return `${prefix}XXXX (e.g., ${prefix}0001)`;
+    } else if (prefix === 'SL') {
+      return `${prefix}XX (e.g., ${prefix}01)`;
+    } else {
+      return `${prefix}XXX (e.g., ${prefix}001)`;
+    }
   };
 
   return {

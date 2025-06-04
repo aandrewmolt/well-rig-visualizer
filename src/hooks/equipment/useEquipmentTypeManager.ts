@@ -1,3 +1,4 @@
+
 import { useInventoryData, EquipmentType } from '../useInventoryData';
 import { useAuditTrail } from '../useAuditTrail';
 import { toast } from 'sonner';
@@ -11,11 +12,13 @@ export const useEquipmentTypeManager = () => {
     const typeMapping: { [key: string]: { id: string; name: string; category: string; requiresIndividualTracking: boolean; defaultIdPrefix?: string } } = {
       '100ft': { id: '1', name: '100ft Cable', category: 'cables', requiresIndividualTracking: false },
       '200ft': { id: '2', name: '200ft Cable', category: 'cables', requiresIndividualTracking: false },
-      '300ft': { id: '4', name: '300ft Cable (New Version)', category: 'cables', requiresIndividualTracking: false },
-      'gauge': { id: '7', name: '1502 Pressure Gauge', category: 'gauges', requiresIndividualTracking: true, defaultIdPrefix: 'PG-' },
+      '300ft': { id: '4', name: '300ft Cable (New)', category: 'cables', requiresIndividualTracking: false },
+      'gauge': { id: '7', name: '1502 Pressure Gauge', category: 'gauges', requiresIndividualTracking: true, defaultIdPrefix: 'PG' },
       'adapter': { id: '9', name: 'Y Adapter Cable', category: 'adapters', requiresIndividualTracking: false },
-      'computer': { id: '11', name: 'Customer Computer', category: 'communication', requiresIndividualTracking: true, defaultIdPrefix: 'CC-' },
-      'satellite': { id: '10', name: 'Starlink', category: 'communication', requiresIndividualTracking: true, defaultIdPrefix: 'SL-' },
+      'computer': { id: '11', name: 'Customer Computer', category: 'communication', requiresIndividualTracking: true, defaultIdPrefix: 'CC' },
+      'tablet': { id: '14', name: 'Customer Tablet', category: 'communication', requiresIndividualTracking: true, defaultIdPrefix: 'CT' },
+      'satellite': { id: '10', name: 'Starlink', category: 'communication', requiresIndividualTracking: true, defaultIdPrefix: 'SL' },
+      'shearstream': { id: '15', name: 'ShearStream Box', category: 'communication', requiresIndividualTracking: true, defaultIdPrefix: 'SS' },
     };
 
     const missingTypes: EquipmentType[] = [];

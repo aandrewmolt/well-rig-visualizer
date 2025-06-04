@@ -36,6 +36,13 @@ export const useInventoryCleanup = () => {
     return cleanupInventoryDuplicates(updatedItems);
   };
 
+  const generateTemporaryId = (typeId: string, locationId: string): string => {
+    // Generate a temporary ID that's clearly distinguishable from UUID
+    const timestamp = Date.now();
+    const random = Math.random().toString(36).substring(2, 8);
+    return `temp-${typeId.replace(/-/g, '')}-${locationId.replace(/-/g, '')}-${timestamp}-${random}`;
+  };
+
   const ensureRequiredItemsExist = (items: EquipmentItem[]): EquipmentItem[] => {
     const requiredItems = [
       { typeId: '100ft-cable', locationId: 'midland-office', minQuantity: 20 },
@@ -60,9 +67,9 @@ export const useInventoryCleanup = () => {
       const existing = itemMap.get(key);
       
       if (!existing) {
-        // Create new item
+        // Create new item with temporary ID
         itemMap.set(key, {
-          id: `${required.typeId.replace(/-/g, '')}-${required.locationId}-001`,
+          id: generateTemporaryId(required.typeId, required.locationId),
           typeId: required.typeId,
           locationId: required.locationId,
           quantity: required.minQuantity,

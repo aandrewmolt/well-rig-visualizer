@@ -9,7 +9,7 @@ import { useInventoryCleanup } from '@/hooks/inventory/useInventoryCleanup';
 import { toast } from 'sonner';
 
 const InventoryCleanupButton: React.FC = () => {
-  const { data, updateEquipmentItems } = useInventory();
+  const { data, updateSingleEquipmentItem, addEquipmentItem } = useInventory();
   const { mergeAndCleanupInventory, ensureRequiredItemsExist } = useInventoryCleanup();
   const [isProcessing, setIsProcessing] = useState(false);
   const [cleanupResults, setCleanupResults] = useState<{
@@ -31,10 +31,23 @@ const InventoryCleanupButton: React.FC = () => {
       const finalItems = ensureRequiredItemsExist(mergedItems);
       const itemsAdded = finalItems.length - mergedItems.length;
       
-      // Update the inventory - using the correct function signature
-      await Promise.all(
-        finalItems.map(item => updateEquipmentItems(item.id, item))
+      // Step 3: Separate existing items from new items
+      const existingItemIds = new Set(data.equipmentItems.map(item => item.id));
+      const existingItems = finalItems.filter(item => existingItemIds.has(item.id));
+      const newItems = finalItems.filter(item => !existingItemIds.has(item.id));
+      
+      // Step 4: Update existing items and create new items
+      const updatePromises = existingItems.map(item => 
+        updateSingleEquipmentItem(item.id, item)
       );
+      
+      const createPromises = newItems.map(item => {
+        // Remove the id field for new items since Supabase will generate it
+        const { id, ...itemData } = item;
+        return addEquipmentItem(itemData);
+      });
+      
+      await Promise.all([...updatePromises, ...createPromises]);
       
       const results = {
         duplicatesFound,

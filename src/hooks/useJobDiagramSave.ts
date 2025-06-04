@@ -44,6 +44,7 @@ export const useJobDiagramSave = ({
   const { saveJob } = useSupabaseJobs();
   const lastSavedDataRef = useRef<string>('');
   const initialLoadCompleteRef = useRef(false);
+  const saveInProgressRef = useRef(false);
 
   // Save data preparation with enhanced edge validation and configuration data
   const saveDataMemo = useMemo(() => {
@@ -135,11 +136,23 @@ export const useJobDiagramSave = ({
   }, [saveDataMemo]);
 
   const performSave = React.useCallback(() => {
+    // Prevent multiple saves running simultaneously
+    if (saveInProgressRef.current) {
+      console.log('Skipping save - save already in progress');
+      return;
+    }
+
     // Only save if data has actually changed and we're not in the initial load phase
     if (isInitialized && initialLoadCompleteRef.current && currentDataString !== lastSavedDataRef.current) {
-      console.log('Performing enhanced save - data has changed');
+      console.log('Performing save - data has changed');
+      saveInProgressRef.current = true;
       lastSavedDataRef.current = currentDataString;
-      saveJob(saveDataMemo);
+      
+      // Add a small delay to ensure UI interactions complete
+      setTimeout(() => {
+        saveJob(saveDataMemo);
+        saveInProgressRef.current = false;
+      }, 100);
     } else if (!initialLoadCompleteRef.current) {
       console.log('Skipping save - initial load not complete');
     } else if (currentDataString === lastSavedDataRef.current) {
@@ -147,24 +160,24 @@ export const useJobDiagramSave = ({
     }
   }, [isInitialized, currentDataString, saveJob, saveDataMemo]);
 
-  const { debouncedSave, cleanup } = useDebouncedSave(performSave, 800); // Slightly faster save for better UX
+  const { debouncedSave, cleanup } = useDebouncedSave(performSave, 3000); // Increased delay to 3 seconds
 
-  // Mark initial load as complete after a short delay
+  // Mark initial load as complete after a longer delay
   useEffect(() => {
     if (isInitialized && !initialLoadCompleteRef.current) {
       const timer = setTimeout(() => {
         initialLoadCompleteRef.current = true;
         lastSavedDataRef.current = currentDataString;
-        console.log('Initial load complete, ready for enhanced auto-save');
-      }, 1500); // Reduced delay for faster responsiveness
+        console.log('Initial load complete, ready for auto-save');
+      }, 3000); // Increased delay to 3 seconds
 
       return () => clearTimeout(timer);
     }
   }, [isInitialized, currentDataString]);
 
-  // Trigger debounced save only when there are actual changes
+  // Trigger debounced save only when there are actual changes and not during initial load
   useEffect(() => {
-    if (isInitialized && initialLoadCompleteRef.current) {
+    if (isInitialized && initialLoadCompleteRef.current && !saveInProgressRef.current) {
       debouncedSave();
     }
   }, [currentDataString, isInitialized, debouncedSave]);

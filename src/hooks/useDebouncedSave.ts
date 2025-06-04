@@ -1,7 +1,7 @@
 
 import { useCallback, useRef } from 'react';
 
-export const useDebouncedSave = (saveFunction: () => void, delay: number = 500) => {
+export const useDebouncedSave = (saveFunction: () => void, delay: number = 2000) => {
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const debouncedSave = useCallback(() => {

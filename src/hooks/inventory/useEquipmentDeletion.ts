@@ -18,22 +18,27 @@ export const useEquipmentDeletion = ({
   deleteIndividualEquipment
 }: UseEquipmentDeletionProps) => {
 
-  const canDeleteEquipmentType = (typeId: string): { canDelete: boolean; reason?: string } => {
+  const canDeleteEquipmentType = (typeId: string): { canDelete: boolean; reason?: string; details?: string[] } => {
     // Check if any equipment items use this type
-    const hasEquipmentItems = equipmentItems.some(item => item.typeId === typeId);
-    if (hasEquipmentItems) {
-      return { 
-        canDelete: false, 
-        reason: 'Cannot delete equipment type that has equipment items. Please remove all items first.' 
-      };
+    const relatedEquipmentItems = equipmentItems.filter(item => item.typeId === typeId);
+    const relatedIndividualEquipment = individualEquipment.filter(item => item.typeId === typeId);
+    
+    const details: string[] = [];
+    
+    if (relatedEquipmentItems.length > 0) {
+      const totalQuantity = relatedEquipmentItems.reduce((sum, item) => sum + item.quantity, 0);
+      details.push(`${relatedEquipmentItems.length} equipment item records (${totalQuantity} total items)`);
     }
-
-    // Check if any individual equipment uses this type
-    const hasIndividualEquipment = individualEquipment.some(item => item.typeId === typeId);
-    if (hasIndividualEquipment) {
+    
+    if (relatedIndividualEquipment.length > 0) {
+      details.push(`${relatedIndividualEquipment.length} individual equipment items`);
+    }
+    
+    if (details.length > 0) {
       return { 
         canDelete: false, 
-        reason: 'Cannot delete equipment type that has individual equipment. Please remove all items first.' 
+        reason: 'Cannot delete equipment type that still has equipment assigned to it.',
+        details
       };
     }
 
@@ -58,10 +63,15 @@ export const useEquipmentDeletion = ({
   };
 
   const handleDeleteEquipmentType = async (typeId: string, typeName: string) => {
-    const { canDelete, reason } = canDeleteEquipmentType(typeId);
+    const { canDelete, reason, details } = canDeleteEquipmentType(typeId);
     
     if (!canDelete) {
-      toast.error(reason);
+      let detailMessage = reason;
+      if (details && details.length > 0) {
+        detailMessage += '\n\nRelated items:\n• ' + details.join('\n• ');
+        detailMessage += '\n\nTo delete this equipment type, you must first remove or reassign all related equipment.';
+      }
+      toast.error(detailMessage);
       return false;
     }
 
@@ -77,7 +87,7 @@ export const useEquipmentDeletion = ({
       return true;
     } catch (error) {
       console.error('Failed to delete equipment type:', error);
-      toast.error('Failed to delete equipment type');
+      toast.error('Failed to delete equipment type. Please try again.');
       return false;
     }
   };

@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Plus, Settings, Trash2, Edit, AlertTriangle } from 'lucide-react';
 import { useInventory } from '@/contexts/InventoryContext';
+import { useEquipmentDeletion } from '@/hooks/inventory/useEquipmentDeletion';
 import { toast } from 'sonner';
 import EquipmentTypeForm from './EquipmentTypeForm';
 
@@ -15,6 +16,14 @@ const EquipmentTypeManager = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingType, setEditingType] = useState<any>(null);
+
+  const { handleDeleteEquipmentType, canDeleteEquipmentType } = useEquipmentDeletion({
+    equipmentItems: data.equipmentItems,
+    individualEquipment: data.individualEquipment,
+    deleteEquipmentItem: () => Promise.resolve(),
+    deleteEquipmentType,
+    deleteIndividualEquipment: undefined
+  });
 
   const filteredTypes = data.equipmentTypes.filter(type =>
     type.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -35,7 +44,11 @@ const EquipmentTypeManager = () => {
   const getEquipmentCountForType = (typeId: string) => {
     const equipmentItems = data.equipmentItems.filter(item => item.typeId === typeId);
     const individualEquipment = data.individualEquipment.filter(eq => eq.typeId === typeId);
-    return equipmentItems.length + individualEquipment.length;
+    return {
+      equipmentItems: equipmentItems.length,
+      individualEquipment: individualEquipment.length,
+      totalQuantity: equipmentItems.reduce((sum, item) => sum + item.quantity, 0)
+    };
   };
 
   const handleEdit = (type: any) => {
@@ -44,21 +57,7 @@ const EquipmentTypeManager = () => {
   };
 
   const handleDelete = async (typeId: string, typeName: string) => {
-    const equipmentCount = getEquipmentCountForType(typeId);
-    
-    if (equipmentCount > 0) {
-      toast.error(`Cannot delete "${typeName}" - it has ${equipmentCount} equipment items. Please remove or reassign all equipment first.`);
-      return;
-    }
-
-    if (window.confirm(`Are you sure you want to delete "${typeName}"? This action cannot be undone.`)) {
-      try {
-        await deleteEquipmentType(typeId);
-        toast.success(`Equipment type "${typeName}" deleted successfully`);
-      } catch (error) {
-        toast.error(`Failed to delete equipment type "${typeName}"`);
-      }
-    }
+    await handleDeleteEquipmentType(typeId, typeName);
   };
 
   const handleSubmit = async (formData: any) => {
@@ -126,8 +125,9 @@ const EquipmentTypeManager = () => {
       <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredTypes.map((type) => {
-            const equipmentCount = getEquipmentCountForType(type.id);
-            const canDelete = equipmentCount === 0;
+            const equipmentCounts = getEquipmentCountForType(type.id);
+            const { canDelete, details } = canDeleteEquipmentType(type.id);
+            const totalItems = equipmentCounts.equipmentItems + equipmentCounts.individualEquipment;
             
             return (
               <Card key={type.id} className="border border-gray-200">
@@ -148,7 +148,7 @@ const EquipmentTypeManager = () => {
                         onClick={() => handleDelete(type.id, type.name)}
                         disabled={!canDelete}
                         className={canDelete ? "hover:text-red-600" : "opacity-50 cursor-not-allowed"}
-                        title={canDelete ? "Delete equipment type" : `Cannot delete - has ${equipmentCount} equipment items`}
+                        title={canDelete ? "Delete equipment type" : `Cannot delete - ${details?.join(', ')}`}
                       >
                         {!canDelete && <AlertTriangle className="h-3 w-3 mr-1" />}
                         <Trash2 className="h-3 w-3" />
@@ -161,9 +161,14 @@ const EquipmentTypeManager = () => {
                       {type.category}
                     </Badge>
                     
-                    {equipmentCount > 0 && (
+                    {totalItems > 0 && (
                       <div className="text-xs text-blue-600 font-medium">
-                        {equipmentCount} equipment items
+                        {equipmentCounts.equipmentItems > 0 && (
+                          <div>{equipmentCounts.equipmentItems} item records ({equipmentCounts.totalQuantity} total)</div>
+                        )}
+                        {equipmentCounts.individualEquipment > 0 && (
+                          <div>{equipmentCounts.individualEquipment} individual items</div>
+                        )}
                       </div>
                     )}
                     

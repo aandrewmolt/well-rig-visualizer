@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 export const useSupabaseInventory = () => {
   const [isLoading, setIsLoading] = useState(false);
   const channelRef = useRef<any>(null);
+  const isSubscribedRef = useRef(false);
   
   const {
     equipmentTypes,
@@ -25,8 +26,8 @@ export const useSupabaseInventory = () => {
 
   // Set up real-time subscriptions only once
   useEffect(() => {
-    if (channelRef.current) {
-      return; // Already subscribed
+    if (isSubscribedRef.current || channelRef.current) {
+      return; // Already subscribed or channel exists
     }
 
     console.log('Setting up real-time subscriptions for inventory...');
@@ -48,8 +49,15 @@ export const useSupabaseInventory = () => {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'individual_equipment' }, () => {
         console.log('Individual equipment changed, refetching...');
         refetch.refetchIndividualEquipment();
-      })
-      .subscribe();
+      });
+
+    // Only subscribe once
+    channel.subscribe((status) => {
+      console.log('Subscription status:', status);
+      if (status === 'SUBSCRIBED') {
+        isSubscribedRef.current = true;
+      }
+    });
 
     channelRef.current = channel;
 
@@ -58,6 +66,7 @@ export const useSupabaseInventory = () => {
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
+        isSubscribedRef.current = false;
       }
     };
   }, []); // Empty dependency array to run only once

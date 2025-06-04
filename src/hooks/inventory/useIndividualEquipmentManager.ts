@@ -91,8 +91,10 @@ export const useIndividualEquipmentManager = (
     // Bulk creation
     ...bulkCreateHook,
     
-    // Operations
-    ...operationsHook,
+    // Operations - explicitly expose the required functions
+    handleStatusChange: operationsHook.handleStatusChange,
+    handleLocationChange: operationsHook.handleLocationChange,
+    handleDelete: operationsHook.handleDelete,
     
     // Draft management
     saveImmediately,

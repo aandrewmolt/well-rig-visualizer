@@ -38,6 +38,69 @@ const generateWellPositions = (wellCount: number) => {
   return positions;
 };
 
+const createDefaultNodes = (job: JobDiagram, mainBoxName: string, satelliteName: string, wellsideGaugeName: string): Node[] => {
+  const wellPositions = generateWellPositions(job.wellCount);
+  
+  // Always create at least 1 ShearStream Box
+  const newNodes: Node[] = [
+    {
+      id: 'main-box',
+      type: 'mainBox',
+      position: { x: 50, y: 100 },
+      data: { 
+        label: mainBoxName || 'ShearStream Box',
+        boxNumber: 1,
+        equipmentId: null,
+        assigned: false
+      },
+      draggable: true,
+    },
+    // Starlink Satellite
+    {
+      id: 'satellite',
+      type: 'satellite',
+      position: { x: 400, y: 50 },
+      data: { 
+        label: satelliteName || 'Starlink',
+        equipmentId: null,
+        assigned: false
+      },
+      draggable: true,
+    },
+  ];
+
+  // Always create wells based on wellCount
+  wellPositions.forEach((pos, index) => {
+    newNodes.push({
+      id: `well-${index + 1}`,
+      type: 'well',
+      position: pos,
+      data: { 
+        label: `Well ${index + 1}`,
+        wellNumber: index + 1,
+        color: '#3b82f6'
+      },
+      draggable: true,
+    });
+  });
+
+  // Add wellside gauge if selected
+  if (job.hasWellsideGauge) {
+    newNodes.push({
+      id: 'wellside-gauge',
+      type: 'wellsideGauge',
+      position: { x: 600, y: 300 },
+      data: { 
+        label: wellsideGaugeName || 'Wellside Gauge',
+        color: '#10b981'
+      },
+      draggable: true,
+    });
+  }
+
+  return newNodes;
+};
+
 export const useJobDiagramInitialization = (props: UseJobDiagramInitializationProps) => {
   const { jobs } = useSupabaseJobs();
 
@@ -68,65 +131,36 @@ export const useJobDiagramInitialization = (props: UseJobDiagramInitializationPr
       props.setWellsideGaugeName(initialData.wellsideGaugeName || 'Wellside Gauge');
       props.setCustomerComputerNames(initialData.companyComputerNames || {});
 
-      const wellPositions = generateWellPositions(props.job.wellCount);
-    
-    // Create nodes with updated positioning
-    const newNodes: Node[] = [
-      // Main ShearStream Box
-      {
-        id: 'main-box',
-        type: 'mainBox',
-        position: { x: 50, y: 100 },
-        data: { 
-          label: props.mainBoxName || 'ShearStream Box',
-          boxNumber: 1,
-          equipmentId: null,
-          assigned: false
-        },
-        draggable: true,
-      },
-      // Starlink Satellite - moved up for better compactness
-      {
-        id: 'satellite',
-        type: 'satellite',
-        position: { x: 400, y: 50 }, // Moved up from y: 100 to y: 50
-        data: { 
-          label: props.satelliteName || 'Starlink',
-          equipmentId: null,
-          assigned: false
-        },
-        draggable: true,
-      },
-      // Wells
-      ...wellPositions.map((pos, index) => ({
-        id: `well-${index + 1}`,
-        type: 'well',
-        position: pos,
-        data: { 
-          label: `Well ${index + 1}`,
-          wellNumber: index + 1,
-          color: '#3b82f6'
-        },
-        draggable: true,
-      })),
-    ];
+      // Create default nodes if no saved nodes exist, or use saved nodes
+      const nodesToSet = (initialData.nodes && initialData.nodes.length > 0) 
+        ? initialData.nodes 
+        : createDefaultNodes(
+            initialData, 
+            initialData.mainBoxName || 'ShearStream Box',
+            initialData.satelliteName || 'Starlink', 
+            initialData.wellsideGaugeName || 'Wellside Gauge'
+          );
 
-    // Add wellside gauge if needed
-    if (props.job.hasWellsideGauge) {
-      newNodes.push({
-        id: 'wellside-gauge',
-        type: 'wellsideGauge',
-        position: { x: 600, y: 300 },
-        data: { 
-          label: props.wellsideGaugeName || 'Wellside Gauge',
-          color: '#10b981'
-        },
-        draggable: true,
-      });
-    }
+      // Always ensure we have the essential components even if loading from saved data
+      const hasMainBox = nodesToSet.some((node: any) => node.id === 'main-box');
+      const hasWells = nodesToSet.some((node: any) => node.type === 'well');
+      const hasWellsideGauge = nodesToSet.some((node: any) => node.id === 'wellside-gauge');
 
-      // Initialize nodes and edges
-      props.setNodes(initialData.nodes && initialData.nodes.length > 0 ? initialData.nodes : newNodes);
+      // If essential components are missing, create default nodes
+      if (!hasMainBox || !hasWells || (initialData.hasWellsideGauge && !hasWellsideGauge)) {
+        console.log('Essential components missing, creating default nodes');
+        const defaultNodes = createDefaultNodes(
+          initialData,
+          initialData.mainBoxName || 'ShearStream Box',
+          initialData.satelliteName || 'Starlink',
+          initialData.wellsideGaugeName || 'Wellside Gauge'
+        );
+        props.setNodes(defaultNodes);
+      } else {
+        props.setNodes(nodesToSet);
+      }
+
+      // Initialize edges
       props.setEdges(initialData.edges && initialData.edges.length > 0 ? initialData.edges : []);
       props.setIsInitialized(true);
     }

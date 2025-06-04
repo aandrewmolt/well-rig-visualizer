@@ -134,7 +134,7 @@ const RedTagManager: React.FC = () => {
                     </div>
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4 text-gray-500" />
-                      <span>{new Date(item.lastUpdated || item.updated_at || item.created_at || Date.now()).toLocaleDateString()}</span>
+                      <span>{new Date(item.lastUpdated || Date.now()).toLocaleDateString()}</span>
                     </div>
                   </div>
 
@@ -212,7 +212,7 @@ const RedTagManager: React.FC = () => {
                             className="w-full"
                           >
                             Update Red Tag
-                          </Button>
+                            </Button>
                         </div>
                       </DialogContent>
                     </Dialog>

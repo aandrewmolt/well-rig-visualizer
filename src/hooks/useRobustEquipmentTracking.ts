@@ -1,9 +1,9 @@
-
 import { useState, useCallback } from 'react';
 import { Node, Edge } from '@xyflow/react';
 import { useInventoryData } from './useInventoryData';
 import { useComprehensiveEquipmentTracking } from './equipment/useComprehensiveEquipmentTracking';
 import { toast } from 'sonner';
+import { EquipmentItem } from '@/types/inventory';
 
 export const useRobustEquipmentTracking = (jobId: string, nodes: Node[], edges: Edge[]) => {
   const { data, updateEquipmentItems } = useInventoryData();
@@ -88,7 +88,7 @@ export const useRobustEquipmentTracking = (jobId: string, nodes: Node[], edges: 
   }, [jobId, nodes, edges, data.equipmentItems, updateEquipmentItems]);
 
   const allocateEquipmentType = (
-    updatedItems: any[], 
+    updatedItems: EquipmentItem[], 
     typeId: string, 
     quantity: number, 
     locationId: string, 
@@ -113,7 +113,7 @@ export const useRobustEquipmentTracking = (jobId: string, nodes: Node[], edges: 
     availableItem.lastUpdated = new Date();
 
     // Create deployed record
-    updatedItems.push({
+    const deployedItem: EquipmentItem = {
       id: `deployed-${typeId}-${jobId}-${Date.now()}`,
       typeId,
       locationId,
@@ -122,15 +122,18 @@ export const useRobustEquipmentTracking = (jobId: string, nodes: Node[], edges: 
       jobId,
       lastUpdated: new Date(),
       notes: `Allocated for job diagram analysis`,
-    });
+    };
 
+    updatedItems.push(deployedItem);
     return true;
   };
 
   const returnAllJobEquipment = useCallback(() => {
     console.log(`Returning all equipment for job ${jobId}`);
     
-    const updatedItems = data.equipmentItems.map(item => {
+    const updatedItems: EquipmentItem[] = [];
+    
+    data.equipmentItems.forEach(item => {
       if (item.status === 'deployed' && item.jobId === jobId) {
         // Find corresponding available item to return quantity to
         const availableItem = data.equipmentItems.find(
@@ -142,15 +145,21 @@ export const useRobustEquipmentTracking = (jobId: string, nodes: Node[], edges: 
         );
 
         if (availableItem) {
-          availableItem.quantity += item.quantity;
-          availableItem.lastUpdated = new Date();
+          // Update the available item quantity
+          const updatedAvailableItem = updatedItems.find(ui => ui.id === availableItem.id) || availableItem;
+          updatedAvailableItem.quantity += item.quantity;
+          updatedAvailableItem.lastUpdated = new Date();
+          
+          if (!updatedItems.find(ui => ui.id === availableItem.id)) {
+            updatedItems.push(updatedAvailableItem);
+          }
         }
-
-        // Mark deployed item for removal by setting quantity to 0
-        return { ...item, quantity: 0, status: 'returned' as const };
+        // Don't add the deployed item back (effectively removing it)
+      } else {
+        // Keep all other items
+        updatedItems.push(item);
       }
-      return item;
-    }).filter(item => item.quantity > 0); // Remove returned items
+    });
 
     updateEquipmentItems(updatedItems);
     toast.success('All equipment returned to storage');

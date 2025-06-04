@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Settings } from 'lucide-react';
@@ -28,17 +29,6 @@ import RedTagManager from '@/components/inventory/RedTagManager';
 
 const Inventory = () => {
   const { data, updateSingleEquipmentItem } = useInventoryData();
-  const [isRedTagOpen, setIsRedTagOpen] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<any>(null);
-
-  const handleRedTag = (itemId: string, reason: string, photo?: string, location?: string) => {
-    updateSingleEquipmentItem(itemId, {
-      status: 'red-tagged',
-      redTagReason: reason,
-      redTagPhoto: photo,
-    });
-    setIsRedTagOpen(false);
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -75,7 +65,6 @@ const Inventory = () => {
                       <TableHead>Location</TableHead>
                       <TableHead>Quantity</TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead className="w-[100px]">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -85,18 +74,6 @@ const Inventory = () => {
                         <TableCell>{item.locationId}</TableCell>
                         <TableCell>{item.quantity}</TableCell>
                         <TableCell>{item.status}</TableCell>
-                        <TableCell>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => {
-                              setSelectedItem(item);
-                              setIsRedTagOpen(true);
-                            }}
-                          >
-                            Red Tag
-                          </Button>
-                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -106,15 +83,12 @@ const Inventory = () => {
 
             <StorageTransferManager />
           </div>
+
+          <div className="mt-8">
+            <RedTagManager />
+          </div>
         </div>
       </div>
-
-      <RedTagManager
-        isOpen={isRedTagOpen}
-        onClose={() => setIsRedTagOpen(false)}
-        equipmentItem={selectedItem}
-        onRedTag={handleRedTag}
-      />
     </div>
   );
 };

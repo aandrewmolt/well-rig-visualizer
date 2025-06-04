@@ -23,7 +23,7 @@ const YAdapterNode = ({ data }: { data: any }) => {
         <h3 className="font-bold text-sm">{data.label}</h3>
       </div>
       
-      {/* Output 1 - Primary output for wells */}
+      {/* Output 1 - Pressure ports 1,2 */}
       <Handle
         type="source"
         position={Position.Right}
@@ -38,19 +38,19 @@ const YAdapterNode = ({ data }: { data: any }) => {
         }}
       />
       <div
-        className="absolute text-xs font-bold"
+        className="absolute text-sm font-bold"
         style={{
-          right: -25,
+          right: -35,
           top: '25%',
           transform: 'translateY(-50%)',
           color: '#374151',
-          fontSize: '8px'
+          fontSize: '14px'
         }}
       >
-        1
+        1,2
       </div>
       
-      {/* Output 2 - Switchable output */}
+      {/* Output 2 - Pressure ports 3,4 */}
       <Handle
         type="source"
         position={Position.Right}
@@ -65,16 +65,16 @@ const YAdapterNode = ({ data }: { data: any }) => {
         }}
       />
       <div
-        className="absolute text-xs font-bold"
+        className="absolute text-sm font-bold"
         style={{
-          right: -25,
+          right: -35,
           top: '65%',
           transform: 'translateY(-50%)',
           color: '#374151',
-          fontSize: '8px'
+          fontSize: '14px'
         }}
       >
-        2
+        3,4
       </div>
       
       {/* Connection capability indicator */}

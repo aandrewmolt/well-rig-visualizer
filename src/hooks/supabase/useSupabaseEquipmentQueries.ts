@@ -1,4 +1,3 @@
-
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { EquipmentType, StorageLocation, EquipmentItem, IndividualEquipment } from '@/types/inventory';
@@ -17,7 +16,7 @@ export const useSupabaseEquipmentQueries = () => {
       return data.map(item => ({
         id: item.id,
         name: item.name,
-        category: item.category,
+        category: item.category as EquipmentType['category'],
         description: item.description || undefined,
         requiresIndividualTracking: item.requires_individual_tracking,
         defaultIdPrefix: item.default_id_prefix || undefined

@@ -4,14 +4,14 @@ import { useSupabaseInventory } from './useSupabaseInventory';
 import { toast } from 'sonner';
 
 const DEFAULT_EQUIPMENT_TYPES = [
-  { name: 'Customer Computer', category: 'Equipment', description: 'Customer computer for job sites', requiresIndividualTracking: false },
-  { name: 'Starlink', category: 'Equipment', description: 'Satellite internet equipment', requiresIndividualTracking: true, defaultIdPrefix: 'STL' },
-  { name: 'ShearStream Box', category: 'Equipment', description: 'Main streaming box', requiresIndividualTracking: true, defaultIdPrefix: 'SSB' },
-  { name: '100ft Cable', category: 'Cables', description: '100 foot cable', requiresIndividualTracking: false },
-  { name: '200ft Cable', category: 'Cables', description: '200 foot cable', requiresIndividualTracking: false },
-  { name: '300ft Cable', category: 'Cables', description: '300 foot cable', requiresIndividualTracking: false },
-  { name: '1502 Pressure Gauge', category: 'Equipment', description: 'Pressure gauge for monitoring', requiresIndividualTracking: true, defaultIdPrefix: 'PG' },
-  { name: 'Y Adapter Cable', category: 'Cables', description: 'Y adapter cable', requiresIndividualTracking: false }
+  { name: 'Customer Computer', category: 'communication' as const, description: 'Customer computer for job sites', requiresIndividualTracking: false },
+  { name: 'Starlink', category: 'communication' as const, description: 'Satellite internet equipment', requiresIndividualTracking: true, defaultIdPrefix: 'STL' },
+  { name: 'ShearStream Box', category: 'communication' as const, description: 'Main streaming box', requiresIndividualTracking: true, defaultIdPrefix: 'SSB' },
+  { name: '100ft Cable', category: 'cables' as const, description: '100 foot cable', requiresIndividualTracking: false },
+  { name: '200ft Cable', category: 'cables' as const, description: '200 foot cable', requiresIndividualTracking: false },
+  { name: '300ft Cable', category: 'cables' as const, description: '300 foot cable', requiresIndividualTracking: false },
+  { name: '1502 Pressure Gauge', category: 'gauges' as const, description: 'Pressure gauge for monitoring', requiresIndividualTracking: true, defaultIdPrefix: 'PG' },
+  { name: 'Y Adapter Cable', category: 'adapters' as const, description: 'Y adapter cable', requiresIndividualTracking: false }
 ];
 
 const DEFAULT_STORAGE_LOCATION = {

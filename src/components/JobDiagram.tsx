@@ -44,6 +44,16 @@ interface JobDiagramProps {
 }
 
 const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
+  // Sample extras data - this should come from the job data in a real implementation
+  const [extrasOnLocation, setExtrasOnLocation] = React.useState<Array<{
+    id: string;
+    equipmentTypeId: string;
+    quantity: number;
+    reason: string;
+    addedDate: Date;
+    notes?: string;
+  }>>([]);
+
   const {
     reactFlowWrapper,
     nodes,
@@ -146,6 +156,22 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
     );
   }, [setNodes]);
 
+  const handleAddExtra = useCallback((equipmentTypeId: string, quantity: number, reason: string, notes?: string) => {
+    const newExtra = {
+      id: `extra-${Date.now()}`,
+      equipmentTypeId,
+      quantity,
+      reason,
+      addedDate: new Date(),
+      notes,
+    };
+    setExtrasOnLocation(prev => [...prev, newExtra]);
+  }, []);
+
+  const handleRemoveExtra = useCallback((extraId: string) => {
+    setExtrasOnLocation(prev => prev.filter(extra => extra.id !== extraId));
+  }, []);
+
   return (
     <div className="w-full h-screen flex flex-col">
       <DiagramControls
@@ -163,9 +189,6 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
             selectedShearstreamBoxes={selectedShearstreamBoxes}
             selectedStarlink={selectedStarlink}
             selectedCustomerComputers={selectedCustomerComputers}
-            updateMainBoxName={updateMainBoxName}
-            updateSatelliteName={updateSatelliteName}
-            updateCustomerComputerName={updateCustomerComputerName}
           />
 
           <WellConfigurationPanel
@@ -179,8 +202,9 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
 
           {/* Extras on Location Panel */}
           <ExtrasOnLocationPanel 
-            jobId={job.id}
-            jobName={job.name}
+            extrasOnLocation={extrasOnLocation}
+            onAddExtra={handleAddExtra}
+            onRemoveExtra={handleRemoveExtra}
           />
         </div>
 

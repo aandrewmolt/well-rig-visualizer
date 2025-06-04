@@ -29,22 +29,36 @@ const InventoryCleanupButton: React.FC = () => {
       
       // Step 2: Ensure required items exist
       const finalItems = ensureRequiredItemsExist(mergedItems);
-      const itemsAdded = finalItems.length - mergedItems.length;
       
-      // Step 3: Separate existing items from new items
+      // Step 3: Separate existing items from new items to create
       const existingItemIds = new Set(data.equipmentItems.map(item => item.id));
-      const existingItems = finalItems.filter(item => existingItemIds.has(item.id));
-      const newItems = finalItems.filter(item => !existingItemIds.has(item.id));
-      
-      // Step 4: Update existing items and create new items
-      const updatePromises = existingItems.map(item => 
-        updateSingleEquipmentItem(item.id, item)
+      const existingItems = finalItems.filter(item => 
+        existingItemIds.has(item.id) && !item.id.startsWith('new-')
+      );
+      const newItems = finalItems.filter(item => 
+        !existingItemIds.has(item.id) || item.id.startsWith('new-')
       );
       
+      const itemsAdded = newItems.length;
+      
+      // Step 4: Update existing items
+      const updatePromises = existingItems.map(item => 
+        updateSingleEquipmentItem(item.id, {
+          quantity: item.quantity,
+          notes: item.notes,
+          lastUpdated: item.lastUpdated
+        })
+      );
+      
+      // Step 5: Create only truly new items
       const createPromises = newItems.map(item => {
-        // Remove the id field for new items since Supabase will generate it
-        const { id, ...itemData } = item;
-        return addEquipmentItem(itemData);
+        return addEquipmentItem({
+          typeId: item.typeId,
+          locationId: item.locationId,
+          quantity: item.quantity,
+          status: item.status,
+          notes: item.notes,
+        });
       });
       
       await Promise.all([...updatePromises, ...createPromises]);
@@ -60,7 +74,7 @@ const InventoryCleanupButton: React.FC = () => {
       if (results.totalCleaned > 0) {
         toast.success(`Inventory cleanup complete! Merged ${duplicatesFound} duplicates and added ${itemsAdded} missing items.`);
       } else {
-        toast.success('Inventory is already clean - no issues found!');
+        toast.success('Inventory is already clean - no duplicates found!');
       }
       
     } catch (error) {
@@ -81,7 +95,7 @@ const InventoryCleanupButton: React.FC = () => {
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="text-sm text-gray-600">
-          This tool will merge duplicate equipment items at the same location and ensure all required cable types exist in your inventory.
+          This tool will merge duplicate equipment items at the same location and ensure all required cable types exist in your inventory. No duplicates will be created.
         </div>
         
         <Button

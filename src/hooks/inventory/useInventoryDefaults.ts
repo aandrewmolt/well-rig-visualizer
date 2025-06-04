@@ -68,19 +68,26 @@ export const useInventoryDefaults = () => {
     return defaultData;
   };
 
-  // Function to cleanup and merge duplicate inventory items
+  // Enhanced function to cleanup and merge duplicate inventory items
   const cleanupInventoryDuplicates = (existingItems: EquipmentItem[]): EquipmentItem[] => {
     const mergedItems = new Map<string, EquipmentItem>();
     
-    // Group items by type and location
+    // Group items by type, location, and status for proper merging
     existingItems.forEach(item => {
-      const key = `${item.typeId}-${item.locationId}`;
+      const key = `${item.typeId}-${item.locationId}-${item.status}`;
       
       if (mergedItems.has(key)) {
         // Merge quantities for duplicate items
         const existing = mergedItems.get(key)!;
         existing.quantity += item.quantity;
         existing.lastUpdated = new Date();
+        
+        // Merge notes if both have them
+        if (item.notes && existing.notes) {
+          existing.notes = `${existing.notes}; ${item.notes}`;
+        } else if (item.notes && !existing.notes) {
+          existing.notes = item.notes;
+        }
       } else {
         mergedItems.set(key, { ...item, lastUpdated: new Date() });
       }

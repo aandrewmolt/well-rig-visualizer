@@ -14,8 +14,16 @@ export const useInventoryCleanup = () => {
     
     // Process existing cleaned items
     cleanedItems.forEach(item => {
-      const key = `${item.typeId}-${item.locationId}`;
-      itemMap.set(key, item);
+      const key = `${item.typeId}-${item.locationId}-${item.status}`;
+      
+      if (itemMap.has(key)) {
+        // Merge quantities for identical items
+        const existing = itemMap.get(key)!;
+        existing.quantity += item.quantity;
+        existing.lastUpdated = new Date();
+      } else {
+        itemMap.set(key, { ...item });
+      }
     });
 
     // Ensure all equipment types exist with proper names and IDs
@@ -36,13 +44,6 @@ export const useInventoryCleanup = () => {
     return cleanupInventoryDuplicates(updatedItems);
   };
 
-  const generateTemporaryId = (typeId: string, locationId: string): string => {
-    // Generate a temporary ID that's clearly distinguishable from UUID
-    const timestamp = Date.now();
-    const random = Math.random().toString(36).substring(2, 8);
-    return `temp-${typeId.replace(/-/g, '')}-${locationId.replace(/-/g, '')}-${timestamp}-${random}`;
-  };
-
   const ensureRequiredItemsExist = (items: EquipmentItem[]): EquipmentItem[] => {
     const requiredItems = [
       { typeId: '100ft-cable', locationId: 'midland-office', minQuantity: 20 },
@@ -55,21 +56,29 @@ export const useInventoryCleanup = () => {
 
     const itemMap = new Map<string, EquipmentItem>();
     
-    // Add existing items
+    // Add existing items with proper key structure
     items.forEach(item => {
-      const key = `${item.typeId}-${item.locationId}`;
-      itemMap.set(key, item);
+      const key = `${item.typeId}-${item.locationId}-${item.status}`;
+      
+      if (itemMap.has(key)) {
+        // Merge if duplicate found
+        const existing = itemMap.get(key)!;
+        existing.quantity += item.quantity;
+        existing.lastUpdated = new Date();
+      } else {
+        itemMap.set(key, item);
+      }
     });
 
     // Ensure required items exist with minimum quantities
     requiredItems.forEach(required => {
-      const key = `${required.typeId}-${required.locationId}`;
+      const key = `${required.typeId}-${required.locationId}-available`;
       const existing = itemMap.get(key);
       
       if (!existing) {
-        // Create new item with temporary ID
+        // Mark for creation - will be handled by the component
         itemMap.set(key, {
-          id: generateTemporaryId(required.typeId, required.locationId),
+          id: `new-${required.typeId}-${required.locationId}`, // Temporary marker
           typeId: required.typeId,
           locationId: required.locationId,
           quantity: required.minQuantity,

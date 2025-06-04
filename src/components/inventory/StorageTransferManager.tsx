@@ -4,17 +4,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ArrowRightLeft, Calendar as CalendarIcon, Package } from 'lucide-react';
-import { useInventoryData } from '@/hooks/useInventoryData';
+import { useInventory } from '@/contexts/InventoryContext';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 
 const StorageTransferManager = () => {
-  const { data, updateEquipmentItems } = useInventoryData();
+  const { data, updateSingleEquipmentItem, addEquipmentItem } = useInventory();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedEquipmentType, setSelectedEquipmentType] = useState('');
   const [quantity, setQuantity] = useState(1);
@@ -29,7 +28,7 @@ const StorageTransferManager = () => {
       .reduce((sum, item) => sum + item.quantity, 0);
   };
 
-  const handleTransfer = () => {
+  const handleTransfer = async () => {
     if (!selectedEquipmentType || !fromLocation || !toLocation || quantity <= 0) {
       toast.error('Please fill in all required fields');
       return;
@@ -46,53 +45,64 @@ const StorageTransferManager = () => {
       return;
     }
 
-    const updatedItems = [...data.equipmentItems];
-    
-    // Find and update source item
-    const sourceItem = updatedItems.find(
-      item => item.typeId === selectedEquipmentType && item.locationId === fromLocation && item.status === 'available'
-    );
-    
-    if (sourceItem) {
-      sourceItem.quantity -= quantity;
-      sourceItem.lastUpdated = transferDate;
-    }
+    try {
+      // Find source item to deduct from
+      const sourceItem = data.equipmentItems.find(
+        item => item.typeId === selectedEquipmentType && 
+                item.locationId === fromLocation && 
+                item.status === 'available' &&
+                item.quantity >= quantity
+      );
 
-    // Find or create destination item
-    const destItem = updatedItems.find(
-      item => item.typeId === selectedEquipmentType && item.locationId === toLocation && item.status === 'available'
-    );
-    
-    if (destItem) {
-      destItem.quantity += quantity;
-      destItem.lastUpdated = transferDate;
-    } else {
-      updatedItems.push({
-        id: `transfer-${Date.now()}`,
-        typeId: selectedEquipmentType,
-        locationId: toLocation,
-        quantity,
-        status: 'available',
-        notes,
-        lastUpdated: transferDate,
+      if (!sourceItem) {
+        toast.error('Source equipment not found');
+        return;
+      }
+
+      // Deduct from source
+      await updateSingleEquipmentItem(sourceItem.id, {
+        quantity: sourceItem.quantity - quantity,
       });
-    }
 
-    updateEquipmentItems(updatedItems);
-    
-    // Reset form
+      // Find existing destination item to merge with
+      const destinationItem = data.equipmentItems.find(
+        item => item.typeId === selectedEquipmentType && 
+                item.locationId === toLocation && 
+                item.status === 'available'
+      );
+
+      if (destinationItem) {
+        // Merge with existing destination item
+        await updateSingleEquipmentItem(destinationItem.id, {
+          quantity: destinationItem.quantity + quantity,
+          notes: notes ? `${destinationItem.notes || ''} Transfer: ${notes}`.trim() : destinationItem.notes,
+        });
+      } else {
+        // Create new destination item only if none exists
+        await addEquipmentItem({
+          typeId: selectedEquipmentType,
+          locationId: toLocation,
+          quantity,
+          status: 'available',
+          notes: notes ? `Transferred from ${data.storageLocations.find(l => l.id === fromLocation)?.name}. ${notes}`.trim() : undefined,
+        });
+      }
+
+      toast.success('Equipment transferred and merged successfully');
+      resetForm();
+    } catch (error) {
+      console.error('Transfer failed:', error);
+      toast.error('Failed to transfer equipment');
+    }
+  };
+
+  const resetForm = () => {
     setSelectedEquipmentType('');
     setQuantity(1);
     setFromLocation('');
     setToLocation('');
     setNotes('');
     setIsDialogOpen(false);
-    
-    const equipmentName = data.equipmentTypes.find(type => type.id === selectedEquipmentType)?.name;
-    const fromLocationName = data.storageLocations.find(loc => loc.id === fromLocation)?.name;
-    const toLocationName = data.storageLocations.find(loc => loc.id === toLocation)?.name;
-    
-    toast.success(`${quantity}x ${equipmentName} transferred from ${fromLocationName} to ${toLocationName}`);
   };
 
   return (
@@ -221,7 +231,7 @@ const StorageTransferManager = () => {
         <div className="text-center py-8 text-gray-500">
           <ArrowRightLeft className="mx-auto h-12 w-12 text-gray-300 mb-2" />
           <p className="text-sm">Use the transfer button to move equipment between storage locations</p>
-          <p className="text-xs text-gray-400 mt-1">All transfers are tracked with dates and can be modified</p>
+          <p className="text-xs text-gray-400 mt-1">All transfers automatically merge with existing items at the destination</p>
         </div>
       </CardContent>
     </Card>

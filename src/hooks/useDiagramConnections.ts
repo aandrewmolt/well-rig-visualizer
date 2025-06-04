@@ -3,6 +3,8 @@ import { useCallback } from 'react';
 import { Connection, addEdge, Node } from '@xyflow/react';
 import { useInventoryData } from './useInventoryData';
 import { useCableTypeService } from './cables/useCableTypeService';
+import { useCableConnectionValidator } from './equipment/useCableConnectionValidator';
+import { toast } from 'sonner';
 
 export const useDiagramConnections = (
   selectedCableType: string,
@@ -11,6 +13,7 @@ export const useDiagramConnections = (
 ) => {
   const { data } = useInventoryData();
   const { getCableColor, getCableDisplayName } = useCableTypeService(data.equipmentTypes);
+  const { validateConnection, getValidCablesForConnection } = useCableConnectionValidator();
 
   const onConnect = useCallback(
     (params: Connection) => {
@@ -19,14 +22,6 @@ export const useDiagramConnections = (
       const targetNode = nodes.find(node => node.id === params.target);
       
       if (!sourceNode || !targetNode) return;
-
-      // Determine connection type
-      let connectionType = 'cable';
-      let edgeData: any = {
-        cableTypeId: selectedCableType,
-        label: getCableDisplayName(selectedCableType),
-        connectionType: 'cable'
-      };
 
       // Check for direct connections (satellite to shearstream box)
       const isDirectConnection = (
@@ -37,29 +32,61 @@ export const useDiagramConnections = (
       );
 
       if (isDirectConnection) {
-        connectionType = 'direct';
-        edgeData = {
-          connectionType: 'direct',
-          label: 'Direct Connection'
+        // Create direct connection
+        const newEdge = {
+          ...params,
+          id: `edge-${params.source}-${params.target}-${Date.now()}`,
+          type: 'smoothstep',
+          data: {
+            connectionType: 'direct',
+            label: 'Direct Connection'
+          },
+          style: {
+            stroke: '#10b981',
+            strokeWidth: 3,
+          },
+          animated: true,
         };
+
+        setEdges((eds) => addEdge(newEdge, eds));
+        return;
       }
 
-      // Create edge with proper styling
+      // For cable connections, validate first
+      const validation = validateConnection(sourceNode, targetNode, selectedCableType);
+      
+      if (!validation.isValid) {
+        toast.error(`Invalid connection: ${validation.reason}`);
+        
+        // Show valid alternatives if available
+        const validCables = getValidCablesForConnection(sourceNode, targetNode);
+        if (validCables.length > 0) {
+          const validNames = validCables.map(c => c.cableName).join(', ');
+          toast.info(`Valid cables for this connection: ${validNames}`);
+        }
+        return;
+      }
+
+      // Create valid cable connection
       const newEdge = {
         ...params,
         id: `edge-${params.source}-${params.target}-${Date.now()}`,
-        type: connectionType === 'direct' ? 'smoothstep' : 'cable',
-        data: edgeData,
+        type: 'cable',
+        data: {
+          cableTypeId: selectedCableType,
+          label: getCableDisplayName(selectedCableType),
+          connectionType: 'cable'
+        },
         style: {
-          stroke: connectionType === 'direct' ? '#10b981' : getCableColor(selectedCableType),
+          stroke: getCableColor(selectedCableType),
           strokeWidth: 3,
         },
-        animated: connectionType === 'direct',
       };
 
       setEdges((eds) => addEdge(newEdge, eds));
+      toast.success(`Connected with ${getCableDisplayName(selectedCableType)}`);
     },
-    [selectedCableType, nodes, setEdges, getCableColor, getCableDisplayName]
+    [selectedCableType, nodes, setEdges, getCableColor, getCableDisplayName, validateConnection, getValidCablesForConnection]
   );
 
   return { onConnect };

@@ -26,8 +26,8 @@ export const useCableConnectionValidator = () => {
             cableTypeId: cableType.id,
             cableName: cableType.name,
             allowedConnections: {
-              from: ['mainBox'],
-              to: ['well', 'wellsideGauge']
+              from: ['mainBox', 'yAdapter'],
+              to: ['well', 'wellsideGauge', 'yAdapter']
             }
           };
         } else if (name.includes('200ft')) {
@@ -40,9 +40,9 @@ export const useCableConnectionValidator = () => {
             }
           };
         } else if (name.includes('300ft')) {
-          // Determine if it's old or new version based on name patterns
-          const isOldVersion = name.includes('old') || name.includes('legacy') || 
-                              (!name.includes('new') && !name.includes('direct'));
+          // Determine if it's old or new version
+          const isOldVersion = name.includes('old') || name.includes('y adapter') || 
+                              name.includes('reel') && !name.includes('new');
           
           if (isOldVersion) {
             return {
@@ -73,7 +73,7 @@ export const useCableConnectionValidator = () => {
           cableName: cableType.name,
           allowedConnections: {
             from: ['mainBox'],
-            to: ['well', 'wellsideGauge', 'yAdapter']
+            to: ['well', 'wellsideGauge']
           }
         };
       });
@@ -86,6 +86,30 @@ export const useCableConnectionValidator = () => {
   ): { isValid: boolean; reason?: string } => {
     if (!sourceNode || !targetNode) {
       return { isValid: false, reason: 'Source or target node not found' };
+    }
+
+    // Special case: Y Adapters cannot connect directly to Main Box
+    if (sourceNode.type === 'yAdapter' && targetNode.type === 'mainBox') {
+      return { isValid: false, reason: 'Y Adapters cannot connect directly to Main Box' };
+    }
+
+    if (targetNode.type === 'yAdapter' && sourceNode.type === 'mainBox') {
+      // Only certain cables can connect Main Box to Y Adapter
+      const rules = getCableConnectionRules();
+      const rule = rules.find(r => r.cableTypeId === cableTypeId);
+      
+      if (!rule) {
+        return { isValid: false, reason: 'Cable type not found' };
+      }
+
+      // Only 300ft old and 100ft cables can connect to Y Adapter from Main Box
+      const name = rule.cableName.toLowerCase();
+      const is300ftOld = name.includes('300ft') && (name.includes('old') || name.includes('y adapter') || name.includes('reel') && !name.includes('new'));
+      const is100ft = name.includes('100ft');
+      
+      if (!is300ftOld && !is100ft) {
+        return { isValid: false, reason: `${rule.cableName} cannot connect to Y Adapter (only 300ft Old and 100ft cables allowed)` };
+      }
     }
 
     const rules = getCableConnectionRules();
@@ -123,9 +147,8 @@ export const useCableConnectionValidator = () => {
 
     const rules = getCableConnectionRules();
     return rules.filter(rule => {
-      const sourceValid = rule.allowedConnections.from.includes(sourceNode.type!);
-      const targetValid = rule.allowedConnections.to.includes(targetNode.type!);
-      return sourceValid && targetValid;
+      const validation = validateConnection(sourceNode, targetNode, rule.cableTypeId);
+      return validation.isValid;
     });
   };
 

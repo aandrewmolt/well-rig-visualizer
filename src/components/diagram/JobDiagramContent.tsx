@@ -72,7 +72,7 @@ const JobDiagramContent: React.FC<JobDiagramContentProps> = ({
   const [isPhotosPanelOpen, setIsPhotosPanelOpen] = useState(false);
 
   return (
-    <div className="max-w-7xl mx-auto space-y-2">
+    <div className="max-w-7xl mx-auto space-y-3">
       {/* Compact Configuration Grid */}
       <JobDiagramPanels
         job={job}
@@ -96,45 +96,50 @@ const JobDiagramContent: React.FC<JobDiagramContentProps> = ({
         updateWellsideGaugeColor={updateWellsideGaugeColor}
       />
 
-      {/* Diagram Section with Floating Controls */}
-      <div className="relative">
-        {/* Photo Panel Button - positioned in top left */}
-        <div className="absolute top-4 left-4 z-10">
+      {/* Diagram Section */}
+      <div className="relative bg-white rounded-lg border shadow-sm">
+        {/* Top Controls Bar */}
+        <div className="absolute top-4 left-4 right-4 z-20 flex justify-between items-center">
+          {/* Photos Button */}
           <Sheet open={isPhotosPanelOpen} onOpenChange={setIsPhotosPanelOpen}>
             <SheetTrigger asChild>
               <Button
                 variant="outline"
                 size="sm"
-                className="bg-white/95 backdrop-blur-sm shadow-md hover:bg-gray-50"
+                className="bg-white/95 backdrop-blur-sm shadow-md hover:bg-gray-50 border-gray-300"
               >
                 <Camera className="h-4 w-4 mr-2" />
                 Photos
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-96 p-0">
+            <SheetContent side="bottom" className="h-96 p-0">
               <JobPhotoPanel jobId={job.id} jobName={job.name} />
             </SheetContent>
           </Sheet>
+
+          {/* Floating Diagram Controls */}
+          <div className="flex gap-2">
+            <FloatingDiagramControls
+              selectedCableType={selectedCableType}
+              setSelectedCableType={setSelectedCableType}
+              addYAdapter={addYAdapter}
+              onAddShearstreamBox={onAddShearstreamBox}
+              addCustomerComputer={addCustomerComputer}
+            />
+          </div>
         </div>
 
-        {/* Floating Diagram Controls */}
-        <FloatingDiagramControls
-          selectedCableType={selectedCableType}
-          setSelectedCableType={setSelectedCableType}
-          addYAdapter={addYAdapter}
-          onAddShearstreamBox={onAddShearstreamBox}
-          addCustomerComputer={addCustomerComputer}
-        />
-
         {/* Diagram Canvas */}
-        <DiagramCanvas
-          nodes={nodes}
-          edges={edges}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          onConnect={onConnect}
-          reactFlowWrapper={reactFlowWrapper}
-        />
+        <div className="h-[600px]">
+          <DiagramCanvas
+            nodes={nodes}
+            edges={edges}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            onConnect={onConnect}
+            reactFlowWrapper={reactFlowWrapper}
+          />
+        </div>
       </div>
 
       {/* Connection Guide */}

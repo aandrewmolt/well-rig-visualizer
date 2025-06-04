@@ -42,34 +42,39 @@ export const useJobPhotos = (jobId: string) => {
     }
   });
 
-  // Upload photo mutation
+  // Upload photo mutation with enhanced WebP optimization
   const uploadPhotoMutation = useMutation({
     mutationFn: async ({ file, sectionLabel, caption }: { 
       file: File; 
       sectionLabel: string; 
       caption?: string; 
     }) => {
-      // Optimize image before upload
-      console.log('Original file size:', (file.size / 1024 / 1024).toFixed(2), 'MB');
+      console.log('Starting image optimization process...');
+      console.log('Original file:', file.name, 'Size:', (file.size / 1024 / 1024).toFixed(2), 'MB');
       
+      // Enhanced optimization for WebP with better compression
       const optimizedFile = await optimizeImage(file, {
         maxWidth: 1920,
         maxHeight: 1080,
-        quality: 0.8,
+        quality: 0.75, // Slightly lower quality for better compression
         format: 'webp'
       });
       
       console.log('Optimized file size:', (optimizedFile.size / 1024 / 1024).toFixed(2), 'MB');
-      console.log('Size reduction:', (((file.size - optimizedFile.size) / file.size) * 100).toFixed(1), '%');
+      console.log('Compression ratio:', (((file.size - optimizedFile.size) / file.size) * 100).toFixed(1), '%');
       
-      // Generate unique filename with webp extension
-      const fileExt = 'webp';
-      const fileName = `${jobId}/${sectionLabel}/${Date.now()}.${fileExt}`;
+      // Generate filename with timestamp and proper extension
+      const timestamp = Date.now();
+      const sanitizedSection = sectionLabel.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+      const fileName = `${jobId}/${sanitizedSection}/${timestamp}_optimized.webp`;
       
       // Upload optimized file to storage
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('job-photos')
-        .upload(fileName, optimizedFile);
+        .upload(fileName, optimizedFile, {
+          cacheControl: '3600',
+          upsert: false
+        });
       
       if (uploadError) throw uploadError;
       
@@ -84,14 +89,14 @@ export const useJobPhotos = (jobId: string) => {
         ? Math.max(...existingPhotos.map(p => p.sortOrder)) + 1 
         : 0;
       
-      // Save to database
+      // Save to database with enhanced metadata
       const { data, error } = await supabase
         .from('job_photos')
         .insert({
           job_id: jobId,
           section_label: sectionLabel,
           photo_url: publicUrl,
-          caption,
+          caption: caption || `${sectionLabel} - Photo ${nextSortOrder + 1}`,
           sort_order: nextSortOrder,
         })
         .select()
@@ -100,13 +105,14 @@ export const useJobPhotos = (jobId: string) => {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['job-photos', jobId] });
-      toast.success('Photo uploaded and optimized successfully');
+      toast.success('Photo uploaded and optimized to WebP format successfully');
+      console.log('Photo upload completed successfully');
     },
     onError: (error) => {
       console.error('Failed to upload photo:', error);
-      toast.error('Failed to upload photo');
+      toast.error('Failed to upload photo. Please try again.');
     }
   });
 
@@ -165,7 +171,7 @@ export const useJobPhotos = (jobId: string) => {
     }
   });
 
-  // Group photos by section
+  // Group photos by section with proper labeling
   const photosBySection = photos.reduce((acc, photo) => {
     if (!acc[photo.sectionLabel]) {
       acc[photo.sectionLabel] = [];

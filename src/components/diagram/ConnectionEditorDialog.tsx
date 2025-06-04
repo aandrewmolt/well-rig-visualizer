@@ -36,22 +36,21 @@ const ConnectionEditorDialog: React.FC<ConnectionEditorDialogProps> = ({
   const [newTargetId, setNewTargetId] = useState(currentEdge.target);
   const [newSourceHandle, setNewSourceHandle] = useState(currentEdge.sourceHandle || '');
   const [newTargetHandle, setNewTargetHandle] = useState(currentEdge.targetHandle || '');
-  const [connectionType, setConnectionType] = useState(currentEdge.data?.connectionType || 'direct');
+  const [connectionType, setConnectionType] = useState(currentEdge.data?.connectionType || 'cable');
   const [selectedCableType, setSelectedCableType] = useState(currentEdge.data?.cableTypeId || '');
 
   const sourceNode = nodes.find(n => n.id === newSourceId);
   const targetNode = nodes.find(n => n.id === newTargetId);
 
-  // Check if this is a Y Adapter connection that can be switched
-  const isYAdapterConnection = sourceNode?.type === 'yAdapter';
-  const canSwitchConnectionType = isYAdapterConnection && 
-    (targetNode?.type === 'well' || targetNode?.type === 'wellsideGauge' || targetNode?.type === 'companyComputer');
+  // Check if this connection can be switched between direct and cable
+  const canSwitchConnectionType = (sourceNode?.type === 'satellite' && targetNode?.type === 'mainBox') ||
+    (sourceNode?.type === 'mainBox' && targetNode?.type === 'satellite') ||
+    (sourceNode?.type === 'satellite' && targetNode?.type === 'shearstreamBox') ||
+    (sourceNode?.type === 'shearstreamBox' && targetNode?.type === 'satellite') ||
+    (sourceNode?.type === 'yAdapter' && (targetNode?.type === 'well' || targetNode?.type === 'wellsideGauge' || targetNode?.type === 'companyComputer'));
 
   // Get valid cables for the current connection
   const validCables = getValidCablesForConnection(sourceNode, targetNode);
-  const available100ftCables = validCables.filter(rule => 
-    rule.cableName.toLowerCase().includes('100ft')
-  );
 
   const getAvailableSourceHandles = (node: Node) => {
     if (node?.type === 'mainBox') {
@@ -84,7 +83,20 @@ const ConnectionEditorDialog: React.FC<ConnectionEditorDialogProps> = ({
   };
 
   const handleSave = () => {
-    // Validate connection if using cable
+    // For direct connections, no validation needed
+    if (connectionType === 'direct') {
+      onUpdateConnection(
+        newSourceId, 
+        newTargetId, 
+        newSourceHandle, 
+        newTargetHandle, 
+        'direct'
+      );
+      onClose();
+      return;
+    }
+
+    // Validate cable connection if using cable
     if (connectionType === 'cable' && selectedCableType) {
       const validation = validateConnection(sourceNode, targetNode, selectedCableType);
       if (!validation.isValid) {
@@ -124,7 +136,7 @@ const ConnectionEditorDialog: React.FC<ConnectionEditorDialogProps> = ({
                 </SelectTrigger>
                 <SelectContent>
                   {nodes
-                    .filter(n => n.type === 'mainBox' || n.type === 'yAdapter')
+                    .filter(n => n.type === 'mainBox' || n.type === 'yAdapter' || n.type === 'satellite')
                     .map(node => (
                       <SelectItem key={node.id} value={node.id}>
                         {getNodeLabel(node)}
@@ -142,7 +154,7 @@ const ConnectionEditorDialog: React.FC<ConnectionEditorDialogProps> = ({
                 </SelectTrigger>
                 <SelectContent>
                   {nodes
-                    .filter(n => ['well', 'yAdapter', 'companyComputer', 'satellite', 'wellsideGauge'].includes(n.type!))
+                    .filter(n => ['well', 'yAdapter', 'companyComputer', 'satellite', 'wellsideGauge', 'mainBox', 'shearstreamBox'].includes(n.type!))
                     .map(node => (
                       <SelectItem key={node.id} value={node.id}>
                         {getNodeLabel(node)}
@@ -245,7 +257,7 @@ const ConnectionEditorDialog: React.FC<ConnectionEditorDialogProps> = ({
           </Button>
           <Button 
             onClick={handleSave}
-            disabled={connectionType === 'cable' && !selectedCableType}
+            disabled={connectionType === 'cable' && !selectedCableType && validCables.length > 0}
           >
             Update Connection
           </Button>

@@ -162,7 +162,7 @@ export const useJobDiagramSave = ({
 
   const { debouncedSave, cleanup } = useDebouncedSave(performSave, 3000); // Increased delay to 3 seconds
 
-  // Mark initial load as complete after a longer delay
+  // Mark initial load as complete after a longer delay - ALWAYS call this useEffect
   useEffect(() => {
     if (isInitialized && !initialLoadCompleteRef.current) {
       const timer = setTimeout(() => {
@@ -175,14 +175,14 @@ export const useJobDiagramSave = ({
     }
   }, [isInitialized, currentDataString]);
 
-  // Trigger debounced save only when there are actual changes and not during initial load
+  // Trigger debounced save - ALWAYS call this useEffect
   useEffect(() => {
     if (isInitialized && initialLoadCompleteRef.current && !saveInProgressRef.current) {
       debouncedSave();
     }
   }, [currentDataString, isInitialized, debouncedSave]);
 
-  // Cleanup on unmount
+  // Cleanup on unmount - ALWAYS call this useEffect
   useEffect(() => {
     return cleanup;
   }, [cleanup]);

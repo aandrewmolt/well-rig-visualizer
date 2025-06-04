@@ -29,6 +29,28 @@ export const useEquipmentValidation = (jobId: string, nodes: any[], edges: any[]
       }
     });
 
+    // Check other equipment types
+    const equipmentChecks = [
+      { typeId: '7', usage: usage.gauges, name: 'Pressure Gauges' },
+      { typeId: '9', usage: usage.adapters, name: 'Y Adapters' },
+      { typeId: '11', usage: usage.computers, name: 'Company Computers' },
+      { typeId: '10', usage: usage.satellite, name: 'Satellite Equipment' },
+    ];
+
+    equipmentChecks.forEach(({ typeId, usage: requiredQuantity, name }) => {
+      if (requiredQuantity > 0) {
+        const deployed = deployedItems
+          .filter(item => item.typeId === typeId)
+          .reduce((sum, item) => sum + item.quantity, 0);
+
+        if (deployed !== requiredQuantity) {
+          inconsistencies.push(
+            `${name}: Diagram requires ${requiredQuantity}, but ${deployed} deployed`
+          );
+        }
+      }
+    });
+
     if (inconsistencies.length > 0) {
       console.warn('Inventory inconsistencies detected:', inconsistencies);
       toast.warning(`Inventory inconsistencies: ${inconsistencies.join(', ')}`);
@@ -38,7 +60,22 @@ export const useEquipmentValidation = (jobId: string, nodes: any[], edges: any[]
     return true;
   };
 
+  const getEquipmentSummary = () => {
+    const usage = analyzeEquipmentUsage();
+    const deployedItems = data.equipmentItems.filter(
+      item => item.status === 'deployed' && item.jobId === jobId
+    );
+
+    return {
+      required: usage,
+      deployed: deployedItems,
+      isConsistent: validateInventoryConsistency(),
+    };
+  };
+
   return {
     validateInventoryConsistency,
+    getEquipmentSummary,
+    analyzeEquipmentUsage,
   };
 };

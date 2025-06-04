@@ -1,3 +1,4 @@
+
 import React, { useCallback, useState } from 'react';
 
 import '@xyflow/react/dist/style.css';
@@ -11,6 +12,7 @@ import { useDiagramValidation } from '@/hooks/useDiagramValidation';
 import { useJobDiagramActions } from '@/hooks/useJobDiagramActions';
 import { useJobDiagramEquipmentHandlers } from '@/hooks/useJobDiagramEquipmentHandlers';
 import { useJobPhotos } from '@/hooks/useJobPhotos';
+import { useRobustEquipmentTracking } from '@/hooks/useRobustEquipmentTracking';
 import { JobDiagram as JobDiagramType } from '@/hooks/useSupabaseJobs';
 
 // Import components
@@ -19,8 +21,9 @@ import JobDiagramSidebar from '@/components/diagram/JobDiagramSidebar';
 import JobDiagramCanvas from '@/components/diagram/JobDiagramCanvas';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { Camera } from 'lucide-react';
+import { Camera, Package, AlertTriangle } from 'lucide-react';
 import JobPhotoPanel from '@/components/diagram/JobPhotoPanel';
+import CompactJobEquipmentPanel from '@/components/diagram/CompactJobEquipmentPanel';
 
 interface JobDiagramProps {
   job: JobDiagramType;
@@ -28,6 +31,7 @@ interface JobDiagramProps {
 
 const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
   const [isPhotosPanelOpen, setIsPhotosPanelOpen] = useState(false);
+  const [isEquipmentPanelOpen, setIsEquipmentPanelOpen] = useState(false);
 
   const {
     reactFlowWrapper,
@@ -75,6 +79,12 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
     selectedStarlink,
     selectedCustomerComputers,
   });
+
+  // Equipment tracking
+  const {
+    validateInventoryConsistency,
+    analyzeEquipmentUsage,
+  } = useRobustEquipmentTracking(job.id, nodes, edges);
 
   // Enhanced connection handler with immediate save for edge toggles
   const enhancedOnConnect = useCallback((connection: any) => {
@@ -181,12 +191,20 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
   });
 
   const handleValidateEquipment = useCallback(() => {
-    const issues = validateEquipmentAllocations();
-    if (issues.length > 0) {
-      const fixedCount = fixEquipmentAllocations(issues);
-      console.log(`Fixed ${fixedCount} equipment issues`);
+    const isConsistent = validateInventoryConsistency();
+    if (!isConsistent) {
+      const issues = validateEquipmentAllocations();
+      if (issues.length > 0) {
+        const fixedCount = fixEquipmentAllocations(issues);
+        console.log(`Fixed ${fixedCount} equipment issues`);
+      }
     }
-  }, [validateEquipmentAllocations, fixEquipmentAllocations]);
+  }, [validateInventoryConsistency, validateEquipmentAllocations, fixEquipmentAllocations]);
+
+  // Get equipment status for UI indicators
+  const usage = analyzeEquipmentUsage();
+  const totalEquipmentRequired = Object.values(usage.cables).reduce((sum, cable) => sum + cable.quantity, 0) + 
+                                usage.gauges + usage.adapters + usage.computers + usage.satellite;
 
   // Add handlers for Starlink and Customer Computer management
   const handleAddStarlink = () => {
@@ -218,8 +236,8 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
         isValidating={isValidating}
       />
       
-      {/* Photos Button */}
-      <div className="absolute top-16 left-4 z-20">
+      {/* Action Buttons */}
+      <div className="absolute top-16 left-4 z-20 flex gap-2">
         <Sheet open={isPhotosPanelOpen} onOpenChange={setIsPhotosPanelOpen}>
           <SheetTrigger asChild>
             <Button
@@ -233,6 +251,35 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
           </SheetTrigger>
           <SheetContent side="bottom" className="h-96 p-0">
             <JobPhotoPanel jobId={job.id} jobName={job.name} />
+          </SheetContent>
+        </Sheet>
+
+        <Sheet open={isEquipmentPanelOpen} onOpenChange={setIsEquipmentPanelOpen}>
+          <SheetTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className="bg-white/95 backdrop-blur-sm shadow-md hover:bg-gray-50 border-gray-300"
+            >
+              <Package className="h-4 w-4 mr-2" />
+              Equipment
+              {totalEquipmentRequired > 0 && (
+                <span className="ml-1 px-1 bg-blue-500 text-white text-xs rounded">
+                  {totalEquipmentRequired}
+                </span>
+              )}
+              {!validateInventoryConsistency() && (
+                <AlertTriangle className="h-3 w-3 ml-1 text-yellow-500" />
+              )}
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="right" className="w-96 p-4">
+            <CompactJobEquipmentPanel
+              jobId={job.id}
+              jobName={job.name}
+              nodes={nodes}
+              edges={edges}
+            />
           </SheetContent>
         </Sheet>
       </div>

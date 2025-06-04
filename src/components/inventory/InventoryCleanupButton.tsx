@@ -31,8 +31,10 @@ const InventoryCleanupButton: React.FC = () => {
       const finalItems = ensureRequiredItemsExist(mergedItems);
       const itemsAdded = finalItems.length - mergedItems.length;
       
-      // Update the inventory
-      updateEquipmentItems(finalItems);
+      // Update the inventory - using the correct function signature
+      await Promise.all(
+        finalItems.map(item => updateEquipmentItems(item.id, item))
+      );
       
       const results = {
         duplicatesFound,

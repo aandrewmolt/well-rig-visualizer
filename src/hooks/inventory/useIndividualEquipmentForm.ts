@@ -92,11 +92,11 @@ export const useIndividualEquipmentForm = (
       return;
     }
 
-    const existingEquipment = allEquipment.find(eq => 
+    const existingEquipmentItem = allEquipment.find(eq => 
       eq.equipmentId === formData.equipmentId && (!editingEquipment || eq.id !== editingEquipment.id)
     );
     
-    if (existingEquipment) {
+    if (existingEquipmentItem) {
       toast.error('Equipment ID already exists');
       return;
     }

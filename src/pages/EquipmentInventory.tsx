@@ -1,14 +1,15 @@
 
 import React, { useState } from 'react';
 import AppHeader from '@/components/AppHeader';
-import InventoryDashboard from '@/components/inventory/InventoryDashboard';
+import EnhancedInventoryDashboard from '@/components/inventory/EnhancedInventoryDashboard';
 import EquipmentTypeManager from '@/components/inventory/EquipmentTypeManager';
 import StorageLocationManager from '@/components/inventory/StorageLocationManager';
 import EquipmentListView from '@/components/inventory/EquipmentListView';
-import EquipmentTransferPanel from '@/components/inventory/EquipmentTransferPanel';
-import RedTagPanel from '@/components/inventory/RedTagPanel';
+import EquipmentTransferSystem from '@/components/inventory/EquipmentTransferSystem';
+import RedTagManager from '@/components/inventory/RedTagManager';
+import AdvancedSearchPanel from '@/components/inventory/AdvancedSearchPanel';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Package, Settings, MapPin, List, ArrowRightLeft, AlertTriangle } from 'lucide-react';
+import { Package, Settings, MapPin, List, ArrowRightLeft, AlertTriangle, Search } from 'lucide-react';
 
 const EquipmentInventory = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -30,7 +31,7 @@ const EquipmentInventory = () => {
           </div>
           
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-6 mb-6">
+            <TabsList className="grid w-full grid-cols-7 mb-6">
               <TabsTrigger value="dashboard" className="flex items-center gap-2">
                 <Package className="h-4 w-4" />
                 Dashboard
@@ -38,6 +39,10 @@ const EquipmentInventory = () => {
               <TabsTrigger value="equipment-list" className="flex items-center gap-2">
                 <List className="h-4 w-4" />
                 Equipment List
+              </TabsTrigger>
+              <TabsTrigger value="search" className="flex items-center gap-2">
+                <Search className="h-4 w-4" />
+                Advanced Search
               </TabsTrigger>
               <TabsTrigger value="transfers" className="flex items-center gap-2">
                 <ArrowRightLeft className="h-4 w-4" />
@@ -58,19 +63,23 @@ const EquipmentInventory = () => {
             </TabsList>
 
             <TabsContent value="dashboard">
-              <InventoryDashboard onSwitchToTab={handleSwitchToTab} />
+              <EnhancedInventoryDashboard onSwitchToTab={handleSwitchToTab} />
             </TabsContent>
 
             <TabsContent value="equipment-list">
               <EquipmentListView />
             </TabsContent>
 
+            <TabsContent value="search">
+              <AdvancedSearchPanel />
+            </TabsContent>
+
             <TabsContent value="transfers">
-              <EquipmentTransferPanel />
+              <EquipmentTransferSystem />
             </TabsContent>
 
             <TabsContent value="red-tag">
-              <RedTagPanel />
+              <RedTagManager />
             </TabsContent>
 
             <TabsContent value="equipment-types">

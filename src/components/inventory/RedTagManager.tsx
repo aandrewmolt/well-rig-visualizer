@@ -1,208 +1,228 @@
 
-import React, { useState, useRef } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Camera, MapPin, AlertTriangle, X } from 'lucide-react';
-import { useInventoryData, EquipmentItem } from '@/hooks/useInventoryData';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { AlertTriangle, Camera, MapPin, Calendar, Tag } from 'lucide-react';
+import { useInventoryData } from '@/hooks/useInventoryData';
 import { toast } from 'sonner';
 
-interface RedTagManagerProps {
-  isOpen: boolean;
-  onClose: () => void;
-  equipmentItem?: EquipmentItem;
-  onRedTag: (itemId: string, reason: string, photo?: string, location?: string) => void;
-}
+const RedTagManager: React.FC = () => {
+  const { data, updateSingleEquipmentItem, updateSingleIndividualEquipment } = useInventoryData();
+  const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [redTagData, setRedTagData] = useState({
+    reason: '',
+    photo: '',
+    notes: ''
+  });
 
-const RedTagManager: React.FC<RedTagManagerProps> = ({
-  isOpen,
-  onClose,
-  equipmentItem,
-  onRedTag,
-}) => {
-  const [reason, setReason] = useState('');
-  const [location, setLocation] = useState('');
-  const [photo, setPhoto] = useState<string | null>(null);
-  const [isCapturing, setIsCapturing] = useState(false);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const streamRef = useRef<MediaStream | null>(null);
+  const redTaggedItems = [
+    ...data.equipmentItems.filter(item => item.status === 'red-tagged'),
+    ...data.individualEquipment.filter(eq => eq.status === 'red-tagged')
+  ];
 
-  const startCamera = async () => {
-    try {
-      setIsCapturing(true);
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: 'environment' } 
-      });
-      streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-      }
-    } catch (error) {
-      console.error('Error accessing camera:', error);
-      toast.error('Unable to access camera');
-      setIsCapturing(false);
-    }
-  };
-
-  const capturePhoto = () => {
-    if (videoRef.current && canvasRef.current) {
-      const video = videoRef.current;
-      const canvas = canvasRef.current;
-      const context = canvas.getContext('2d');
-      
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      
-      if (context) {
-        context.drawImage(video, 0, 0);
-        const photoDataUrl = canvas.toDataURL('image/jpeg', 0.8);
-        setPhoto(photoDataUrl);
-        stopCamera();
-      }
-    }
-  };
-
-  const stopCamera = () => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
-      streamRef.current = null;
-    }
-    setIsCapturing(false);
-  };
-
-  const handleSubmit = () => {
-    if (!reason.trim()) {
-      toast.error('Please enter a reason for red tagging');
+  const handleRedTag = async (item: any, isIndividual: boolean) => {
+    if (!redTagData.reason) {
+      toast.error('Red tag reason is required');
       return;
     }
 
-    if (equipmentItem) {
-      onRedTag(equipmentItem.id, reason, photo || undefined, location || undefined);
-      setReason('');
-      setLocation('');
-      setPhoto(null);
-      onClose();
-      toast.success('Equipment red-tagged successfully');
+    try {
+      const updates = {
+        status: 'red-tagged',
+        redTagReason: redTagData.reason,
+        redTagPhoto: redTagData.photo,
+        notes: redTagData.notes
+      };
+
+      if (isIndividual) {
+        await updateSingleIndividualEquipment(item.id, updates);
+      } else {
+        await updateSingleEquipmentItem(item.id, updates);
+      }
+
+      toast.success('Item red-tagged successfully');
+      setIsDialogOpen(false);
+      setRedTagData({ reason: '', photo: '', notes: '' });
+    } catch (error) {
+      console.error('Error red-tagging item:', error);
+      toast.error('Failed to red-tag item');
     }
   };
 
-  const handleClose = () => {
-    stopCamera();
-    setReason('');
-    setLocation('');
-    setPhoto(null);
-    onClose();
+  const handleRemoveRedTag = async (item: any, isIndividual: boolean) => {
+    try {
+      const updates = {
+        status: 'available',
+        redTagReason: null,
+        redTagPhoto: null
+      };
+
+      if (isIndividual) {
+        await updateSingleIndividualEquipment(item.id, updates);
+      } else {
+        await updateSingleEquipmentItem(item.id, updates);
+      }
+
+      toast.success('Red tag removed successfully');
+    } catch (error) {
+      console.error('Error removing red tag:', error);
+      toast.error('Failed to remove red tag');
+    }
   };
 
-  if (!isOpen || !equipmentItem) return null;
+  const getLocationName = (locationId: string) => {
+    const location = data.storageLocations.find(l => l.id === locationId);
+    return location?.name || 'Unknown Location';
+  };
+
+  const getTypeName = (typeId: string) => {
+    const type = data.equipmentTypes.find(t => t.id === typeId);
+    return type?.name || 'Unknown Type';
+  };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <Card className="w-full max-w-md mx-4">
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-red-600" />
-              Red Tag Equipment
-            </CardTitle>
-            <Button variant="ghost" size="sm" onClick={handleClose}>
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <h4 className="font-medium mb-2">Equipment Details</h4>
-            <div className="p-2 bg-gray-50 rounded text-sm">
-              <p>Type: {equipmentItem.typeId}</p>
-              <p>Quantity: {equipmentItem.quantity}</p>
-              <Badge variant="outline">Current Status: {equipmentItem.status}</Badge>
-            </div>
-          </div>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold text-gray-900">Red Tag Management</h2>
+        <Badge variant="destructive" className="text-lg px-3 py-1">
+          {redTaggedItems.length} Red Tagged Items
+        </Badge>
+      </div>
 
-          <div>
-            <label className="text-sm font-medium mb-2 block">Reason for Red Tag *</label>
-            <Textarea
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              placeholder="Enter detailed reason for red tagging..."
-              className="h-20 resize-none"
-            />
-          </div>
+      {redTaggedItems.length === 0 ? (
+        <Card>
+          <CardContent className="text-center py-12">
+            <AlertTriangle className="mx-auto h-12 w-12 text-green-500 mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">No Red Tagged Items</h3>
+            <p className="text-gray-600">All equipment is currently in good condition.</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid gap-4">
+          {redTaggedItems.map((item) => {
+            const isIndividual = 'equipmentId' in item;
+            const typeName = getTypeName(item.typeId);
+            const locationName = getLocationName(item.locationId);
 
-          <div>
-            <label className="text-sm font-medium mb-2 block">Current Location</label>
-            <Input
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              placeholder="Enter current location of equipment..."
-              className="flex items-center gap-2"
-            />
-          </div>
+            return (
+              <Card key={item.id} className="border-red-200 bg-red-50">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg text-red-800">
+                      <div className="flex items-center gap-2">
+                        <AlertTriangle className="h-5 w-5" />
+                        {isIndividual ? item.equipmentId : `${typeName} (Qty: ${item.quantity})`}
+                      </div>
+                    </CardTitle>
+                    <Badge variant="destructive">
+                      <Tag className="h-3 w-3 mr-1" />
+                      Red Tagged
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4 text-gray-500" />
+                      <span>{locationName}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-gray-500" />
+                      <span>{new Date(item.lastUpdated || item.created_at).toLocaleDateString()}</span>
+                    </div>
+                  </div>
 
-          <div>
-            <label className="text-sm font-medium mb-2 block">Photo Evidence</label>
-            {!photo && !isCapturing && (
-              <Button
-                onClick={startCamera}
-                variant="outline"
-                className="w-full flex items-center gap-2"
-              >
-                <Camera className="h-4 w-4" />
-                Take Photo
-              </Button>
-            )}
+                  {item.redTagReason && (
+                    <div className="bg-white p-3 rounded border border-red-200">
+                      <h4 className="font-semibold text-red-800 mb-1">Red Tag Reason:</h4>
+                      <p className="text-gray-700">{item.redTagReason}</p>
+                    </div>
+                  )}
 
-            {isCapturing && (
-              <div className="space-y-2">
-                <video
-                  ref={videoRef}
-                  autoPlay
-                  playsInline
-                  className="w-full rounded border"
-                />
-                <div className="flex gap-2">
-                  <Button onClick={capturePhoto} className="flex-1">
-                    Capture
-                  </Button>
-                  <Button onClick={stopCamera} variant="outline">
-                    Cancel
-                  </Button>
-                </div>
-              </div>
-            )}
+                  {item.notes && (
+                    <div className="bg-white p-3 rounded border border-red-200">
+                      <h4 className="font-semibold text-red-800 mb-1">Notes:</h4>
+                      <p className="text-gray-700">{item.notes}</p>
+                    </div>
+                  )}
 
-            {photo && (
-              <div className="space-y-2">
-                <img src={photo} alt="Equipment photo" className="w-full rounded border" />
-                <Button
-                  onClick={() => setPhoto(null)}
-                  variant="outline"
-                  size="sm"
-                  className="w-full"
-                >
-                  Retake Photo
-                </Button>
-              </div>
-            )}
+                  {item.redTagPhoto && (
+                    <div className="bg-white p-3 rounded border border-red-200">
+                      <h4 className="font-semibold text-red-800 mb-2">Photo:</h4>
+                      <img 
+                        src={item.redTagPhoto} 
+                        alt="Red tag photo"
+                        className="max-w-sm h-32 object-cover rounded border"
+                      />
+                    </div>
+                  )}
 
-            <canvas ref={canvasRef} style={{ display: 'none' }} />
-          </div>
-
-          <div className="flex gap-2 pt-4">
-            <Button onClick={handleSubmit} className="flex-1 bg-red-600 hover:bg-red-700">
-              <AlertTriangle className="h-4 w-4 mr-2" />
-              Red Tag Equipment
-            </Button>
-            <Button onClick={handleClose} variant="outline">
-              Cancel
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+                  <div className="flex gap-2 pt-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleRemoveRedTag(item, isIndividual)}
+                      className="text-green-600 border-green-600 hover:bg-green-50"
+                    >
+                      Remove Red Tag
+                    </Button>
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button variant="outline" size="sm">
+                          Edit Red Tag
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Edit Red Tag</DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <div>
+                            <Label>Reason for Red Tag *</Label>
+                            <Input
+                              value={redTagData.reason}
+                              onChange={(e) => setRedTagData(prev => ({ ...prev, reason: e.target.value }))}
+                              placeholder="Damage, malfunction, etc."
+                            />
+                          </div>
+                          <div>
+                            <Label>Photo URL (Optional)</Label>
+                            <Input
+                              value={redTagData.photo}
+                              onChange={(e) => setRedTagData(prev => ({ ...prev, photo: e.target.value }))}
+                              placeholder="https://..."
+                            />
+                          </div>
+                          <div>
+                            <Label>Additional Notes</Label>
+                            <Textarea
+                              value={redTagData.notes}
+                              onChange={(e) => setRedTagData(prev => ({ ...prev, notes: e.target.value }))}
+                              placeholder="Additional details..."
+                            />
+                          </div>
+                          <Button 
+                            onClick={() => handleRedTag(item, isIndividual)}
+                            className="w-full"
+                          >
+                            Update Red Tag
+                          </Button>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 };

@@ -17,6 +17,11 @@ import WellsideGaugeNode from '@/components/nodes/WellsideGaugeNode';
 import YAdapterNode from '@/components/nodes/YAdapterNode';
 import CustomerComputerNode from '@/components/nodes/CustomerComputerNode';
 
+// Import edge types
+import CableEdge from '@/components/edges/CableEdge';
+import DirectEdge from '@/components/edges/DirectEdge';
+import InteractiveCableEdge from '@/components/edges/InteractiveCableEdge';
+
 const nodeTypes = {
   mainBox: MainBoxNode,
   satellite: SatelliteNode,
@@ -24,6 +29,13 @@ const nodeTypes = {
   wellsideGauge: WellsideGaugeNode,
   yAdapter: YAdapterNode,
   customerComputer: CustomerComputerNode,
+};
+
+const edgeTypes = {
+  cable: InteractiveCableEdge,
+  direct: DirectEdge,
+  smoothstep: CableEdge,
+  default: InteractiveCableEdge,
 };
 
 interface JobDiagramCanvasProps {
@@ -52,8 +64,14 @@ const JobDiagramCanvas: React.FC<JobDiagramCanvasProps> = ({
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
         nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
         fitView
         className="bg-gradient-to-br from-blue-50 to-indigo-100"
+        defaultEdgeOptions={{
+          style: { strokeWidth: 3, stroke: '#374151' },
+          type: 'cable',
+          animated: false,
+        }}
       >
         <Background />
         <Controls />

@@ -4,20 +4,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import JobDiagram from '@/components/JobDiagram';
 import JobCreationDialog from '@/components/jobs/JobCreationDialog';
+import { JobDiagram as JobDiagramType } from '@/hooks/useSupabaseJobs';
 import { toast } from 'sonner';
 import { Plus, FileText } from 'lucide-react';
 
-interface Job {
-  id: string;
-  name: string;
-  wellCount: number;
-  hasWellsideGauge: boolean;
-  createdAt: Date;
-}
-
 const Index = () => {
-  const [jobs, setJobs] = useState<Job[]>([]);
-  const [selectedJob, setSelectedJob] = useState<Job | null>(null);
+  const [jobs, setJobs] = useState<JobDiagramType[]>([]);
+  const [selectedJob, setSelectedJob] = useState<JobDiagramType | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const handleCreateJob = (jobData: { name: string; wellCount: number; hasWellsideGauge: boolean }) => {
@@ -26,12 +19,22 @@ const Index = () => {
       return;
     }
 
-    const newJob: Job = {
+    const newJob: JobDiagramType = {
       id: Date.now().toString(),
       name: jobData.name,
       wellCount: jobData.wellCount,
       hasWellsideGauge: jobData.hasWellsideGauge,
-      createdAt: new Date()
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      nodes: [],
+      edges: [],
+      companyComputerNames: {},
+      equipmentAssignment: {},
+      equipmentAllocated: false,
+      mainBoxName: 'ShearStream Box',
+      satelliteName: 'Starlink',
+      wellsideGaugeName: 'Wellside Gauge',
+      selectedCableType: 'defaultCableType'
     };
 
     setJobs(prev => [...prev, newJob]);

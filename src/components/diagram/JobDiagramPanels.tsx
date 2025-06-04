@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { Node } from '@xyflow/react';
-import CableConfigurationPanel from './CableConfigurationPanel';
 import WellConfigurationPanel from './WellConfigurationPanel';
 import CompactJobEquipmentPanel from './CompactJobEquipmentPanel';
 import CompactEquipmentSelectionPanel from './CompactEquipmentSelectionPanel';
@@ -63,16 +62,7 @@ const JobDiagramPanels: React.FC<JobDiagramPanelsProps> = ({
   const shearstreamBoxNodes = nodes.filter(node => node.type === 'mainBox');
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-      <CableConfigurationPanel
-        selectedCableType={selectedCableType}
-        setSelectedCableType={setSelectedCableType}
-        addYAdapter={addYAdapter}
-        addCustomerComputer={addCustomerComputer}
-        clearDiagram={clearDiagram}
-        saveDiagram={saveDiagram}
-      />
-
+    <div className="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-4 gap-3">
       <CompactEquipmentSelectionPanel
         selectedShearstreamBoxes={selectedShearstreamBoxes}
         selectedStarlink={selectedStarlink}
@@ -101,7 +91,7 @@ const JobDiagramPanels: React.FC<JobDiagramPanelsProps> = ({
         edges={edges}
       />
 
-      {/* Optional 5th column for future expansion */}
+      {/* Optional 4th column for future expansion */}
       <div className="hidden xl:block">
         {/* Reserved for additional controls if needed */}
       </div>

@@ -1,4 +1,3 @@
-
 import { useEffect, useMemo } from 'react';
 import { IndividualEquipment, EquipmentType } from '@/types/inventory';
 import { useInventoryData } from '@/hooks/useInventoryData';
@@ -87,6 +86,7 @@ export const useIndividualEquipmentManager = (
     setFormData: formHook.setFormData,
     handleSubmit: formHook.handleSubmit,
     resetForm: formHook.resetForm,
+    handlePrefixChange: formHook.handlePrefixChange,
     
     // Bulk creation
     ...bulkCreateHook,

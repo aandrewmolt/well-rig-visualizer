@@ -5,6 +5,7 @@ export interface FormData {
   locationId: string;
   serialNumber: string;
   notes: string;
+  selectedPrefix?: string;
 }
 
 export interface BulkCreateData {

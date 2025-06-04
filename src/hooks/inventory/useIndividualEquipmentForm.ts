@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { IndividualEquipment, EquipmentType } from '@/types/inventory';
 import { FormData } from './types/individualEquipmentTypes';
@@ -13,46 +12,72 @@ export const useIndividualEquipmentForm = (
   updateIndividualEquipment: (equipment: IndividualEquipment[]) => void,
   individualEquipment: IndividualEquipment[]
 ) => {
-  const { generateEquipmentId, generateEquipmentName, getIdPadding } = useEquipmentIdGenerator();
+  const { generateEquipmentId, generateEquipmentName } = useEquipmentIdGenerator();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingEquipment, setEditingEquipment] = useState<IndividualEquipment | null>(null);
-  const [formData, setFormData] = useState<FormData>({
+  const [selectedPrefix, setSelectedPrefix] = useState<string>(equipmentType.defaultIdPrefix || 'CC');
+  const [formData, setFormData] = useState<FormData & { selectedPrefix?: string }>({
     equipmentId: '',
     name: '',
     locationId: '',
     serialNumber: '',
-    notes: ''
+    notes: '',
+    selectedPrefix: equipmentType.defaultIdPrefix || 'CC'
   });
 
-  const generateNextEquipmentId = useCallback(() => {
-    const prefix = equipmentType.defaultIdPrefix || 'EQ-';
+  const generateNextEquipmentId = useCallback((prefix?: string) => {
+    const actualPrefix = prefix || selectedPrefix || equipmentType.defaultIdPrefix || 'EQ-';
     const existingIds = allEquipment.map(eq => eq.equipmentId);
     let counter = 1;
-    let newId = generateEquipmentId(equipmentType, counter);
+    
+    // Create a temporary equipment type with the selected prefix for ID generation
+    const tempEquipmentType = { ...equipmentType, defaultIdPrefix: actualPrefix };
+    let newId = generateEquipmentId(tempEquipmentType, counter);
     
     while (existingIds.includes(newId)) {
       counter++;
-      newId = generateEquipmentId(equipmentType, counter);
+      newId = generateEquipmentId(tempEquipmentType, counter);
     }
     
     return newId;
-  }, [allEquipment, equipmentType, generateEquipmentId]);
+  }, [allEquipment, equipmentType, generateEquipmentId, selectedPrefix]);
+
+  const handlePrefixChange = useCallback((prefix: string) => {
+    setSelectedPrefix(prefix);
+    
+    if (!editingEquipment) {
+      // Generate new ID and name with the selected prefix
+      const tempEquipmentType = { ...equipmentType, defaultIdPrefix: prefix };
+      const newId = generateNextEquipmentId(prefix);
+      const newName = generateEquipmentName(tempEquipmentType, newId);
+      
+      setFormData(prev => ({
+        ...prev,
+        equipmentId: newId,
+        name: newName,
+        selectedPrefix: prefix
+      }));
+    }
+  }, [editingEquipment, generateNextEquipmentId, generateEquipmentName, equipmentType]);
 
   const handleAddItemClick = useCallback(() => {
     if (!editingEquipment) {
-      const newId = generateNextEquipmentId();
-      const newName = generateEquipmentName(equipmentType, newId);
+      const prefix = equipmentType.name === 'Customer Computer' ? selectedPrefix : equipmentType.defaultIdPrefix;
+      const tempEquipmentType = { ...equipmentType, defaultIdPrefix: prefix };
+      const newId = generateNextEquipmentId(prefix);
+      const newName = generateEquipmentName(tempEquipmentType, newId);
       
       setFormData({
         equipmentId: newId,
         name: newName,
         locationId: '',
         serialNumber: '',
-        notes: ''
+        notes: '',
+        selectedPrefix: prefix
       });
     }
     setIsDialogOpen(true);
-  }, [editingEquipment, generateNextEquipmentId, generateEquipmentName, equipmentType]);
+  }, [editingEquipment, generateNextEquipmentId, generateEquipmentName, equipmentType, selectedPrefix]);
 
   const handleSubmit = useCallback((saveImmediate = false) => {
     if (!formData.equipmentId.trim() || !formData.name.trim() || !formData.locationId) {
@@ -126,11 +151,12 @@ export const useIndividualEquipmentForm = (
       name: '',
       locationId: '',
       serialNumber: '',
-      notes: ''
+      notes: '',
+      selectedPrefix: equipmentType.defaultIdPrefix || 'CC'
     });
     setEditingEquipment(null);
     setIsDialogOpen(false);
-  }, []);
+  }, [equipmentType.defaultIdPrefix]);
 
   return {
     isDialogOpen,
@@ -142,5 +168,6 @@ export const useIndividualEquipmentForm = (
     handleSubmit,
     handleEdit,
     resetForm,
+    handlePrefixChange,
   };
 };

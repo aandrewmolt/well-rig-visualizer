@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -36,6 +35,7 @@ const IndividualEquipmentManager: React.FC<IndividualEquipmentManagerProps> = ({
     setFormData,
     handleSubmit,
     resetForm,
+    handlePrefixChange,
     
     // Bulk creation
     isBulkCreateOpen,
@@ -108,6 +108,7 @@ const IndividualEquipmentManager: React.FC<IndividualEquipmentManagerProps> = ({
             allEquipment={allEquipment}
             onSubmit={handleSubmit}
             onReset={resetForm}
+            onPrefixChange={handlePrefixChange}
           />
           
           <BulkEquipmentForm

@@ -19,6 +19,7 @@ interface IndividualEquipmentFormProps {
     locationId: string;
     serialNumber: string;
     notes: string;
+    selectedPrefix?: string;
   };
   setFormData: (data: any) => void;
   equipmentType: EquipmentType;
@@ -26,6 +27,7 @@ interface IndividualEquipmentFormProps {
   allEquipment: IndividualEquipment[];
   onSubmit: (saveImmediate?: boolean) => void;
   onReset: () => void;
+  onPrefixChange?: (prefix: string) => void;
 }
 
 const IndividualEquipmentForm: React.FC<IndividualEquipmentFormProps> = ({
@@ -34,15 +36,31 @@ const IndividualEquipmentForm: React.FC<IndividualEquipmentFormProps> = ({
   editingEquipment,
   formData,
   setFormData,
+  equipmentType,
   storageLocations,
   onSubmit,
   onReset,
+  onPrefixChange,
 }) => {
   const handleAddItemClick = () => {
     if (!editingEquipment) {
       onReset();
     }
     setIsFormOpen(true);
+  };
+
+  // Show prefix selector for Customer Computer types
+  const showPrefixSelector = equipmentType.name === 'Customer Computer';
+  const prefixOptions = showPrefixSelector ? [
+    { value: 'CC', label: 'CC - Customer Computer' },
+    { value: 'CT', label: 'CT - Customer Tablet' }
+  ] : [];
+
+  const handlePrefixChange = (prefix: string) => {
+    if (onPrefixChange) {
+      onPrefixChange(prefix);
+    }
+    setFormData({...formData, selectedPrefix: prefix});
   };
 
   return (
@@ -60,12 +78,32 @@ const IndividualEquipmentForm: React.FC<IndividualEquipmentFormProps> = ({
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
+          {showPrefixSelector && !editingEquipment && (
+            <div>
+              <Label>Equipment Type</Label>
+              <Select 
+                value={formData.selectedPrefix || 'CC'} 
+                onValueChange={handlePrefixChange}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select equipment type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {prefixOptions.map(option => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           <div>
             <Label>Equipment ID</Label>
             <Input
               value={formData.equipmentId}
               onChange={(e) => setFormData({...formData, equipmentId: e.target.value})}
-              placeholder="e.g., SS001, SL01"
+              placeholder="e.g., SS001, SL01, CC01, CT01"
             />
           </div>
           <div>
@@ -73,7 +111,7 @@ const IndividualEquipmentForm: React.FC<IndividualEquipmentFormProps> = ({
             <Input
               value={formData.name}
               onChange={(e) => setFormData({...formData, name: e.target.value})}
-              placeholder="e.g., ShearStream Alpha, Starlink Unit 1"
+              placeholder="e.g., ShearStream Box 001, Starlink 01, Customer Computer 01"
             />
           </div>
           <div>

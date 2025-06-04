@@ -55,33 +55,33 @@ const WellConfigurationPanel: React.FC<WellConfigurationPanelProps> = ({
 
   return (
     <Card className="bg-gradient-to-br from-white to-emerald-50/30 shadow-lg border-emerald-200/50">
-      <CardHeader className="pb-3 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-t-lg">
-        <CardTitle className="flex items-center gap-2 text-lg font-semibold">
-          <div className="p-1.5 bg-white/20 rounded-md">
+      <CardHeader className="pb-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-t-lg">
+        <CardTitle className="flex items-center gap-2 text-base font-semibold">
+          <div className="p-1 bg-white/20 rounded-md">
             <Droplets className="h-4 w-4" />
           </div>
           Well & Gauge Configuration
-          <Badge variant="secondary" className="ml-auto bg-white/20 text-white border-white/30">
+          <Badge variant="secondary" className="ml-auto bg-white/20 text-white border-white/30 text-xs">
             {wellNodes.length + (wellsideGaugeNode ? 1 : 0)} items
           </Badge>
         </CardTitle>
       </CardHeader>
-      <CardContent className="pt-4">
-        <div className="space-y-4 max-h-80 overflow-y-auto custom-scrollbar">
+      <CardContent className="pt-3 px-3">
+        <div className="space-y-3 max-h-80 overflow-y-auto custom-scrollbar">
           {/* Wellside Gauge Configuration */}
           {wellsideGaugeNode && (
-            <div className="p-4 border-2 border-orange-200 rounded-lg bg-gradient-to-r from-orange-50 to-amber-50">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="p-1.5 bg-orange-100 rounded-md">
-                  <Gauge className="h-4 w-4 text-orange-600" />
+            <div className="p-3 border border-orange-200 rounded-lg bg-gradient-to-r from-orange-50 to-amber-50">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="p-1 bg-orange-100 rounded-md">
+                  <Gauge className="h-3 w-3 text-orange-600" />
                 </div>
-                <Label className="text-sm font-semibold text-orange-800">
+                <Label className="text-xs font-semibold text-orange-800">
                   Wellside Gauge Configuration
                 </Label>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <div className="md:col-span-2">
+              <div className="space-y-2">
+                <div>
                   <Label htmlFor="wellside-gauge-name-config" className="text-xs text-gray-600 mb-1 block">
                     Gauge Name
                   </Label>
@@ -89,7 +89,7 @@ const WellConfigurationPanel: React.FC<WellConfigurationPanelProps> = ({
                     id="wellside-gauge-name-config"
                     value={(wellsideGaugeNode.data as NodeData).label || ''}
                     onChange={(e) => updateWellsideGaugeName(e.target.value)}
-                    className="h-8 text-sm border-2 border-orange-200 focus:border-orange-400 focus:ring-2 focus:ring-orange-200"
+                    className="h-7 text-xs border border-orange-200 focus:border-orange-400"
                     placeholder="Enter gauge name..."
                   />
                 </div>
@@ -102,17 +102,17 @@ const WellConfigurationPanel: React.FC<WellConfigurationPanelProps> = ({
                     value={(wellsideGaugeNode.data as NodeData).color || '#f59e0b'}
                     onValueChange={(color) => updateWellsideGaugeColor(color)}
                   >
-                    <SelectTrigger className="h-8 border-2 border-orange-200 focus:border-orange-400">
+                    <SelectTrigger className="h-7 border border-orange-200 focus:border-orange-400">
                       <div 
-                        className="w-4 h-4 rounded border border-gray-300" 
+                        className="w-3 h-3 rounded border border-gray-300" 
                         style={{ backgroundColor: (wellsideGaugeNode.data as NodeData).color || '#f59e0b' }}
                       />
                     </SelectTrigger>
-                    <SelectContent className="bg-white border-2 border-gray-100 shadow-xl">
+                    <SelectContent className="bg-white border border-gray-200 shadow-lg max-h-40">
                       {colorOptions.map(color => (
-                        <SelectItem key={color.value} value={color.value} className="hover:bg-gray-50">
+                        <SelectItem key={color.value} value={color.value} className="hover:bg-gray-50 text-xs">
                           <div className="flex items-center gap-2">
-                            <div className={`w-4 h-4 rounded ${color.class}`}></div>
+                            <div className={`w-3 h-3 rounded ${color.class}`}></div>
                             <span>{color.name}</span>
                           </div>
                         </SelectItem>
@@ -130,22 +130,22 @@ const WellConfigurationPanel: React.FC<WellConfigurationPanelProps> = ({
             return (
               <div 
                 key={wellNode.id} 
-                className="p-4 border-2 border-blue-200 rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50 transition-all duration-200 hover:shadow-md"
+                className="p-3 border border-blue-200 rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50"
               >
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="p-1.5 bg-blue-100 rounded-md">
-                    <Droplets className="h-4 w-4 text-blue-600" />
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="p-1 bg-blue-100 rounded-md">
+                    <Droplets className="h-3 w-3 text-blue-600" />
                   </div>
-                  <Label className="text-sm font-semibold text-blue-800">
+                  <Label className="text-xs font-semibold text-blue-800">
                     Well {index + 1} Configuration
                   </Label>
-                  <Badge variant="outline" className="ml-auto bg-blue-100 text-blue-700 border-blue-300">
+                  <Badge variant="outline" className="ml-auto bg-blue-100 text-blue-700 border-blue-300 text-xs px-1 py-0">
                     Active
                   </Badge>
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <div className="md:col-span-2">
+                <div className="space-y-2">
+                  <div>
                     <Label htmlFor={`well-name-${wellNode.id}`} className="text-xs text-gray-600 mb-1 block">
                       Well Name
                     </Label>
@@ -153,7 +153,7 @@ const WellConfigurationPanel: React.FC<WellConfigurationPanelProps> = ({
                       id={`well-name-${wellNode.id}`}
                       value={nodeData.label || ''}
                       onChange={(e) => updateWellName(wellNode.id, e.target.value)}
-                      className="h-8 text-sm border-2 border-blue-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-200"
+                      className="h-7 text-xs border border-blue-200 focus:border-blue-400"
                       placeholder="Enter well name..."
                     />
                   </div>
@@ -166,17 +166,17 @@ const WellConfigurationPanel: React.FC<WellConfigurationPanelProps> = ({
                       value={nodeData.color || '#3b82f6'}
                       onValueChange={(color) => updateWellColor(wellNode.id, color)}
                     >
-                      <SelectTrigger className="h-8 border-2 border-blue-200 focus:border-blue-400">
+                      <SelectTrigger className="h-7 border border-blue-200 focus:border-blue-400">
                         <div 
-                          className="w-4 h-4 rounded border border-gray-300" 
+                          className="w-3 h-3 rounded border border-gray-300" 
                           style={{ backgroundColor: nodeData.color || '#3b82f6' }}
                         />
                       </SelectTrigger>
-                      <SelectContent className="bg-white border-2 border-gray-100 shadow-xl">
+                      <SelectContent className="bg-white border border-gray-200 shadow-lg max-h-40">
                         {colorOptions.map(color => (
-                          <SelectItem key={color.value} value={color.value} className="hover:bg-gray-50">
+                          <SelectItem key={color.value} value={color.value} className="hover:bg-gray-50 text-xs">
                             <div className="flex items-center gap-2">
-                              <div className={`w-4 h-4 rounded ${color.class}`}></div>
+                              <div className={`w-3 h-3 rounded ${color.class}`}></div>
                               <span>{color.name}</span>
                             </div>
                           </SelectItem>

@@ -161,7 +161,7 @@ export const useJobDiagramInitialization = (props: UseJobDiagramInitializationPr
     props.setMainBoxName(initialData.mainBoxName || 'ShearStream Box');
     props.setSatelliteName(initialData.satelliteName || 'Starlink');
     props.setWellsideGaugeName(initialData.wellsideGaugeName || 'Wellside Gauge');
-    props.setCustomerComputerNames(initialData.customerComputerNames || {});
+    props.setCustomerComputerNames(initialData.companyComputerNames || {});
 
     // Check if we have saved nodes and edges - if so, use them instead of creating defaults
     if (initialData.nodes && Array.isArray(initialData.nodes) && initialData.nodes.length > 0) {

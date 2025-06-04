@@ -32,6 +32,8 @@ const nodeTypes = {
 const edgeTypes = {
   cable: CableEdge,
   direct: DirectEdge,
+  smoothstep: DirectEdge, // Use DirectEdge for smoothstep connections
+  default: CableEdge, // Default edge type
 };
 
 interface DiagramCanvasProps {
@@ -56,7 +58,14 @@ const DiagramCanvas: React.FC<DiagramCanvasProps> = ({
     console.log('DiagramCanvas rendered with:', {
       nodeCount: nodes.length,
       edgeCount: edges.length,
-      edges: edges.map(e => ({ id: e.id, type: e.type, source: e.source, target: e.target }))
+      edges: edges.map(e => ({ 
+        id: e.id, 
+        type: e.type, 
+        source: e.source, 
+        target: e.target, 
+        label: e.label || e.data?.label,
+        style: e.style 
+      }))
     });
   }, [nodes, edges]);
 
@@ -77,11 +86,30 @@ const DiagramCanvas: React.FC<DiagramCanvasProps> = ({
             style={{ backgroundColor: '#f8fafc' }}
             deleteKeyCode={null} // Prevent accidental deletion
             multiSelectionKeyCode={null} // Simplify selection
+            defaultEdgeOptions={{
+              style: { strokeWidth: 3, stroke: '#374151' },
+              type: 'smoothstep',
+              animated: false,
+            }}
+            connectionLineStyle={{ strokeWidth: 3, stroke: '#6366f1' }}
+            connectionLineType="smoothstep"
           >
             <Controls position="top-left" />
             <MiniMap 
               position="top-right" 
               style={{ background: '#ffffff', border: '1px solid #e2e8f0' }}
+              nodeStrokeWidth={3}
+              nodeColor={(node) => {
+                switch (node.type) {
+                  case 'mainBox': return '#1f2937';
+                  case 'satellite': return '#059669';
+                  case 'customerComputer': return '#374151';
+                  case 'yAdapter': return '#f59e0b';
+                  case 'wellsideGauge': return '#f59e0b';
+                  case 'well': return '#3b82f6';
+                  default: return '#6b7280';
+                }
+              }}
             />
             <Background 
               variant={BackgroundVariant.Dots} 

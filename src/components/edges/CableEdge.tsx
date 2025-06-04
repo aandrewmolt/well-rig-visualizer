@@ -1,6 +1,6 @@
+
 import React, { useState } from 'react';
 import { BaseEdge, getBezierPath, EdgeLabelRenderer, useReactFlow } from '@xyflow/react';
-import { Edit } from 'lucide-react';
 import ConnectionEditorDialog from '../diagram/ConnectionEditorDialog';
 
 const CableEdge = ({
@@ -12,15 +12,16 @@ const CableEdge = ({
   sourcePosition,
   targetPosition,
   style = {},
-  data,
   markerEnd,
   selected,
   source,
   target,
   sourceHandle,
   targetHandle,
+  data,
+  label,
 }: any) => {
-  const { setEdges, getNodes } = useReactFlow();
+  const { getNodes } = useReactFlow();
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   
   const [edgePath, labelX, labelY] = getBezierPath({
@@ -32,74 +33,13 @@ const CableEdge = ({
     targetPosition,
   });
 
-  const getCableColor = (cableType: string) => {
-    switch (cableType) {
-      case '100ft': return '#ef4444';
-      case '200ft': return '#3b82f6';
-      case '300ft': return '#10b981';
-      default: return '#6b7280';
-    }
-  };
-
-  const handleDelete = () => {
-    setEdges((edges) => edges.filter((edge) => edge.id !== id));
-  };
-
   const handleEdit = () => {
     setIsEditDialogOpen(true);
   };
 
-  const handleUpdateConnection = (
-    newSourceId: string, 
-    newTargetId: string, 
-    newSourceHandle?: string, 
-    newTargetHandle?: string,
-    connectionType?: string,
-    cableTypeId?: string
-  ) => {
-    setEdges((edges) => 
-      edges.map((edge) => {
-        if (edge.id === id) {
-          if (connectionType === 'direct') {
-            // Convert to direct edge
-            return {
-              ...edge,
-              source: newSourceId,
-              target: newTargetId,
-              sourceHandle: newSourceHandle,
-              targetHandle: newTargetHandle,
-              type: 'direct',
-              data: {
-                ...edge.data,
-                connectionType: 'direct',
-                label: 'Direct',
-                canSwitchType: true
-              },
-              style: {
-                stroke: '#8b5cf6',
-                strokeWidth: 4,
-                strokeDasharray: '5,5',
-              }
-            };
-          } else {
-            // Keep as cable connection, potentially with new cable type
-            return {
-              ...edge,
-              source: newSourceId,
-              target: newTargetId,
-              sourceHandle: newSourceHandle,
-              targetHandle: newTargetHandle,
-              data: {
-                ...edge.data,
-                cableTypeId: cableTypeId || edge.data?.cableTypeId,
-                connectionType: 'cable'
-              }
-            };
-          }
-        }
-        return edge;
-      })
-    );
+  const handleUpdateConnection = (updates: any) => {
+    console.log('Updating cable connection:', updates);
+    setIsEditDialogOpen(false);
   };
 
   const currentEdge = {
@@ -111,54 +51,44 @@ const CableEdge = ({
     data,
   };
 
+  // Get the cable label from data or fallback to default
+  const cableLabel = data?.label || label || 'Cable';
+  
+  // Use the style provided or default cable styling
+  const edgeStyle = {
+    stroke: style.stroke || '#374151',
+    strokeWidth: selected ? 4 : 3,
+    ...style,
+  };
+
   return (
     <>
       <BaseEdge 
         path={edgePath} 
         markerEnd={markerEnd} 
-        style={{
-          ...style,
-          stroke: getCableColor(data?.cableType),
-          strokeWidth: selected ? 6 : 4,
-        }} 
+        style={edgeStyle}
       />
       <EdgeLabelRenderer>
         <div
           style={{
             position: 'absolute',
             transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
+            fontSize: 12,
+            fontWeight: 600,
             background: 'white',
             padding: '4px 8px',
             borderRadius: '4px',
-            fontSize: '12px',
-            fontWeight: 'bold',
-            border: `2px solid ${getCableColor(data?.cableType)}`,
-            color: getCableColor(data?.cableType),
+            border: '1px solid #e5e7eb',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
             pointerEvents: 'all',
+            cursor: 'pointer',
+            color: '#374151',
+            whiteSpace: 'nowrap',
           }}
-          className="nodrag nopan"
+          onClick={handleEdit}
+          className="nodrag nopan hover:bg-gray-50"
         >
-          <div className="flex items-center gap-2">
-            {data?.label || 'Cable'}
-            {selected && (
-              <div className="flex gap-1">
-                <button
-                  onClick={handleEdit}
-                  className="text-blue-500 hover:text-blue-700 font-bold text-sm flex items-center"
-                  title="Edit connection"
-                >
-                  <Edit className="h-3 w-3" />
-                </button>
-                <button
-                  onClick={handleDelete}
-                  className="text-red-500 hover:text-red-700 font-bold text-sm"
-                  title="Delete connection"
-                >
-                  ×
-                </button>
-              </div>
-            )}
-          </div>
+          {cableLabel}
         </div>
       </EdgeLabelRenderer>
 

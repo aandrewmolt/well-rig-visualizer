@@ -23,6 +23,14 @@ export const useDiagramConnections = (
       
       if (!sourceNode || !targetNode) return;
 
+      console.log('Connecting:', {
+        source: sourceNode.type,
+        target: targetNode.type,
+        sourceId: params.source,
+        targetId: params.target,
+        selectedCableType
+      });
+
       // Check for direct connections (satellite to shearstream box)
       const isDirectConnection = (
         (sourceNode.type === 'satellite' && targetNode.type === 'mainBox') ||
@@ -36,7 +44,8 @@ export const useDiagramConnections = (
         const newEdge = {
           ...params,
           id: `edge-${params.source}-${params.target}-${Date.now()}`,
-          type: 'smoothstep',
+          type: 'direct',
+          label: 'Direct Connection',
           data: {
             connectionType: 'direct',
             label: 'Direct Connection'
@@ -44,11 +53,14 @@ export const useDiagramConnections = (
           style: {
             stroke: '#10b981',
             strokeWidth: 3,
+            strokeDasharray: '5,5',
           },
           animated: true,
         };
 
+        console.log('Creating direct connection:', newEdge);
         setEdges((eds) => addEdge(newEdge, eds));
+        toast.success('Direct connection established');
         return;
       }
 
@@ -67,24 +79,49 @@ export const useDiagramConnections = (
         return;
       }
 
+      // Determine cable type and label
+      let cableLabel = 'Cable';
+      let cableColor = '#374151';
+      
+      if (selectedCableType && selectedCableType !== '') {
+        cableLabel = getCableDisplayName(selectedCableType);
+        cableColor = getCableColor(selectedCableType);
+      } else {
+        // Default cable types based on connection
+        if (sourceNode.type === 'mainBox' || targetNode.type === 'mainBox') {
+          if (targetNode.type === 'yAdapter' || sourceNode.type === 'yAdapter') {
+            cableLabel = '300ft Cable (Old)';
+            cableColor = '#6b7280';
+          } else if (targetNode.type === 'wellsideGauge' || sourceNode.type === 'wellsideGauge') {
+            cableLabel = '200ft Cable';
+            cableColor = '#f59e0b';
+          }
+        } else if (sourceNode.type === 'yAdapter' || targetNode.type === 'yAdapter') {
+          cableLabel = '100ft Cable';
+          cableColor = '#3b82f6';
+        }
+      }
+
       // Create valid cable connection
       const newEdge = {
         ...params,
         id: `edge-${params.source}-${params.target}-${Date.now()}`,
         type: 'cable',
+        label: cableLabel,
         data: {
           cableTypeId: selectedCableType,
-          label: getCableDisplayName(selectedCableType),
+          label: cableLabel,
           connectionType: 'cable'
         },
         style: {
-          stroke: getCableColor(selectedCableType),
+          stroke: cableColor,
           strokeWidth: 3,
         },
       };
 
+      console.log('Creating cable connection:', newEdge);
       setEdges((eds) => addEdge(newEdge, eds));
-      toast.success(`Connected with ${getCableDisplayName(selectedCableType)}`);
+      toast.success(`Connected with ${cableLabel}`);
     },
     [selectedCableType, nodes, setEdges, getCableColor, getCableDisplayName, validateConnection, getValidCablesForConnection]
   );

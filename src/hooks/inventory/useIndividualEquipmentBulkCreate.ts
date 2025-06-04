@@ -11,7 +11,7 @@ export const useIndividualEquipmentBulkCreate = (
   allEquipment: IndividualEquipment[],
   addBulkDraftEquipment: (equipment: DraftEquipment[], saveImmediate?: boolean) => void
 ) => {
-  const { generateEquipmentId } = useEquipmentIdGenerator();
+  const { generateEquipmentId, generateEquipmentName } = useEquipmentIdGenerator();
   const [isBulkCreateOpen, setIsBulkCreateOpen] = useState(false);
   const [bulkCreateData, setBulkCreateData] = useState<BulkCreateData>({
     count: 5,
@@ -46,9 +46,12 @@ export const useIndividualEquipmentBulkCreate = (
         return;
       }
 
+      // Use the new name generation function
+      const equipmentName = generateEquipmentName(equipmentType, equipmentId);
+
       newEquipment.push({
         equipmentId,
-        name: `${equipmentType.name} ${equipmentId}`,
+        name: equipmentName,
         typeId: equipmentType.id,
         locationId: bulkCreateData.locationId,
         status: 'available',
@@ -69,7 +72,7 @@ export const useIndividualEquipmentBulkCreate = (
       startNumber: bulkCreateData.startNumber + bulkCreateData.count,
       locationId: ''
     });
-  }, [bulkCreateData, allEquipment, equipmentType, addBulkDraftEquipment, generateEquipmentId]);
+  }, [bulkCreateData, allEquipment, equipmentType, addBulkDraftEquipment, generateEquipmentId, generateEquipmentName]);
 
   return {
     isBulkCreateOpen,

@@ -28,6 +28,31 @@ export const useEquipmentIdGenerator = () => {
     return `${prefix}${number.toString().padStart(padding, '0')}`;
   };
 
+  const generateEquipmentName = (
+    equipmentType: EquipmentType,
+    equipmentId: string
+  ): string => {
+    const prefix = equipmentType.defaultIdPrefix || '';
+    
+    // Extract the number portion from the equipment ID
+    const numberPart = equipmentId.replace(prefix, '');
+    const number = parseInt(numberPart, 10);
+    
+    // Format the name based on the equipment type
+    if (prefix === 'SL') {
+      return `Starlink ${number.toString().padStart(2, '0')}`;
+    } else if (prefix === 'CC') {
+      return `Customer Computer ${number.toString().padStart(2, '0')}`;
+    } else if (prefix === 'CT') {
+      return `Customer Tablet ${number.toString().padStart(2, '0')}`;
+    } else if (prefix === 'SS') {
+      return `ShearStream Box ${number.toString().padStart(3, '0')}`;
+    }
+    
+    // Fallback for other types
+    return `${equipmentType.name} ${number.toString().padStart(2, '0')}`;
+  };
+
   const getIdFormat = (equipmentType: EquipmentType): string => {
     const prefix = equipmentType.defaultIdPrefix || '';
     const padding = getIdPadding(equipmentType);
@@ -37,6 +62,7 @@ export const useEquipmentIdGenerator = () => {
 
   return {
     generateEquipmentId,
+    generateEquipmentName,
     getIdFormat,
     getIdPadding,
   };

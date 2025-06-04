@@ -4,6 +4,7 @@ import { IndividualEquipment, EquipmentType } from '@/types/inventory';
 import { FormData } from './types/individualEquipmentTypes';
 import { toast } from '@/hooks/use-toast';
 import { DraftEquipment } from '@/hooks/useDraftEquipmentManager';
+import { useEquipmentIdGenerator } from './useEquipmentIdGenerator';
 
 export const useIndividualEquipmentForm = (
   equipmentType: EquipmentType,
@@ -12,6 +13,7 @@ export const useIndividualEquipmentForm = (
   updateIndividualEquipment: (equipment: IndividualEquipment[]) => void,
   individualEquipment: IndividualEquipment[]
 ) => {
+  const { generateEquipmentId, generateEquipmentName, getIdPadding } = useEquipmentIdGenerator();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingEquipment, setEditingEquipment] = useState<IndividualEquipment | null>(null);
   const [formData, setFormData] = useState<FormData>({
@@ -26,28 +28,31 @@ export const useIndividualEquipmentForm = (
     const prefix = equipmentType.defaultIdPrefix || 'EQ-';
     const existingIds = allEquipment.map(eq => eq.equipmentId);
     let counter = 1;
-    let newId = `${prefix}${counter.toString().padStart(3, '0')}`;
+    let newId = generateEquipmentId(equipmentType, counter);
     
     while (existingIds.includes(newId)) {
       counter++;
-      newId = `${prefix}${counter.toString().padStart(3, '0')}`;
+      newId = generateEquipmentId(equipmentType, counter);
     }
     
     return newId;
-  }, [allEquipment, equipmentType.defaultIdPrefix]);
+  }, [allEquipment, equipmentType, generateEquipmentId]);
 
   const handleAddItemClick = useCallback(() => {
     if (!editingEquipment) {
+      const newId = generateNextEquipmentId();
+      const newName = generateEquipmentName(equipmentType, newId);
+      
       setFormData({
-        equipmentId: generateNextEquipmentId(),
-        name: '',
+        equipmentId: newId,
+        name: newName,
         locationId: '',
         serialNumber: '',
         notes: ''
       });
     }
     setIsDialogOpen(true);
-  }, [editingEquipment, generateNextEquipmentId]);
+  }, [editingEquipment, generateNextEquipmentId, generateEquipmentName, equipmentType]);
 
   const handleSubmit = useCallback((saveImmediate = false) => {
     if (!formData.equipmentId.trim() || !formData.name.trim() || !formData.locationId) {

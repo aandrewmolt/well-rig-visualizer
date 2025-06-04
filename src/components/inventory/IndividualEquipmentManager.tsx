@@ -1,12 +1,13 @@
 
 import React from 'react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Search, Database } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useSupabaseInventory } from '@/hooks/useSupabaseInventory';
 import { EquipmentType, StorageLocation } from '@/types/inventory';
 import { useIndividualEquipmentManager } from '@/hooks/inventory/useIndividualEquipmentManager';
 import { useEquipmentMigration } from '@/hooks/inventory/useEquipmentMigration';
+import { useInventoryDataCleanup } from '@/hooks/inventory/useInventoryDataCleanup';
 import IndividualEquipmentForm from './IndividualEquipmentForm';
 import BulkEquipmentCreationDialog from './BulkEquipmentCreationDialog';
 import EquipmentGrid from './EquipmentGrid';
@@ -27,6 +28,7 @@ const IndividualEquipmentManager: React.FC<IndividualEquipmentManagerProps> = ({
 }) => {
   const { isLoading } = useSupabaseInventory();
   const { migrateEquipmentNaming } = useEquipmentMigration();
+  const { analyzeDataConsistency } = useInventoryDataCleanup();
   
   const manager = useIndividualEquipmentManager(
     equipmentType!,
@@ -97,22 +99,44 @@ const IndividualEquipmentManager: React.FC<IndividualEquipmentManagerProps> = ({
         onBulkCreate={() => manager.setIsBulkCreateOpen(true)}
       />
 
-      {/* Migration Button for fixing naming */}
-      <Card className="border-blue-200 bg-blue-50">
-        <CardContent className="p-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-blue-700 font-medium">Fix Equipment Naming</p>
-              <p className="text-xs text-blue-600">
-                Update equipment names to use correct format (e.g., ShearStream-001, Starlink-01)
-              </p>
+      {/* Data Management Tools */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {/* Migration Tool */}
+        <Card className="border-blue-200 bg-blue-50">
+          <CardContent className="p-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-blue-700 font-medium">Fix Equipment Naming</p>
+                <p className="text-xs text-blue-600">
+                  Update equipment names and IDs with correct zero padding (SS0001, CC01, etc.)
+                </p>
+              </div>
+              <Button size="sm" onClick={migrateEquipmentNaming} variant="outline">
+                <Search className="h-3 w-3 mr-1" />
+                Fix Names
+              </Button>
             </div>
-            <Button size="sm" onClick={migrateEquipmentNaming} variant="outline">
-              Fix Names
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+
+        {/* Data Analysis Tool */}
+        <Card className="border-purple-200 bg-purple-50">
+          <CardContent className="p-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-purple-700 font-medium">Analyze Data</p>
+                <p className="text-xs text-purple-600">
+                  Check for missing CC equipment and data consistency issues
+                </p>
+              </div>
+              <Button size="sm" onClick={analyzeDataConsistency} variant="outline">
+                <Database className="h-3 w-3 mr-1" />
+                Analyze
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       <IndividualEquipmentStats equipment={manager.individualEquipment} />
       <DraftItemsList draftItems={manager.draftEquipment} />

@@ -29,15 +29,18 @@ export const useIndividualEquipmentForm = (
   const getNextEquipmentId = useCallback((prefix: string) => {
     const existingIds = allEquipment.map(eq => eq.equipmentId);
     let counter = 1;
-    let newId = generateEquipmentId({ defaultIdPrefix: prefix } as EquipmentType, counter);
+    
+    // Create a temporary equipment type with the selected prefix for ID generation
+    const tempEquipmentType = { ...equipmentType, defaultIdPrefix: prefix };
+    let newId = generateEquipmentId(tempEquipmentType, counter);
     
     while (existingIds.includes(newId)) {
       counter++;
-      newId = generateEquipmentId({ defaultIdPrefix: prefix } as EquipmentType, counter);
+      newId = generateEquipmentId(tempEquipmentType, counter);
     }
     
     return newId;
-  }, [allEquipment, generateEquipmentId]);
+  }, [allEquipment, generateEquipmentId, equipmentType]);
 
   const resetForm = useCallback(() => {
     const prefix = equipmentType.name === 'Customer Computer' ? 'CC' : 
@@ -47,7 +50,7 @@ export const useIndividualEquipmentForm = (
     
     setFormData({
       equipmentId: nextId,
-      name: generateEquipmentName(equipmentType, nextId),
+      name: generateEquipmentName({ ...equipmentType, defaultIdPrefix: prefix }, nextId),
       locationId: '',
       serialNumber: '',
       notes: '',
@@ -59,10 +62,12 @@ export const useIndividualEquipmentForm = (
 
   const handlePrefixChange = useCallback((prefix: string) => {
     const nextId = getNextEquipmentId(prefix);
+    const tempEquipmentType = { ...equipmentType, defaultIdPrefix: prefix };
+    
     setFormData(prev => ({
       ...prev,
       equipmentId: nextId,
-      name: generateEquipmentName({ ...equipmentType, defaultIdPrefix: prefix }, nextId),
+      name: generateEquipmentName(tempEquipmentType, nextId),
       selectedPrefix: prefix
     }));
   }, [getNextEquipmentId, generateEquipmentName, equipmentType]);

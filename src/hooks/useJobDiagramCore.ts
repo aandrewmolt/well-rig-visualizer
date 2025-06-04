@@ -3,16 +3,9 @@ import React, { useRef, useEffect } from 'react';
 import { useJobDiagramState } from '@/hooks/useJobDiagramState';
 import { useJobDiagramInitialization } from '@/hooks/useJobDiagramInitialization';
 import { useDiagramConnections } from '@/hooks/useDiagramConnections';
+import { JobDiagram } from '@/hooks/useSupabaseJobs';
 
-interface Job {
-  id: string;
-  name: string;
-  wellCount: number;
-  hasWellsideGauge: boolean;
-  createdAt: Date;
-}
-
-export const useJobDiagramCore = (job: Job) => {
+export const useJobDiagramCore = (job: JobDiagram) => {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
 
   // State management

@@ -77,6 +77,14 @@ const IndividualEquipmentManager: React.FC<IndividualEquipmentManagerProps> = ({
     return location?.name || 'Unknown Location';
   };
 
+  // Create a wrapper function that matches the expected signature
+  const handleBulkCreateWrapper = (equipment: any[]) => {
+    // The bulk creation dialog will pass the equipment array,
+    // but our hook's handleBulkCreate expects no parameters
+    // and handles the bulk creation internally
+    manager.handleBulkCreate();
+  };
+
   return (
     <div className="space-y-3">
       <IndividualEquipmentHeader
@@ -122,7 +130,7 @@ const IndividualEquipmentManager: React.FC<IndividualEquipmentManagerProps> = ({
         equipmentType={equipmentType}
         storageLocations={storageLocations}
         existingEquipment={manager.allEquipment}
-        onBulkCreate={manager.handleBulkCreate}
+        onBulkCreate={handleBulkCreateWrapper}
       />
     </div>
   );

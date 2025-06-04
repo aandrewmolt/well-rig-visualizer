@@ -161,24 +161,44 @@ export const useJobDiagramInitialization = (props: UseJobDiagramInitializationPr
     props.setMainBoxName(initialData.mainBoxName || 'ShearStream Box');
     props.setSatelliteName(initialData.satelliteName || 'Starlink');
     props.setWellsideGaugeName(initialData.wellsideGaugeName || 'Wellside Gauge');
-    props.setCustomerComputerNames(initialData.companyComputerNames || {});
+    props.setCustomerComputerNames(initialData.customerComputerNames || {});
 
-    // Always create default nodes - this ensures we have the essential components
-    const defaultNodes = createDefaultNodes(
-      initialData, 
-      initialData.mainBoxName || 'ShearStream Box',
-      initialData.satelliteName || 'Starlink', 
-      initialData.wellsideGaugeName || 'Wellside Gauge'
-    );
+    // Check if we have saved nodes and edges - if so, use them instead of creating defaults
+    if (initialData.nodes && Array.isArray(initialData.nodes) && initialData.nodes.length > 0) {
+      console.log('Loading saved nodes and edges:', {
+        nodeCount: initialData.nodes.length,
+        edgeCount: initialData.edges?.length || 0
+      });
+      
+      // Use saved nodes and edges
+      props.setNodes(initialData.nodes);
+      props.setEdges(initialData.edges && initialData.edges.length > 0 ? initialData.edges : []);
+      
+      // Set node counter based on existing nodes
+      const maxNodeId = Math.max(
+        ...initialData.nodes.map(node => {
+          const match = node.id.match(/\d+/);
+          return match ? parseInt(match[0]) : 0;
+        }),
+        0
+      );
+      props.setNodeIdCounter(maxNodeId + 1);
+    } else {
+      // Only create default nodes if no saved nodes exist (new job)
+      console.log('No saved nodes found, creating default nodes for new job');
+      
+      const defaultNodes = createDefaultNodes(
+        initialData, 
+        initialData.mainBoxName || 'ShearStream Box',
+        initialData.satelliteName || 'Starlink', 
+        initialData.wellsideGaugeName || 'Wellside Gauge'
+      );
 
-    console.log('Setting nodes to:', defaultNodes);
-    props.setNodes(defaultNodes);
-
-    // Initialize edges
-    props.setEdges(initialData.edges && initialData.edges.length > 0 ? initialData.edges : []);
-    
-    // Set node counter based on created nodes
-    props.setNodeIdCounter(defaultNodes.length + 1);
+      console.log('Setting default nodes to:', defaultNodes);
+      props.setNodes(defaultNodes);
+      props.setEdges([]);
+      props.setNodeIdCounter(defaultNodes.length + 1);
+    }
     
     props.setIsInitialized(true);
     console.log('Job initialization completed');

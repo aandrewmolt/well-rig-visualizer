@@ -162,14 +162,14 @@ export const useJobDiagramSave = ({
 
   const { debouncedSave, cleanup } = useDebouncedSave(performSave, 3000); // Increased delay to 3 seconds
 
-  // Mark initial load as complete after a longer delay - ALWAYS call this useEffect
+  // Mark initial load as complete after a longer delay to ensure data loading is finished
   useEffect(() => {
     if (isInitialized && !initialLoadCompleteRef.current) {
       const timer = setTimeout(() => {
         initialLoadCompleteRef.current = true;
         lastSavedDataRef.current = currentDataString;
         console.log('Initial load complete, ready for auto-save');
-      }, 3000); // Increased delay to 3 seconds
+      }, 5000); // Increased delay to 5 seconds to allow proper data loading
 
       return () => clearTimeout(timer);
     }

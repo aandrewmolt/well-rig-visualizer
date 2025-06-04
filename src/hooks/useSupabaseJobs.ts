@@ -39,9 +39,9 @@ export const useSupabaseJobs = () => {
         name: job.name,
         wellCount: job.well_count,
         hasWellsideGauge: job.has_wellside_gauge,
-        nodes: job.nodes,
-        edges: job.edges,
-        companyComputerNames: job.company_computer_names,
+        nodes: Array.isArray(job.nodes) ? job.nodes : [],
+        edges: Array.isArray(job.edges) ? job.edges : [],
+        companyComputerNames: (job.company_computer_names as Record<string, string>) || {},
         equipmentAssignment: job.equipment_assignment,
         equipmentAllocated: job.equipment_allocated,
         mainBoxName: job.main_box_name,
@@ -50,7 +50,7 @@ export const useSupabaseJobs = () => {
         selectedCableType: job.selected_cable_type,
         createdAt: new Date(job.created_at),
         updatedAt: new Date(job.updated_at),
-      }));
+      })) as JobDiagram[];
     }
   });
 

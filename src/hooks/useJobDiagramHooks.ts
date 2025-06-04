@@ -1,19 +1,11 @@
-
 import { useRobustEquipmentTracking } from '@/hooks/useRobustEquipmentTracking';
 import { useJobDiagramCore } from '@/hooks/useJobDiagramCore';
 import { useJobDiagramActions } from '@/hooks/useJobDiagramActions';
 import { useJobDiagramEquipmentHandlers } from '@/hooks/useJobDiagramEquipmentHandlers';
 import { useJobDiagramSave } from '@/hooks/useJobDiagramSave';
+import { JobDiagram } from '@/hooks/useSupabaseJobs';
 
-interface Job {
-  id: string;
-  name: string;
-  wellCount: number;
-  hasWellsideGauge: boolean;
-  createdAt: Date;
-}
-
-export const useJobDiagramHooks = (job: Job) => {
+export const useJobDiagramHooks = (job: JobDiagram) => {
   // Core state and initialization
   const coreData = useJobDiagramCore(job);
 

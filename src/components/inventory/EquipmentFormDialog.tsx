@@ -1,12 +1,13 @@
 
 import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { InventoryData } from '@/types/inventory';
+import { Plus } from 'lucide-react';
 
 interface EquipmentFormDialogProps {
   isOpen: boolean;
@@ -20,7 +21,10 @@ interface EquipmentFormDialogProps {
     notes: string;
   };
   setFormData: (data: any) => void;
-  data: InventoryData;
+  data: {
+    equipmentTypes: any[];
+    storageLocations: any[];
+  };
   onSubmit: () => void;
   onCancel: () => void;
   getCategoryColor: (category: string) => string;
@@ -39,6 +43,12 @@ const EquipmentFormDialog: React.FC<EquipmentFormDialogProps> = ({
 }) => {
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogTrigger asChild>
+        <Button>
+          <Plus className="mr-2 h-4 w-4" />
+          Add Equipment
+        </Button>
+      </DialogTrigger>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>
@@ -47,52 +57,57 @@ const EquipmentFormDialog: React.FC<EquipmentFormDialogProps> = ({
         </DialogHeader>
         <div className="space-y-4">
           <div>
-            <Label>Equipment Type</Label>
-            <Select value={formData.typeId} onValueChange={(value) => setFormData({...formData, typeId: value})}>
+            <Label htmlFor="typeId">Equipment Type</Label>
+            <Select value={formData.typeId} onValueChange={(value) => setFormData(prev => ({ ...prev, typeId: value }))}>
               <SelectTrigger>
                 <SelectValue placeholder="Select equipment type" />
               </SelectTrigger>
               <SelectContent>
-                {data.equipmentTypes.filter(type => type.id && type.id.trim() !== '').map(type => (
+                {data.equipmentTypes.map(type => (
                   <SelectItem key={type.id} value={type.id}>
                     <div className="flex items-center gap-2">
-                      {type.name}
-                      <Badge variant="outline" className={getCategoryColor(type.category)}>
+                      <Badge className={getCategoryColor(type.category)}>
                         {type.category}
                       </Badge>
+                      {type.name}
                     </div>
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
+
           <div>
-            <Label>Location</Label>
-            <Select value={formData.locationId} onValueChange={(value) => setFormData({...formData, locationId: value})}>
+            <Label htmlFor="locationId">Location</Label>
+            <Select value={formData.locationId} onValueChange={(value) => setFormData(prev => ({ ...prev, locationId: value }))}>
               <SelectTrigger>
                 <SelectValue placeholder="Select location" />
               </SelectTrigger>
               <SelectContent>
-                {data.storageLocations.filter(location => location.id && location.id.trim() !== '').map(location => (
-                  <SelectItem key={location.id} value={location.id}>{location.name}</SelectItem>
+                {data.storageLocations.map(location => (
+                  <SelectItem key={location.id} value={location.id}>
+                    {location.name}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
+
           <div>
-            <Label>Quantity</Label>
+            <Label htmlFor="quantity">Quantity</Label>
             <Input
               type="number"
               value={formData.quantity}
-              onChange={(e) => setFormData({...formData, quantity: parseInt(e.target.value) || 1})}
+              onChange={(e) => setFormData(prev => ({ ...prev, quantity: Number(e.target.value) }))}
               min="1"
             />
           </div>
+
           <div>
-            <Label>Status</Label>
-            <Select value={formData.status} onValueChange={(value: any) => setFormData({...formData, status: value})}>
+            <Label htmlFor="status">Status</Label>
+            <Select value={formData.status} onValueChange={(value) => setFormData(prev => ({ ...prev, status: value }))}>
               <SelectTrigger>
-                <SelectValue />
+                <SelectValue placeholder="Select status" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="available">Available</SelectItem>
@@ -101,19 +116,21 @@ const EquipmentFormDialog: React.FC<EquipmentFormDialogProps> = ({
               </SelectContent>
             </Select>
           </div>
+
           <div>
-            <Label>Notes (Optional)</Label>
-            <Input
+            <Label htmlFor="notes">Notes</Label>
+            <Textarea
               value={formData.notes}
-              onChange={(e) => setFormData({...formData, notes: e.target.value})}
-              placeholder="Additional notes"
+              onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+              placeholder="Optional notes..."
             />
           </div>
-          <div className="flex space-x-2">
-            <Button onClick={onSubmit} className="flex-1">
-              {editingItem ? 'Update' : 'Add'}
+
+          <div className="flex gap-2">
+            <Button onClick={onSubmit}>
+              {editingItem ? 'Update' : 'Add'} Equipment
             </Button>
-            <Button onClick={onCancel} variant="outline" className="flex-1">
+            <Button variant="outline" onClick={onCancel}>
               Cancel
             </Button>
           </div>

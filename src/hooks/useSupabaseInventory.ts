@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { InventoryData } from '@/types/inventory';
 import { useSupabaseEquipmentQueries } from './supabase/useSupabaseEquipmentQueries';
@@ -29,7 +28,39 @@ export const useSupabaseInventory = () => {
     lastSync: new Date(),
   };
 
-  // Enhanced mutation wrappers with proper error handling
+  // Enhanced mutation wrappers with better error handling
+  const createEquipmentType = async (type: any) => {
+    try {
+      return await mutations.addEquipmentType(type);
+    } catch (error: any) {
+      // Don't throw for expected duplicate errors during initialization
+      if (error.message?.includes('duplicate key') || 
+          error.message?.includes('already exists') ||
+          error.message?.includes('violates unique constraint')) {
+        console.log(`Equipment type '${type.name}' already exists, skipping...`);
+        return null;
+      }
+      console.error('Failed to create equipment type:', error);
+      throw error;
+    }
+  };
+
+  const createStorageLocation = async (location: any) => {
+    try {
+      return await mutations.addStorageLocation(location);
+    } catch (error: any) {
+      // Don't throw for expected duplicate errors during initialization
+      if (error.message?.includes('duplicate key') || 
+          error.message?.includes('already exists') ||
+          error.message?.includes('violates unique constraint')) {
+        console.log(`Storage location '${location.name}' already exists, skipping...`);
+        return null;
+      }
+      console.error('Failed to create storage location:', error);
+      throw error;
+    }
+  };
+
   const updateSingleEquipmentItem = async (id: string, updates: any) => {
     try {
       await mutations.updateEquipmentItem(id, updates);
@@ -71,7 +102,9 @@ export const useSupabaseInventory = () => {
     isLoading: queriesLoading || isLoading || mutations.isLoading,
     syncStatus: 'synced' as const,
     
-    // Enhanced CRUD operations
+    // Enhanced CRUD operations with better error handling
+    createEquipmentType,
+    createStorageLocation,
     updateSingleEquipmentItem,
     addEquipmentItem,
     deleteEquipmentItem,
@@ -79,8 +112,6 @@ export const useSupabaseInventory = () => {
     
     // All mutation operations with proper aliases
     ...mutations,
-    createEquipmentType: mutations.addEquipmentType,
-    createStorageLocation: mutations.addStorageLocation,
     addIndividualEquipment: mutations.addIndividualEquipment,
     updateSingleIndividualEquipment: mutations.updateIndividualEquipment,
     
@@ -100,7 +131,7 @@ export const useSupabaseInventory = () => {
     // Utilities
     ...utils,
 
-    // Legacy compatibility methods (now implemented)
+    // Legacy compatibility methods
     updateEquipmentTypes: mutations.updateEquipmentType,
     updateStorageLocations: mutations.updateStorageLocation,
     updateEquipmentItems: mutations.updateEquipmentItem,

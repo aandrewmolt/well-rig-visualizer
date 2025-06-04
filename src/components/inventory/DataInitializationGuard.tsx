@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Database, CheckCircle } from 'lucide-react';
+import { Loader2, Database, CheckCircle, AlertCircle } from 'lucide-react';
 import { useDefaultDataSetup } from '@/hooks/useDefaultDataSetup';
 
 interface DataInitializationGuardProps {
@@ -25,10 +25,10 @@ const DataInitializationGuard: React.FC<DataInitializationGuardProps> = ({ child
           <CardContent className="space-y-4">
             <div className="flex items-center gap-2">
               <Loader2 className="h-4 w-4 animate-spin" />
-              <span>Creating default equipment types and storage locations...</span>
+              <span>Checking and creating missing equipment types...</span>
             </div>
             <p className="text-sm text-gray-600">
-              This will only happen once during initial setup.
+              Only missing items will be created. This process is optimized to prevent duplicates.
             </p>
           </CardContent>
         </Card>
@@ -43,7 +43,7 @@ const DataInitializationGuard: React.FC<DataInitializationGuardProps> = ({ child
         <Card className="w-96">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Database className="h-5 w-5" />
+              <AlertCircle className="h-5 w-5 text-orange-500" />
               Inventory Setup Required
             </CardTitle>
           </CardHeader>
@@ -53,7 +53,7 @@ const DataInitializationGuard: React.FC<DataInitializationGuardProps> = ({ child
               <span>Preparing inventory system...</span>
             </div>
             <p className="text-sm text-gray-600">
-              Setting up default equipment types and storage locations.
+              Setting up required equipment types and storage locations.
             </p>
           </CardContent>
         </Card>

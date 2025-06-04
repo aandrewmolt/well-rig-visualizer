@@ -50,6 +50,55 @@ const JobEquipmentPanel: React.FC<JobEquipmentPanelProps> = ({
   const usage = analyzeEquipmentUsage();
   const report = generateEquipmentReport(usage);
 
+  // Calculate equipment counts from diagram
+  const calculateDiagramEquipment = () => {
+    const counts = {
+      SL: 0, // Starlink/Satellite
+      CC: 0, // Customer Computer  
+      SS: 0, // ShearStream Box
+      gauges: 0,
+      adapters: 0,
+      cables: {} as { [key: string]: number }
+    };
+
+    // Count from nodes
+    nodes.forEach(node => {
+      switch (node.type) {
+        case 'satellite':
+          counts.SL += 1;
+          break;
+        case 'customerComputer':
+          counts.CC += 1;
+          break;
+        case 'companyComputer':
+          counts.SS += 1;
+          break;
+        case 'well':
+        case 'wellsideGauge':
+          counts.gauges += 1;
+          break;
+        case 'yAdapter':
+          counts.adapters += 1;
+          break;
+      }
+    });
+
+    // Count cables from edges
+    edges.forEach(edge => {
+      if (edge.type === 'cable' && edge.data?.cableTypeId) {
+        const cableType = data.equipmentTypes.find(type => type.id === edge.data.cableTypeId);
+        if (cableType) {
+          const cableName = cableType.name;
+          counts.cables[cableName] = (counts.cables[cableName] || 0) + 1;
+        }
+      }
+    });
+
+    return counts;
+  };
+
+  const diagramCounts = calculateDiagramEquipment();
+
   const getDeployedEquipment = () => {
     return data.equipmentItems.filter(
       item => item.status === 'deployed' && item.jobId === jobId
@@ -65,7 +114,7 @@ const JobEquipmentPanel: React.FC<JobEquipmentPanelProps> = ({
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-lg">
             <Package className="h-5 w-5" />
-            Equipment Tracking - {jobName}
+            Equipment Overview - {jobName}
             {isConsistent ? (
               <CheckCircle className="h-4 w-4 text-green-500" />
             ) : (
@@ -79,70 +128,55 @@ const JobEquipmentPanel: React.FC<JobEquipmentPanelProps> = ({
             setSelectedLocation={setSelectedLocation}
           />
 
-          {/* Equipment Summary */}
+          {/* Diagram Equipment Summary */}
           <div className="bg-blue-50 p-3 rounded-lg">
-            <h4 className="font-medium mb-2">Connection Analysis Summary</h4>
+            <h4 className="font-medium mb-2">Equipment Required from Diagram</h4>
             <div className="grid grid-cols-2 gap-2 text-sm">
-              <div>Total Connections: {usage.totalConnections}</div>
-              <div>Direct Connections: {usage.directConnections}</div>
-              <div>Cable Types Used: {Object.keys(usage.cables).length}</div>
-              <div>Total Cables: {Object.values(usage.cables).reduce((sum, cable) => sum + cable.quantity, 0)}</div>
+              {diagramCounts.SL > 0 && (
+                <div className="flex justify-between">
+                  <span>SL (Starlink):</span>
+                  <span className="font-bold">{diagramCounts.SL}</span>
+                </div>
+              )}
+              {diagramCounts.CC > 0 && (
+                <div className="flex justify-between">
+                  <span>CC (Customer Computer):</span>
+                  <span className="font-bold">{diagramCounts.CC}</span>
+                </div>
+              )}
+              {diagramCounts.SS > 0 && (
+                <div className="flex justify-between">
+                  <span>SS (ShearStream Box):</span>
+                  <span className="font-bold">{diagramCounts.SS}</span>
+                </div>
+              )}
+              {diagramCounts.gauges > 0 && (
+                <div className="flex justify-between">
+                  <span>Gauges:</span>
+                  <span className="font-bold">{diagramCounts.gauges}</span>
+                </div>
+              )}
+              {diagramCounts.adapters > 0 && (
+                <div className="flex justify-between">
+                  <span>Y Adapters:</span>
+                  <span className="font-bold">{diagramCounts.adapters}</span>
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Enhanced Cable Details */}
-          {Object.keys(usage.cables).length > 0 && (
+          {/* Cable Requirements */}
+          {Object.keys(diagramCounts.cables).length > 0 && (
             <div className="space-y-2">
               <h4 className="font-medium">Cable Requirements</h4>
-              {Object.entries(usage.cables).map(([typeId, details]) => (
-                <div key={typeId} className="p-2 bg-gray-50 rounded">
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <span className="font-medium">{details.typeName}</span>
-                      <div className="text-xs text-gray-500 mt-1">
-                        {details.length} {details.category}
-                        {details.version && (
-                          <span className="ml-2 px-1 bg-blue-100 text-blue-700 rounded">
-                            {details.version}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <span className="font-bold text-lg">{details.quantity}</span>
+              {Object.entries(diagramCounts.cables).map(([cableName, quantity]) => (
+                <div key={cableName} className="p-2 bg-gray-50 rounded">
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium">{cableName}</span>
+                    <span className="font-bold text-lg">{quantity}</span>
                   </div>
                 </div>
               ))}
-            </div>
-          )}
-
-          {/* Equipment Requirements */}
-          {(usage.gauges > 0 || usage.adapters > 0 || usage.computers > 0 || usage.satellite > 0) && (
-            <div className="space-y-2">
-              <h4 className="font-medium">Equipment Requirements</h4>
-              {usage.gauges > 0 && (
-                <div className="flex justify-between p-2 bg-gray-50 rounded">
-                  <span>Pressure Gauges</span>
-                  <span className="font-bold">{usage.gauges}</span>
-                </div>
-              )}
-              {usage.adapters > 0 && (
-                <div className="flex justify-between p-2 bg-gray-50 rounded">
-                  <span>Y Adapters</span>
-                  <span className="font-bold">{usage.adapters}</span>
-                </div>
-              )}
-              {usage.computers > 0 && (
-                <div className="flex justify-between p-2 bg-gray-50 rounded">
-                  <span>Company Computers</span>
-                  <span className="font-bold">{usage.computers}</span>
-                </div>
-              )}
-              {usage.satellite > 0 && (
-                <div className="flex justify-between p-2 bg-gray-50 rounded">
-                  <span>Satellite Equipment</span>
-                  <span className="font-bold">{usage.satellite}</span>
-                </div>
-              )}
             </div>
           )}
 

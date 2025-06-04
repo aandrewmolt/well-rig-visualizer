@@ -5,7 +5,7 @@ import { Square, RotateCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const YAdapterNode = ({ id, data }: { id: string; data: any }) => {
-  const { getEdges } = useReactFlow();
+  const { getEdges, getNodes } = useReactFlow();
   const [topPortNumber, setTopPortNumber] = useState<string>('1');
   const [bottomPortNumber, setBottomPortNumber] = useState<string>('2');
 

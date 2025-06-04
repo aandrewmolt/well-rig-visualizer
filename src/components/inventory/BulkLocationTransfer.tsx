@@ -140,7 +140,7 @@ const BulkLocationTransfer = () => {
       for (const item of itemsToTransfer) {
         try {
           if (item.type === 'equipment') {
-            // For equipment items, we need to handle partial transfers
+            // Handle bulk equipment transfers
             const relevantItems = data.equipmentItems.filter(
               equipItem => equipItem.typeId === item.typeId && equipItem.locationId === fromLocationId
             );
@@ -185,11 +185,13 @@ const BulkLocationTransfer = () => {
               remainingToTransfer -= transferFromThis;
             }
           } else {
-            // Individual equipment - simple location update
+            // Handle individual equipment - use the correct field name and method
+            console.log('Transferring individual equipment:', item.originalItemId, 'to location:', toLocationId);
             await updateIndividualEquipment(item.originalItemId, {
-              location_id: toLocationId,
+              locationId: toLocationId, // Use locationId, not location_id
               lastUpdated: new Date(),
             });
+            console.log('Individual equipment transfer completed');
           }
           successCount++;
         } catch (error) {

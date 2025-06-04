@@ -202,7 +202,8 @@ export const useJobDiagramInitialization = ({
       if (job.mainBoxName) setMainBoxName(job.mainBoxName);
       if (job.satelliteName) setSatelliteName(job.satelliteName);
       if (job.wellsideGaugeName) setWellsideGaugeName(job.wellsideGaugeName);
-      if (job.customerComputerNames) setCustomerComputerNames(job.customerComputerNames);
+      // Fix: Use companyComputerNames instead of customerComputerNames
+      if (job.companyComputerNames) setCustomerComputerNames(job.companyComputerNames);
       if (job.selectedCableType) setSelectedCableType(job.selectedCableType);
       
       // Restore equipment assignments

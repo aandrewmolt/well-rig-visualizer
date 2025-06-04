@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Package, Zap } from 'lucide-react';
+import { Package } from 'lucide-react';
 import { Node, Edge } from '@xyflow/react';
 import { useEquipmentUsageAnalyzer } from '@/hooks/equipment/useEquipmentUsageAnalyzer';
 import { ExtrasOnLocationItem } from '@/hooks/useExtrasOnLocation';
@@ -49,6 +49,9 @@ const EquipmentSummaryPanel: React.FC<EquipmentSummaryPanelProps> = ({
     acc[typeName].push(extra);
     return acc;
   }, {} as Record<string, ExtrasOnLocationItem[]>);
+
+  // Calculate total cable connections (excluding direct connections)
+  const totalCableConnections = Object.values(equipmentUsage.cables).reduce((sum, cable) => sum + cable.quantity, 0);
 
   return (
     <Card className="bg-white shadow-lg">
@@ -117,22 +120,6 @@ const EquipmentSummaryPanel: React.FC<EquipmentSummaryPanelProps> = ({
           </div>
         )}
 
-        {/* Direct Connections */}
-        {equipmentUsage.directConnections > 0 && (
-          <div>
-            <h4 className="text-sm font-medium text-gray-700 mb-2">Connections</h4>
-            <div className="space-y-1 text-sm">
-              <div className="flex justify-between">
-                <span className="flex items-center gap-1">
-                  <Zap className="h-3 w-3" />
-                  Direct Connections
-                </span>
-                <Badge variant="outline">{equipmentUsage.directConnections}</Badge>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Extras on Location */}
         {Object.keys(extrasGrouped).length > 0 && (
           <div>
@@ -171,11 +158,11 @@ const EquipmentSummaryPanel: React.FC<EquipmentSummaryPanelProps> = ({
           </div>
         )}
 
-        {/* Total Summary */}
+        {/* Total Summary - Only show cable connections, not direct connections */}
         <div className="pt-2 border-t">
           <div className="flex justify-between text-sm font-medium">
-            <span>Total Connections:</span>
-            <Badge variant="default">{equipmentUsage.totalConnections}</Badge>
+            <span>Total Cable Connections:</span>
+            <Badge variant="default">{totalCableConnections}</Badge>
           </div>
         </div>
       </CardContent>

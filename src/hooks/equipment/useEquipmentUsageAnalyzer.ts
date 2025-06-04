@@ -53,11 +53,21 @@ export const useEquipmentUsageAnalyzer = (nodes: Node[], edges: Edge[]) => {
         usage.directConnections++;
         console.log(`Direct connection found (no cable used): ${edge.id}`, edgeData);
       } else if (edgeData?.connectionType === 'cable' && typeof edgeData.cableTypeId === 'string') {
-        // Count ALL cables when connectionType is 'cable', regardless of type (including 100ft)
+        // Count cables based on their actual type
         const originalCableTypeId = edgeData.cableTypeId;
-        const migratedCableTypeId = migrateCableTypeId(originalCableTypeId);
+        let migratedCableTypeId = migrateCableTypeId(originalCableTypeId);
         
-        console.log(`Cable connection found: ${edge.id}, type: ${originalCableTypeId} -> ${migratedCableTypeId}`);
+        // Map cable types based on actual label for accurate counting
+        const label = edgeData.label?.toLowerCase() || '';
+        if (label.includes('100ft')) {
+          migratedCableTypeId = '1'; // 100ft cable type ID
+        } else if (label.includes('200ft')) {
+          migratedCableTypeId = '2'; // 200ft cable type ID
+        } else if (label.includes('300ft')) {
+          migratedCableTypeId = '4'; // 300ft cable type ID
+        }
+        
+        console.log(`Cable connection found: ${edge.id}, label: ${edgeData.label}, type: ${originalCableTypeId} -> ${migratedCableTypeId}`);
         
         const equipmentType = data.equipmentTypes.find(type => type.id === migratedCableTypeId);
         
@@ -96,14 +106,25 @@ export const useEquipmentUsageAnalyzer = (nodes: Node[], edges: Edge[]) => {
           console.warn(`Cable type ${migratedCableTypeId} (migrated from ${originalCableTypeId}) not found in equipment types`);
         }
       } else {
-        // If no explicit connection type, try to infer from edge type or default to direct
-        if (edge.type === 'cable' && edgeData?.cableTypeId) {
-          // This is a legacy cable connection, treat as cable
-          const migratedCableTypeId = migrateCableTypeId(edgeData.cableTypeId);
-          const equipmentType = data.equipmentTypes.find(type => type.id === migratedCableTypeId);
+        // Check if this edge has a label that indicates it's a cable
+        const label = edgeData?.label?.toLowerCase() || edge.label?.toLowerCase() || '';
+        
+        if (label.includes('cable') && !label.includes('direct')) {
+          // This is a cable connection based on label
+          let cableTypeId = '2'; // Default to 200ft
+          
+          if (label.includes('100ft')) {
+            cableTypeId = '1';
+          } else if (label.includes('200ft')) {
+            cableTypeId = '2';
+          } else if (label.includes('300ft')) {
+            cableTypeId = '4';
+          }
+          
+          const equipmentType = data.equipmentTypes.find(type => type.id === cableTypeId);
           
           if (equipmentType) {
-            if (!usage.cables[migratedCableTypeId]) {
+            if (!usage.cables[cableTypeId]) {
               const name = equipmentType.name.toLowerCase();
               let length = '200ft';
               let category = 'cable';
@@ -122,7 +143,7 @@ export const useEquipmentUsageAnalyzer = (nodes: Node[], edges: Edge[]) => {
               
               if (name.includes('reel')) category = 'reel';
 
-              usage.cables[migratedCableTypeId] = {
+              usage.cables[cableTypeId] = {
                 typeName: equipmentType.name,
                 quantity: 0,
                 category,
@@ -130,12 +151,16 @@ export const useEquipmentUsageAnalyzer = (nodes: Node[], edges: Edge[]) => {
                 version,
               };
             }
-            usage.cables[migratedCableTypeId].quantity++;
+            usage.cables[cableTypeId].quantity++;
           }
-        } else {
-          // No cable type ID and not explicitly marked as cable = direct connection
+        } else if (label.includes('direct') || edge.type === 'direct') {
+          // Direct connection
           usage.directConnections++;
-          console.log(`Inferred direct connection (no cable used): ${edge.id}`);
+          console.log(`Inferred direct connection from label: ${edge.id}`);
+        } else {
+          // Default to direct connection if no clear cable indication
+          usage.directConnections++;
+          console.log(`Inferred direct connection (no cable indicators): ${edge.id}`);
         }
       }
     });

@@ -70,11 +70,11 @@ const InteractiveCableEdge: React.FC<InteractiveCableEdgeProps> = ({
               return {
                 ...edge,
                 type: 'direct',
-                label: 'Direct Connection',
+                label: 'Direct',
                 data: {
                   ...edge.data,
                   connectionType: 'direct',
-                  label: 'Direct Connection',
+                  label: 'Direct',
                 },
                 style: {
                   stroke: '#8b5cf6',

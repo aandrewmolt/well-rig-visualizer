@@ -50,6 +50,15 @@ export const useInventoryMutations = (storageLocations: any[]) => {
     }
   };
 
+  const deleteIndividualEquipmentWrapper = async (id: string) => {
+    try {
+      return await mutations.deleteIndividualEquipment(id);
+    } catch (error) {
+      console.error('Failed to delete individual equipment:', error);
+      throw error;
+    }
+  };
+
   const addBulkIndividualEquipment = async (equipment: any[]) => {
     try {
       const results = await Promise.all(
@@ -116,6 +125,7 @@ export const useInventoryMutations = (storageLocations: any[]) => {
     deleteEquipmentItem,
     deleteEquipmentType,
     deleteStorageLocation: deleteStorageLocationWrapper,
+    deleteIndividualEquipment: deleteIndividualEquipmentWrapper,
     addBulkIndividualEquipment,
     updateStorageLocationWithDefault,
     addEquipmentTypeWrapper,

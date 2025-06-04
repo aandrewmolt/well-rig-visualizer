@@ -49,6 +49,7 @@ export const InventoryProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     deleteEquipmentItem: mutations.deleteEquipmentItem,
     deleteEquipmentType: mutations.deleteEquipmentType,
     deleteStorageLocation: mutations.deleteStorageLocation,
+    deleteIndividualEquipment: mutations.deleteIndividualEquipment,
     
     // All mutation operations with proper wrapper functions
     addEquipmentType: mutations.addEquipmentTypeWrapper,

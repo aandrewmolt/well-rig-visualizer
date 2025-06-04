@@ -9,7 +9,7 @@ export const useIndividualEquipmentOperations = (
   onUpdateEquipment: (equipment: IndividualEquipment[]) => void,
   storageLocations: StorageLocation[]
 ) => {
-  const { updateIndividualEquipment } = useInventory();
+  const { updateIndividualEquipment, deleteIndividualEquipment } = useInventory();
 
   const handleStatusChange = useCallback(async (equipmentId: string, newStatus: 'available' | 'deployed' | 'maintenance' | 'red-tagged' | 'retired') => {
     try {
@@ -40,18 +40,14 @@ export const useIndividualEquipmentOperations = (
 
     if (window.confirm('Are you sure you want to delete this equipment?')) {
       try {
-        // Find the equipment in the context and delete it
-        const { deleteIndividualEquipment } = await import('@/contexts/InventoryContext');
-        // For now, update the local state - this should be replaced with proper delete function
-        const updatedEquipment = individualEquipment.filter(eq => eq.id !== equipmentId);
-        onUpdateEquipment(updatedEquipment);
+        await deleteIndividualEquipment(equipmentId);
         toast.success('Equipment deleted');
       } catch (error) {
         console.error('Failed to delete equipment:', error);
         toast.error('Failed to delete equipment');
       }
     }
-  }, [individualEquipment, onUpdateEquipment]);
+  }, [individualEquipment, deleteIndividualEquipment]);
 
   return {
     handleStatusChange,

@@ -10,7 +10,7 @@ export const useEquipmentIdGenerator = () => {
       // ShearStream: 4 digits (SS0001, SS0002, SS0010, SS0100, SS1000)
       return `${prefix}${counter.toString().padStart(4, '0')}`;
     } else if (prefix === 'CC' || prefix === 'CT' || prefix === 'SL') {
-      // Customer Computer, Customer Tablet, Starlink: 2 digits (CC01, CT01, SL01)
+      // Company Computer, Customer Tablet, Starlink: 2 digits (CC01, CT01, SL01)
       return `${prefix}${counter.toString().padStart(2, '0')}`;
     } else if (prefix === 'PG' || prefix === 'BP') {
       // Pressure Gauge, Battery Pack: 3 digits (PG001, BP001)
@@ -26,7 +26,7 @@ export const useEquipmentIdGenerator = () => {
     const prefix = id.substring(0, 2);
     const numberPart = id.substring(2);
     
-    if (equipmentType.name === 'Customer Computer') {
+    if (equipmentType.name === 'Customer Computer' || equipmentType.name === 'Company Computer') {
       return `Customer Computer ${numberPart}`;
     }
     

@@ -40,7 +40,7 @@ export const useEquipmentMigration = () => {
           // ShearStream: 4 digits (SS0001, SS0002, etc.)
           newEquipmentId = `${prefix}${numberInt.toString().padStart(4, '0')}`;
         } else if (prefix === 'CC' || prefix === 'CT' || prefix === 'SL') {
-          // Customer Computer, Customer Tablet, Starlink: 2 digits (CC01, CT01, SL01)
+          // Company Computer, Customer Tablet, Starlink: 2 digits (CC01, CT01, SL01)
           newEquipmentId = `${prefix}${numberInt.toString().padStart(2, '0')}`;
         } else if (prefix === 'PG' || prefix === 'BP') {
           // Pressure Gauge, Battery Pack: 3 digits (PG001, BP001)
@@ -57,7 +57,8 @@ export const useEquipmentMigration = () => {
           'Unit', 'Terminal', 'Field', 'Laptop', 'Dell', 'Lenovo', 'HP', 'Computer',
           'Tablet', 'iPad', 'Surface', 'Android', 'Gauge', 'Pressure', '1502',
           'Battery', 'Pack', 'Power', 'Box', 'Dish', 'Sat', 'ShearStream Unit',
-          'Customer Computer Unit', 'Customer Tablet Unit', 'Starlink Unit'
+          'Customer Computer Unit', 'Customer Tablet Unit', 'Starlink Unit',
+          'Company Computer Unit'
         ];
 
         const hasOldNaming = oldNamePatterns.some(pattern => 
@@ -81,7 +82,7 @@ export const useEquipmentMigration = () => {
           }
         }
         
-        if (equipmentType.name === 'Customer Computer' || hasOldNaming) {
+        if ((equipmentType.name === 'Customer Computer' || equipmentType.name === 'Company Computer') || hasOldNaming) {
           if (newEquipmentId.startsWith('CC')) {
             const numberPart = newEquipmentId.replace('CC', '');
             newName = `Customer Computer ${numberPart}`;

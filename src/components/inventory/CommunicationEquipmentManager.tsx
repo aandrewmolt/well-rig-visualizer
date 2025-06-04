@@ -161,8 +161,8 @@ const CommunicationEquipmentManager: React.FC = () => {
         </Card>
       </div>
 
-      {/* Priority order: SS, SL, CC, CT */}
-      {['ShearStream Box', 'Starlink', 'Customer Computer', 'Customer Tablet'].map(typeName => {
+      {/* Priority order: SS, SL, CC (Company Computer), CT */}
+      {['ShearStream Box', 'Starlink', 'Company Computer', 'Customer Tablet'].map(typeName => {
         const equipmentType = communicationTypes.find(type => type.name === typeName);
         if (!equipmentType) return null;
 

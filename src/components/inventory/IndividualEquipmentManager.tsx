@@ -3,13 +3,13 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { Package, Plus, Save } from 'lucide-react';
+import { Package, Plus, Save, Loader2 } from 'lucide-react';
 import { useSupabaseInventory } from '@/hooks/useSupabaseInventory';
 import { EquipmentType, StorageLocation } from '@/types/inventory';
 import IndividualEquipmentForm from './IndividualEquipmentForm';
 
 interface IndividualEquipmentManagerProps {
-  equipmentType: EquipmentType;
+  equipmentType?: EquipmentType;
   storageLocations: StorageLocation[];
   onDraftCountChange: (count: number) => void;
 }
@@ -19,7 +19,7 @@ const IndividualEquipmentManager: React.FC<IndividualEquipmentManagerProps> = ({
   storageLocations,
   onDraftCountChange,
 }) => {
-  const { data, addIndividualEquipment } = useSupabaseInventory();
+  const { data, addIndividualEquipment, isLoading } = useSupabaseInventory();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [draftItems, setDraftItems] = useState<any[]>([]);
   const [formData, setFormData] = useState({
@@ -31,7 +31,19 @@ const IndividualEquipmentManager: React.FC<IndividualEquipmentManagerProps> = ({
     selectedPrefix: 'CC'
   });
 
-  const existingEquipment = data.individualEquipment.filter(eq => eq.typeId === equipmentType.id);
+  // Show loading state while data is being fetched
+  if (isLoading || !equipmentType) {
+    return (
+      <div className="space-y-3">
+        <div className="flex items-center justify-center p-8">
+          <Loader2 className="h-6 w-6 animate-spin mr-2" />
+          <span>Loading equipment data...</span>
+        </div>
+      </div>
+    );
+  }
+
+  const existingEquipment = data.individualEquipment?.filter(eq => eq.typeId === equipmentType.id) || [];
 
   const generateNextId = (prefix: string = equipmentType.defaultIdPrefix || 'EQ') => {
     const allEquipment = [...existingEquipment, ...draftItems];
@@ -48,14 +60,18 @@ const IndividualEquipmentManager: React.FC<IndividualEquipmentManagerProps> = ({
   };
 
   const handleSubmit = async (saveImmediate = false) => {
+    if (!equipmentType) return;
+    
     const finalPrefix = formData.selectedPrefix || equipmentType.defaultIdPrefix || 'EQ';
     const equipmentId = formData.equipmentId || generateNextId(finalPrefix);
+    
+    const defaultLocation = storageLocations.find(loc => loc.isDefault);
     
     const newItem = {
       equipmentId,
       name: formData.name || `${equipmentType.name} ${equipmentId}`,
       typeId: equipmentType.id,
-      locationId: formData.locationId,
+      locationId: formData.locationId || defaultLocation?.id || storageLocations[0]?.id || '',
       status: 'available' as const,
       serialNumber: formData.serialNumber,
       notes: formData.notes,
@@ -77,10 +93,12 @@ const IndividualEquipmentManager: React.FC<IndividualEquipmentManagerProps> = ({
   };
 
   const onReset = () => {
+    const defaultLocation = storageLocations.find(loc => loc.isDefault);
+    
     setFormData({
       equipmentId: '',
       name: '',
-      locationId: storageLocations.find(loc => loc.isDefault)?.id || '',
+      locationId: defaultLocation?.id || storageLocations[0]?.id || '',
       serialNumber: '',
       notes: '',
       selectedPrefix: 'CC'
@@ -99,6 +117,26 @@ const IndividualEquipmentManager: React.FC<IndividualEquipmentManagerProps> = ({
       console.error('Failed to save draft items:', error);
     }
   };
+
+  if (storageLocations.length === 0) {
+    return (
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Package className="h-4 w-4" />
+            <span className="text-sm font-medium">Individual Items</span>
+          </div>
+        </div>
+        <Card className="border-orange-200 bg-orange-50">
+          <CardContent className="p-3">
+            <p className="text-sm text-orange-700">
+              No storage locations found. Please add storage locations first.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-3">

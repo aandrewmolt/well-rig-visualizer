@@ -46,7 +46,7 @@ const MainDashboard = () => {
 
             <Card 
               className="cursor-pointer hover:shadow-lg transition-shadow bg-white border-2 hover:border-green-300"
-              onClick={() => navigate('/inventory')}
+              onClick={() => navigate('/inventory/equipment')}
             >
               <CardHeader className="text-center pb-4">
                 <div className="mx-auto mb-4 p-4 bg-green-100 rounded-full w-fit">

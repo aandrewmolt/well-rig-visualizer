@@ -17,16 +17,36 @@ import IndividualEquipmentManager from '@/components/inventory/IndividualEquipme
 import { useDefaultDataSetup } from '@/hooks/useDefaultDataSetup';
 import { useInventory } from '@/contexts/InventoryContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Package, Settings, MapPin, List, ArrowRightLeft, AlertTriangle, Search, History, FileText, Wrench, CheckSquare, Users } from 'lucide-react';
+import { Package, Settings, MapPin, List, ArrowRightLeft, AlertTriangle, Search, History, FileText, Wrench, CheckSquare, Users, Loader2 } from 'lucide-react';
 
 const EquipmentInventory = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const { isInitializing, needsInitialization } = useDefaultDataSetup();
-  const { data } = useInventory();
+  const { data, isLoading } = useInventory();
 
   const handleSwitchToTab = (tab: string) => {
     setActiveTab(tab);
   };
+
+  // Show loading state while data is being initialized
+  if (isLoading || isInitializing) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+        <AppHeader />
+        <div className="p-4">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex items-center justify-center p-8">
+              <Loader2 className="h-8 w-8 animate-spin mr-2" />
+              <span>Loading inventory system...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Get the first equipment type that supports individual tracking, or fallback to the first type
+  const individualEquipmentType = data.equipmentTypes.find(type => type.requiresIndividualTracking) || data.equipmentTypes[0];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -109,11 +129,21 @@ const EquipmentInventory = () => {
             </TabsContent>
 
             <TabsContent value="individual">
-              <IndividualEquipmentManager 
-                equipmentType={data.equipmentTypes[0]} 
-                storageLocations={data.storageLocations}
-                onDraftCountChange={() => {}}
-              />
+              {individualEquipmentType ? (
+                <IndividualEquipmentManager 
+                  equipmentType={individualEquipmentType} 
+                  storageLocations={data.storageLocations}
+                  onDraftCountChange={() => {}}
+                />
+              ) : (
+                <div className="text-center p-8">
+                  <Users className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">No Equipment Types Found</h3>
+                  <p className="text-gray-600 mb-4">
+                    Please add equipment types first to manage individual equipment items.
+                  </p>
+                </div>
+              )}
             </TabsContent>
 
             <TabsContent value="locations">

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -53,9 +52,9 @@ const AppHeader = () => {
               Cable Jobs
             </Button>
             <Button
-              variant={isActive('/inventory') || isActive('/inventory/settings') || isActive('/inventory/equipment') ? 'default' : 'ghost'}
+              variant={isActive('/inventory/equipment') ? 'default' : 'ghost'}
               size="sm"
-              onClick={() => navigate('/inventory')}
+              onClick={() => navigate('/inventory/equipment')}
               className="flex items-center gap-2"
             >
               <Package className="h-4 w-4" />

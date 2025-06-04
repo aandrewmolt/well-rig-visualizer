@@ -1,15 +1,24 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Handle, Position } from '@xyflow/react';
 import { Square } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const MainBoxNode = ({ data }: { data: any }) => {
+  const [fracDataPort, setFracDataPort] = useState<string>('');
+  const [gaugeDataPort, setGaugeDataPort] = useState<string>('');
+
   const ports = [
-    { id: 'p1', label: 'P1', coms: 'COM1,2' },
-    { id: 'p2', label: 'P2', coms: 'COM3,4' },
-    { id: 'p3', label: 'P3', coms: 'COM5,6' },
-    { id: 'p4', label: 'P4', coms: 'COM7,8' },
+    { id: 'p1', label: 'P1', coms: 'Pressure1,2' },
+    { id: 'p2', label: 'P2', coms: 'Pressure3,4' },
+    { id: 'p3', label: 'P3', coms: 'Pressure5,6' },
+    { id: 'p4', label: 'P4', coms: 'Pressure7,8' },
   ];
+
+  const portOptions = ports.map(port => ({
+    value: port.id,
+    label: `${port.label} (${port.coms})`
+  }));
 
   const isAssigned = data.assigned && data.equipmentId;
 
@@ -22,6 +31,41 @@ const MainBoxNode = ({ data }: { data: any }) => {
           {isAssigned && data.equipmentId && (
             <p className="text-xs text-green-300">{data.equipmentId}</p>
           )}
+        </div>
+      </div>
+      
+      {/* COM Port Selection - Compact layout */}
+      <div className="mb-3 space-y-1">
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-gray-300 w-12">Frac:</span>
+          <Select value={fracDataPort} onValueChange={setFracDataPort}>
+            <SelectTrigger className="h-6 text-xs bg-gray-700 border-gray-600">
+              <SelectValue placeholder="Select" />
+            </SelectTrigger>
+            <SelectContent>
+              {portOptions.map(option => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-gray-300 w-12">Gauge:</span>
+          <Select value={gaugeDataPort} onValueChange={setGaugeDataPort}>
+            <SelectTrigger className="h-6 text-xs bg-gray-700 border-gray-600">
+              <SelectValue placeholder="Select" />
+            </SelectTrigger>
+            <SelectContent>
+              {portOptions.map(option => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
       

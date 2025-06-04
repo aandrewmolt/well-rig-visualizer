@@ -73,8 +73,8 @@ const EquipmentListView = () => {
     }
   };
 
-  // Get unique categories for filter
-  const availableCategories = [...new Set(data.equipmentTypes.map(type => type.category))];
+  // Get unique categories for filter - filter out empty categories
+  const availableCategories = [...new Set(data.equipmentTypes.map(type => type.category))].filter(category => category && category.trim() !== '');
 
   const filteredEquipment = data.equipmentItems.filter(item => {
     const typeName = getEquipmentTypeName(item.typeId).toLowerCase();
@@ -188,7 +188,7 @@ const EquipmentListView = () => {
                       <SelectValue placeholder="Select equipment type" />
                     </SelectTrigger>
                     <SelectContent>
-                      {data.equipmentTypes.map(type => (
+                      {data.equipmentTypes.filter(type => type.id && type.id.trim() !== '').map(type => (
                         <SelectItem key={type.id} value={type.id}>
                           <div className="flex items-center gap-2">
                             {type.name}
@@ -208,7 +208,7 @@ const EquipmentListView = () => {
                       <SelectValue placeholder="Select location" />
                     </SelectTrigger>
                     <SelectContent>
-                      {data.storageLocations.map(location => (
+                      {data.storageLocations.filter(location => location.id && location.id.trim() !== '').map(location => (
                         <SelectItem key={location.id} value={location.id}>{location.name}</SelectItem>
                       ))}
                     </SelectContent>
@@ -306,7 +306,7 @@ const EquipmentListView = () => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Locations</SelectItem>
-              {data.storageLocations.map(location => (
+              {data.storageLocations.filter(location => location.id && location.id.trim() !== '').map(location => (
                 <SelectItem key={location.id} value={location.id}>
                   {location.name}
                 </SelectItem>

@@ -12,6 +12,7 @@ export interface InventoryContextType {
   deleteEquipmentItem: (id: string) => Promise<any>;
   deleteEquipmentType: (id: string) => Promise<any>;
   deleteStorageLocation: (id: string) => Promise<any>;
+  deleteIndividualEquipment: (id: string) => Promise<any>;
   
   // All mutation operations
   addEquipmentType: (data: any) => Promise<void>;

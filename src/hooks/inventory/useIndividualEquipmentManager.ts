@@ -1,7 +1,7 @@
 
 import { useEffect, useMemo } from 'react';
 import { IndividualEquipment, EquipmentType } from '@/types/inventory';
-import { useInventoryData } from '@/hooks/useInventoryData';
+import { useInventory } from '@/contexts/InventoryContext';
 import { useDraftEquipmentManager } from '@/hooks/useDraftEquipmentManager';
 import { useIndividualEquipmentForm } from './useIndividualEquipmentForm';
 import { useIndividualEquipmentBulkCreate } from './useIndividualEquipmentBulkCreate';
@@ -11,7 +11,7 @@ export const useIndividualEquipmentManager = (
   equipmentType: EquipmentType,
   onDraftCountChange?: (count: number) => void
 ) => {
-  const { data, updateIndividualEquipment } = useInventoryData();
+  const { data, updateIndividualEquipment, addIndividualEquipment } = useInventory();
 
   const individualEquipment = useMemo(() => 
     data.individualEquipment.filter(eq => eq.typeId === equipmentType.id),
@@ -26,8 +26,15 @@ export const useIndividualEquipmentManager = (
     saveImmediately,
     discardChanges,
     unsavedCount,
-  } = useDraftEquipmentManager(individualEquipment, (equipment) => {
-    updateIndividualEquipment(equipment);
+  } = useDraftEquipmentManager(individualEquipment, async (equipment) => {
+    if (Array.isArray(equipment)) {
+      // Handle bulk equipment addition
+      for (const eq of equipment) {
+        await addIndividualEquipment(eq);
+      }
+    } else {
+      await addIndividualEquipment(equipment);
+    }
     setTimeout(() => {
       console.log('Individual equipment saved, triggering sync check');
     }, 200);
@@ -54,7 +61,14 @@ export const useIndividualEquipmentManager = (
     equipmentType,
     allEquipment,
     addDraftEquipment,
-    updateIndividualEquipment,
+    async (equipment: IndividualEquipment[]) => {
+      // This is used for updating existing equipment
+      for (const eq of equipment) {
+        if (eq.id && !eq.id.startsWith('draft-')) {
+          await updateIndividualEquipment(eq.id, eq);
+        }
+      }
+    },
     data.individualEquipment
   );
 
@@ -66,7 +80,14 @@ export const useIndividualEquipmentManager = (
 
   const operationsHook = useIndividualEquipmentOperations(
     individualEquipment,
-    updateIndividualEquipment,
+    async (equipment: IndividualEquipment[]) => {
+      // Update the equipment in the context
+      for (const eq of equipment) {
+        if (eq.id && !eq.id.startsWith('draft-')) {
+          await updateIndividualEquipment(eq.id, eq);
+        }
+      }
+    },
     data.storageLocations
   );
 

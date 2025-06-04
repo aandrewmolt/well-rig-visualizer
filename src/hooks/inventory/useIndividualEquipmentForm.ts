@@ -58,7 +58,9 @@ export const useIndividualEquipmentForm = (
   }, [allEquipment, generateEquipmentId]);
 
   const resetForm = useCallback(() => {
-    const prefix = equipmentType.name === 'Company Computer' ? 'CC' : equipmentType.defaultIdPrefix || '';
+    const prefix = equipmentType.name === 'Customer Computer' ? 'CC' : 
+                   equipmentType.name === 'Customer Tablet' ? 'CT' : 
+                   equipmentType.defaultIdPrefix || '';
     const nextId = getNextEquipmentId(prefix);
     
     setFormData({
@@ -85,13 +87,14 @@ export const useIndividualEquipmentForm = (
 
   const handleEdit = useCallback((equipment: IndividualEquipment) => {
     setEditingEquipment(equipment);
+    const prefix = equipment.equipmentId.substring(0, 2);
     setFormData({
       equipmentId: equipment.equipmentId,
       name: equipment.name,
       locationId: equipment.locationId,
       serialNumber: equipment.serialNumber || '',
       notes: equipment.notes || '',
-      selectedPrefix: equipment.equipmentId.substring(0, 2)
+      selectedPrefix: prefix
     });
     setIsDialogOpen(true);
   }, []);
@@ -113,12 +116,22 @@ export const useIndividualEquipmentForm = (
 
     try {
       if (editingEquipment) {
+        // Update existing equipment
         const updatedEquipment = existingEquipment.map(eq => 
           eq.id === editingEquipment.id 
-            ? { ...eq, ...formData, typeId: equipmentType.id, status: editingEquipment.status }
+            ? { 
+                ...eq, 
+                equipmentId: formData.equipmentId,
+                name: formData.name,
+                locationId: formData.locationId,
+                serialNumber: formData.serialNumber,
+                notes: formData.notes,
+                typeId: equipmentType.id,
+                lastUpdated: new Date()
+              }
             : eq
         );
-        onUpdateEquipment(updatedEquipment);
+        await onUpdateEquipment(updatedEquipment);
         toast.success('Equipment updated successfully');
       } else {
         const newEquipment = {
@@ -133,7 +146,7 @@ export const useIndividualEquipmentForm = (
 
         if (saveImmediate) {
           const updatedEquipment = [...existingEquipment, { ...newEquipment, id: `new-${Date.now()}`, lastUpdated: new Date() }];
-          onUpdateEquipment(updatedEquipment);
+          await onUpdateEquipment(updatedEquipment);
           toast.success('Equipment saved successfully');
         } else {
           onAddDraft(newEquipment);

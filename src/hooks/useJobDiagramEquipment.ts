@@ -1,7 +1,7 @@
-
 import { useCallback } from 'react';
 import { Node } from '@xyflow/react';
-import { useTrackedEquipment } from './useTrackedEquipment';
+import { useInventory } from '@/contexts/InventoryContext';
+import { toast } from 'sonner';
 
 interface Job {
   id: string;
@@ -42,11 +42,45 @@ export const useJobDiagramEquipment = ({
   addShearstreamBox,
   removeShearstreamBox,
 }: UseJobDiagramEquipmentProps) => {
-  const { trackedEquipment, deployEquipment, returnEquipment } = useTrackedEquipment();
+  const { data, updateIndividualEquipment } = useInventory();
+
+  // Get available equipment from inventory
+  const getAvailableEquipment = useCallback((typePrefix: string) => {
+    return data.individualEquipment.filter(eq => 
+      eq.equipmentId.startsWith(typePrefix) && 
+      eq.status === 'available'
+    );
+  }, [data.individualEquipment]);
+
+  const deployEquipment = useCallback(async (equipmentId: string, jobId: string) => {
+    try {
+      await updateIndividualEquipment(equipmentId, { 
+        status: 'deployed',
+        jobId: jobId
+      });
+      toast.success(`Equipment ${equipmentId} deployed to job`);
+    } catch (error) {
+      console.error('Failed to deploy equipment:', error);
+      toast.error('Failed to deploy equipment');
+    }
+  }, [updateIndividualEquipment]);
+
+  const returnEquipment = useCallback(async (equipmentId: string) => {
+    try {
+      await updateIndividualEquipment(equipmentId, { 
+        status: 'available',
+        jobId: null
+      });
+      toast.success(`Equipment ${equipmentId} returned to inventory`);
+    } catch (error) {
+      console.error('Failed to return equipment:', error);
+      toast.error('Failed to return equipment');
+    }
+  }, [updateIndividualEquipment]);
 
   // Handle equipment selection - updated for customer computers
   const handleEquipmentSelect = useCallback((type: 'shearstream-box' | 'starlink' | 'customer-computer', equipmentId: string, index?: number) => {
-    const equipment = trackedEquipment.find(eq => eq.id === equipmentId);
+    const equipment = data.individualEquipment.find(eq => eq.id === equipmentId);
     if (!equipment) return;
 
     if (type === 'shearstream-box' && index !== undefined) {
@@ -56,18 +90,17 @@ export const useJobDiagramEquipment = ({
       }
       newBoxes[index] = equipmentId;
       setSelectedShearstreamBoxes(newBoxes);
-      deployEquipment(equipmentId, job.id, job.name, equipment.name);
+      deployEquipment(equipmentId, job.id);
       
       // Update the specific SS box node with standardized format
       const boxNodeId = index === 0 ? 'main-box' : `main-box-${index + 1}`;
-      const standardizedId = `SS-${equipment.equipmentId.padStart(3, '0')}`;
-      updateMainBoxName(boxNodeId, standardizedId, setNodes);
+      updateMainBoxName(boxNodeId, equipment.equipmentId, setNodes);
     } else if (type === 'starlink') {
       if (selectedStarlink) {
         returnEquipment(selectedStarlink);
       }
       setSelectedStarlink(equipmentId);
-      deployEquipment(equipmentId, job.id, job.name, equipment.name);
+      deployEquipment(equipmentId, job.id);
       updateSatelliteName(equipment.equipmentId, setNodes);
     } else if (type === 'customer-computer' && index !== undefined) {
       const newComputers = [...selectedCustomerComputers];
@@ -76,33 +109,29 @@ export const useJobDiagramEquipment = ({
       }
       newComputers[index] = equipmentId;
       setSelectedCustomerComputers(newComputers);
-      deployEquipment(equipmentId, job.id, job.name, equipment.name);
+      deployEquipment(equipmentId, job.id);
       
-      // Keep the original ID prefix (CC or CT)
-      const prefix = equipment.equipmentId.startsWith('CT') ? 'CT' : 'CC';
-      const equipmentNumber = equipment.equipmentId.replace(/^\D+/g, '');
-      const standardizedId = `${prefix}-${equipmentNumber.padStart(3, '0')}`;
-      
-      // Pass isTablet info to the node
-      updateCustomerComputerName(`customer-computer-${index + 1}`, standardizedId, setNodes);
+      // Keep the original ID format
+      updateCustomerComputerName(`customer-computer-${index + 1}`, equipment.equipmentId, setNodes);
       
       // Update the node data to include isTablet flag
+      const isTablet = equipment.equipmentId.startsWith('CT');
       setNodes(nodes => 
         nodes.map(node => 
           node.id === `customer-computer-${index + 1}`
-            ? { ...node, data: { ...node.data, isTablet: prefix === 'CT', equipmentId: standardizedId }}
+            ? { ...node, data: { ...node.data, isTablet, equipmentId: equipment.equipmentId }}
             : node
         )
       );
     }
   }, [
-    trackedEquipment, 
+    data.individualEquipment,
     selectedShearstreamBoxes, 
     selectedStarlink, 
     selectedCustomerComputers, 
     returnEquipment, 
     deployEquipment, 
-    job, 
+    job.id, 
     updateMainBoxName, 
     updateSatelliteName, 
     updateCustomerComputerName, 
@@ -138,5 +167,8 @@ export const useJobDiagramEquipment = ({
     handleEquipmentSelect,
     handleAddShearstreamBox,
     handleRemoveShearstreamBox,
+    getAvailableEquipment,
+    deployEquipment,
+    returnEquipment,
   };
 };

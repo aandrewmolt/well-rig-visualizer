@@ -7,13 +7,15 @@ import { toast } from 'sonner';
 import EquipmentListFilters from './EquipmentListFilters';
 import EquipmentFormDialog from './EquipmentFormDialog';
 import EquipmentTable from './EquipmentTable';
+import IndividualEquipmentTable from './IndividualEquipmentTable';
 
 const EquipmentListView = () => {
-  const { data, updateSingleEquipmentItem, addEquipmentItem, deleteEquipmentItem } = useInventory();
+  const { data, updateSingleEquipmentItem, addEquipmentItem, deleteEquipmentItem, updateIndividualEquipment } = useInventory();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterLocation, setFilterLocation] = useState('all');
   const [filterCategory, setFilterCategory] = useState('all');
+  const [viewMode, setViewMode] = useState<'bulk' | 'individual' | 'all'>('all');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
   const [formData, setFormData] = useState({
@@ -69,7 +71,8 @@ const EquipmentListView = () => {
     }
   };
 
-  const filteredEquipment = data.equipmentItems.filter(item => {
+  // Filter bulk equipment
+  const filteredBulkEquipment = data.equipmentItems.filter(item => {
     const typeName = getEquipmentTypeName(item.typeId).toLowerCase();
     const typeCategory = getEquipmentTypeCategory(item.typeId);
     const locationName = getLocationName(item.locationId).toLowerCase();
@@ -84,9 +87,34 @@ const EquipmentListView = () => {
     return matchesSearch && matchesStatus && matchesLocation && matchesCategory;
   });
 
+  // Filter individual equipment
+  const filteredIndividualEquipment = data.individualEquipment.filter(item => {
+    const typeName = getEquipmentTypeName(item.typeId).toLowerCase();
+    const typeCategory = getEquipmentTypeCategory(item.typeId);
+    const locationName = getLocationName(item.locationId).toLowerCase();
+    const matchesSearch = typeName.includes(searchTerm.toLowerCase()) || 
+                         locationName.includes(searchTerm.toLowerCase()) ||
+                         item.equipmentId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (item.notes && item.notes.toLowerCase().includes(searchTerm.toLowerCase()));
+    
+    const matchesStatus = filterStatus === 'all' || item.status === filterStatus;
+    const matchesLocation = filterLocation === 'all' || item.locationId === filterLocation;
+    const matchesCategory = filterCategory === 'all' || typeCategory === filterCategory;
+    
+    return matchesSearch && matchesStatus && matchesLocation && matchesCategory;
+  });
+
+  const totalItems = filteredBulkEquipment.length + filteredIndividualEquipment.length;
+
   const handleStatusChange = (itemId: string, newStatus: 'available' | 'deployed' | 'red-tagged') => {
     updateSingleEquipmentItem(itemId, { status: newStatus });
     toast.success('Equipment status updated successfully');
+  };
+
+  const handleIndividualStatusChange = (itemId: string, newStatus: 'available' | 'deployed' | 'maintenance' | 'red-tagged' | 'retired') => {
+    updateIndividualEquipment(itemId, { status: newStatus });
+    toast.success('Individual equipment status updated successfully');
   };
 
   const handleDelete = async (itemId: string) => {
@@ -157,10 +185,30 @@ const EquipmentListView = () => {
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-lg">
             <Package className="h-5 w-5" />
-            Equipment List ({filteredEquipment.length} items)
+            Equipment List ({totalItems} items)
           </CardTitle>
           
           <div className="flex gap-2">
+            <div className="flex rounded-lg border">
+              <button
+                onClick={() => setViewMode('all')}
+                className={`px-3 py-1 text-sm rounded-l-lg ${viewMode === 'all' ? 'bg-blue-500 text-white' : 'bg-white text-gray-700'}`}
+              >
+                All
+              </button>
+              <button
+                onClick={() => setViewMode('bulk')}
+                className={`px-3 py-1 text-sm ${viewMode === 'bulk' ? 'bg-blue-500 text-white' : 'bg-white text-gray-700'}`}
+              >
+                Bulk
+              </button>
+              <button
+                onClick={() => setViewMode('individual')}
+                className={`px-3 py-1 text-sm rounded-r-lg ${viewMode === 'individual' ? 'bg-blue-500 text-white' : 'bg-white text-gray-700'}`}
+              >
+                Individual
+              </button>
+            </div>
             <Button onClick={() => {
               setEditingItem(null);
               setIsAddDialogOpen(true);
@@ -187,19 +235,40 @@ const EquipmentListView = () => {
       </CardHeader>
       
       <CardContent>
-        <EquipmentTable
-          filteredEquipment={filteredEquipment}
-          data={data}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-          onStatusChange={handleStatusChange}
-          getEquipmentTypeName={getEquipmentTypeName}
-          getEquipmentTypeCategory={getEquipmentTypeCategory}
-          getLocationName={getLocationName}
-          getStatusColor={getStatusColor}
-          getCategoryColor={getCategoryColor}
-          onClearFilters={clearFilters}
-        />
+        {(viewMode === 'all' || viewMode === 'bulk') && (
+          <div className="mb-6">
+            <h3 className="text-lg font-semibold mb-3">Bulk Equipment</h3>
+            <EquipmentTable
+              filteredEquipment={filteredBulkEquipment}
+              data={data}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              onStatusChange={handleStatusChange}
+              getEquipmentTypeName={getEquipmentTypeName}
+              getEquipmentTypeCategory={getEquipmentTypeCategory}
+              getLocationName={getLocationName}
+              getStatusColor={getStatusColor}
+              getCategoryColor={getCategoryColor}
+              onClearFilters={clearFilters}
+            />
+          </div>
+        )}
+
+        {(viewMode === 'all' || viewMode === 'individual') && (
+          <div>
+            <h3 className="text-lg font-semibold mb-3">Individual Equipment</h3>
+            <IndividualEquipmentTable
+              filteredEquipment={filteredIndividualEquipment}
+              data={data}
+              onStatusChange={handleIndividualStatusChange}
+              getEquipmentTypeName={getEquipmentTypeName}
+              getEquipmentTypeCategory={getEquipmentTypeCategory}
+              getLocationName={getLocationName}
+              getStatusColor={getStatusColor}
+              getCategoryColor={getCategoryColor}
+            />
+          </div>
+        )}
         
         <EquipmentFormDialog
           isOpen={isAddDialogOpen}

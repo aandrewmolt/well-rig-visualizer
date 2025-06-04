@@ -2,6 +2,7 @@
 import { useState, useCallback } from 'react';
 import { IndividualEquipment, EquipmentType } from '@/types/inventory';
 import { toast } from 'sonner';
+import { useEquipmentIdGenerator } from './useEquipmentIdGenerator';
 
 export const useIndividualEquipmentForm = (
   equipmentType: EquipmentType,
@@ -12,6 +13,8 @@ export const useIndividualEquipmentForm = (
 ) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingEquipment, setEditingEquipment] = useState<IndividualEquipment | null>(null);
+  const { generateEquipmentId, generateEquipmentName } = useEquipmentIdGenerator();
+  
   const [formData, setFormData] = useState({
     equipmentId: '',
     name: '',
@@ -23,35 +26,14 @@ export const useIndividualEquipmentForm = (
                    equipmentType.defaultIdPrefix || ''
   });
 
-  const generateEquipmentId = useCallback((prefix: string, number: number) => {
-    // Different padding for different equipment types
-    if (prefix === 'SS') {
-      return `${prefix}${number.toString().padStart(4, '0')}`;
-    } else if (prefix === 'SL') {
-      return `${prefix}${number.toString().padStart(2, '0')}`;
-    } else {
-      return `${prefix}${number.toString().padStart(3, '0')}`;
-    }
-  }, []);
-
-  const generateEquipmentName = useCallback((prefix: string, id: string) => {
-    if (prefix === 'CC') return `Customer Computer ${id.replace('CC', '')}`;
-    if (prefix === 'CT') return `Customer Tablet ${id.replace('CT', '')}`;
-    if (prefix === 'SL') return `Starlink ${id.replace('SL', '')}`;
-    if (prefix === 'SS') return `ShearStream ${id.replace('SS', '')}`;
-    if (prefix === 'PG') return `Pressure Gauge ${id.replace('PG', '')}`;
-    if (prefix === 'BP') return `Battery Pack ${id.replace('BP', '')}`;
-    return `${equipmentType.name} ${id}`;
-  }, [equipmentType.name]);
-
   const getNextEquipmentId = useCallback((prefix: string) => {
     const existingIds = allEquipment.map(eq => eq.equipmentId);
     let counter = 1;
-    let newId = generateEquipmentId(prefix, counter);
+    let newId = generateEquipmentId({ defaultIdPrefix: prefix } as EquipmentType, counter);
     
     while (existingIds.includes(newId)) {
       counter++;
-      newId = generateEquipmentId(prefix, counter);
+      newId = generateEquipmentId({ defaultIdPrefix: prefix } as EquipmentType, counter);
     }
     
     return newId;
@@ -65,7 +47,7 @@ export const useIndividualEquipmentForm = (
     
     setFormData({
       equipmentId: nextId,
-      name: generateEquipmentName(prefix, nextId),
+      name: generateEquipmentName(equipmentType, nextId),
       locationId: '',
       serialNumber: '',
       notes: '',
@@ -80,10 +62,10 @@ export const useIndividualEquipmentForm = (
     setFormData(prev => ({
       ...prev,
       equipmentId: nextId,
-      name: generateEquipmentName(prefix, nextId),
+      name: generateEquipmentName({ ...equipmentType, defaultIdPrefix: prefix }, nextId),
       selectedPrefix: prefix
     }));
-  }, [getNextEquipmentId, generateEquipmentName]);
+  }, [getNextEquipmentId, generateEquipmentName, equipmentType]);
 
   const handleEdit = useCallback((equipment: IndividualEquipment) => {
     setEditingEquipment(equipment);

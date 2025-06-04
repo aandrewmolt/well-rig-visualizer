@@ -9,10 +9,10 @@ const CustomerComputerNode = ({ data }: { data: any }) => {
     if (data.equipmentId) {
       return data.equipmentId;
     }
-    // Extract number from label if it exists (e.g., "Customer Computer 1" -> "CC-1")
+    // Extract number from label if it exists (e.g., "Customer Computer 001" -> "CC001")
     const match = data.label?.match(/(\d+)/);
     if (match) {
-      const prefix = data.isTablet ? 'CT-' : 'CC-';
+      const prefix = data.isTablet ? 'CT' : 'CC';
       return `${prefix}${match[1].padStart(3, '0')}`;
     }
     return data.label || 'Customer Computer';

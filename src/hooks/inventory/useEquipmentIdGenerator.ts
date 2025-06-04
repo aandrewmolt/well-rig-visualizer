@@ -1,3 +1,4 @@
+
 import { EquipmentType } from '@/types/inventory';
 
 export const useEquipmentIdGenerator = () => {
@@ -27,11 +28,11 @@ export const useEquipmentIdGenerator = () => {
     }
     
     if (equipmentType.name === 'Starlink') {
-      return `Starlink ${id.replace('SL', '')}`;
+      return `Starlink-${id.replace('SL', '')}`;
     }
     
     if (equipmentType.name === 'ShearStream Box') {
-      return `ShearStream ${id.replace('SS', '')}`;
+      return `ShearStream-${id.replace('SS', '')}`;
     }
     
     if (equipmentType.name === '1502 Pressure Gauge') {

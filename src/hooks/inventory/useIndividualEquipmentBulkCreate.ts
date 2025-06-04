@@ -2,6 +2,7 @@
 import { useState, useCallback } from 'react';
 import { EquipmentType } from '@/types/inventory';
 import { toast } from 'sonner';
+import { useEquipmentIdGenerator } from './useEquipmentIdGenerator';
 
 export const useIndividualEquipmentBulkCreate = (
   equipmentType: EquipmentType,
@@ -9,6 +10,8 @@ export const useIndividualEquipmentBulkCreate = (
   onAddBulkDraft: (equipment: any[]) => void
 ) => {
   const [isBulkCreateOpen, setIsBulkCreateOpen] = useState(false);
+  const { generateEquipmentId, generateEquipmentName } = useEquipmentIdGenerator();
+  
   const [bulkCreateData, setBulkCreateData] = useState({
     count: 5,
     prefix: equipmentType.defaultIdPrefix || '',
@@ -18,27 +21,6 @@ export const useIndividualEquipmentBulkCreate = (
                    equipmentType.name === 'Customer Tablet' ? 'CT' : 
                    equipmentType.defaultIdPrefix || ''
   });
-
-  const generateEquipmentId = useCallback((prefix: string, number: number) => {
-    // Different padding for different equipment types
-    if (prefix === 'SS') {
-      return `${prefix}${number.toString().padStart(4, '0')}`;
-    } else if (prefix === 'SL') {
-      return `${prefix}${number.toString().padStart(2, '0')}`;
-    } else {
-      return `${prefix}${number.toString().padStart(3, '0')}`;
-    }
-  }, []);
-
-  const generateEquipmentName = useCallback((prefix: string, id: string) => {
-    if (prefix === 'CC') return `Customer Computer ${id.replace('CC', '')}`;
-    if (prefix === 'CT') return `Customer Tablet ${id.replace('CT', '')}`;
-    if (prefix === 'SL') return `Starlink ${id.replace('SL', '')}`;
-    if (prefix === 'SS') return `ShearStream ${id.replace('SS', '')}`;
-    if (prefix === 'PG') return `Pressure Gauge ${id.replace('PG', '')}`;
-    if (prefix === 'BP') return `Battery Pack ${id.replace('BP', '')}`;
-    return `${equipmentType.name} ${id}`;
-  }, [equipmentType.name]);
 
   const handleBulkCreate = useCallback(async (saveImmediate = false) => {
     if (!bulkCreateData.locationId || bulkCreateData.count <= 0) {
@@ -55,14 +37,14 @@ export const useIndividualEquipmentBulkCreate = (
 
     for (let i = 0; i < bulkCreateData.count; i++) {
       const number = bulkCreateData.startNumber + i;
-      const equipmentId = generateEquipmentId(currentPrefix, number);
+      const equipmentId = generateEquipmentId({ defaultIdPrefix: currentPrefix } as EquipmentType, number);
       
       if (existingIds.includes(equipmentId)) {
         toast.error(`Equipment ID ${equipmentId} already exists`);
         return;
       }
 
-      const equipmentName = generateEquipmentName(currentPrefix, equipmentId);
+      const equipmentName = generateEquipmentName({ ...equipmentType, defaultIdPrefix: currentPrefix }, equipmentId);
 
       newEquipment.push({
         equipmentId,

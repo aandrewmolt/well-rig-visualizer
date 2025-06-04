@@ -2,9 +2,11 @@
 import React from 'react';
 import { Loader2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { useSupabaseInventory } from '@/hooks/useSupabaseInventory';
 import { EquipmentType, StorageLocation } from '@/types/inventory';
 import { useIndividualEquipmentManager } from '@/hooks/inventory/useIndividualEquipmentManager';
+import { useEquipmentMigration } from '@/hooks/inventory/useEquipmentMigration';
 import IndividualEquipmentForm from './IndividualEquipmentForm';
 import BulkEquipmentCreationDialog from './BulkEquipmentCreationDialog';
 import EquipmentGrid from './EquipmentGrid';
@@ -24,6 +26,7 @@ const IndividualEquipmentManager: React.FC<IndividualEquipmentManagerProps> = ({
   onDraftCountChange,
 }) => {
   const { isLoading } = useSupabaseInventory();
+  const { migrateEquipmentNaming } = useEquipmentMigration();
   
   const manager = useIndividualEquipmentManager(
     equipmentType!,
@@ -93,6 +96,23 @@ const IndividualEquipmentManager: React.FC<IndividualEquipmentManagerProps> = ({
         onOpenForm={() => manager.setIsFormOpen(true)}
         onBulkCreate={() => manager.setIsBulkCreateOpen(true)}
       />
+
+      {/* Migration Button for fixing naming */}
+      <Card className="border-blue-200 bg-blue-50">
+        <CardContent className="p-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-blue-700 font-medium">Fix Equipment Naming</p>
+              <p className="text-xs text-blue-600">
+                Update equipment names to use correct format (e.g., ShearStream-001, Starlink-01)
+              </p>
+            </div>
+            <Button size="sm" onClick={migrateEquipmentNaming} variant="outline">
+              Fix Names
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       <IndividualEquipmentStats equipment={manager.individualEquipment} />
       <DraftItemsList draftItems={manager.draftEquipment} />

@@ -29,4 +29,8 @@ export interface JobEquipmentAssignment {
   shearstreamBoxIds: string[]; // Changed from shearstreamBoxId to support multiple boxes
   starlinkId?: string;
   customerComputerIds: string[]; // Changed from companyComputerIds
+  
+  // Legacy properties for backward compatibility
+  companyComputerIds?: string[];
+  company_computer_ids?: string[];
 }

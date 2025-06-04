@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Node, Edge } from '@xyflow/react';
 import { JobEquipmentAssignment } from '@/types/equipment';
@@ -16,6 +17,9 @@ export interface JobData {
   selectedCableType?: string;
   equipmentAssignment?: JobEquipmentAssignment;
   lastUpdated: Date;
+  
+  // Legacy properties for backward compatibility
+  company_computer_names?: Record<string, string>;
 }
 
 export const useJobPersistence = (jobId: string) => {
@@ -185,9 +189,12 @@ export const useJobPersistence = (jobId: string) => {
             delete parsed.equipmentAssignment.shearstreamBoxId;
           }
           // Migrate old companyComputerIds to customerComputerIds
-          if (parsed.equipmentAssignment.companyComputerIds) {
-            parsed.equipmentAssignment.customerComputerIds = parsed.equipmentAssignment.companyComputerIds;
+          if (parsed.equipmentAssignment.companyComputerIds || parsed.equipmentAssignment.company_computer_ids) {
+            parsed.equipmentAssignment.customerComputerIds = parsed.equipmentAssignment.customerComputerIds || 
+                                                           parsed.equipmentAssignment.companyComputerIds ||
+                                                           parsed.equipmentAssignment.company_computer_ids || [];
             delete parsed.equipmentAssignment.companyComputerIds;
+            delete parsed.equipmentAssignment.company_computer_ids;
           }
           // Ensure arrays exist
           parsed.equipmentAssignment.shearstreamBoxIds = parsed.equipmentAssignment.shearstreamBoxIds || [];
@@ -195,9 +202,12 @@ export const useJobPersistence = (jobId: string) => {
         }
         
         // Migrate old companyComputerNames to customerComputerNames
-        if (parsed.companyComputerNames && !parsed.customerComputerNames) {
-          parsed.customerComputerNames = parsed.companyComputerNames;
+        if (parsed.companyComputerNames || parsed.company_computer_names) {
+          parsed.customerComputerNames = parsed.customerComputerNames || 
+                                       parsed.companyComputerNames || 
+                                       parsed.company_computer_names || {};
           delete parsed.companyComputerNames;
+          delete parsed.company_computer_names;
         }
         parsed.customerComputerNames = parsed.customerComputerNames || {};
         

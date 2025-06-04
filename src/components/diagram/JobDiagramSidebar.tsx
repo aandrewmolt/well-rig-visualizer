@@ -4,11 +4,13 @@ import { Node } from '@xyflow/react';
 import WellConfigurationPanel from './WellConfigurationPanel';
 import EquipmentSelectionPanel from './EquipmentSelectionPanel';
 import ExtrasOnLocationPanel from './ExtrasOnLocationPanel';
+import EquipmentSummaryPanel from './EquipmentSummaryPanel';
 import RedTagPanel from './RedTagPanel';
 import { ExtrasOnLocationItem } from '@/hooks/useExtrasOnLocation';
 
 interface JobDiagramSidebarProps {
   nodes: Node[];
+  edges: any[];
   selectedShearstreamBoxes: string[];
   selectedStarlink: string;
   selectedCustomerComputers: string[];
@@ -30,6 +32,7 @@ interface JobDiagramSidebarProps {
 
 const JobDiagramSidebar: React.FC<JobDiagramSidebarProps> = ({
   nodes,
+  edges,
   selectedShearstreamBoxes,
   selectedStarlink,
   selectedCustomerComputers,
@@ -82,6 +85,15 @@ const JobDiagramSidebar: React.FC<JobDiagramSidebarProps> = ({
         updateWellColor={updateWellColor}
         updateWellsideGaugeName={updateWellsideGaugeName}
         updateWellsideGaugeColor={updateWellsideGaugeColor}
+      />
+
+      <EquipmentSummaryPanel
+        nodes={nodes}
+        edges={edges}
+        selectedShearstreamBoxes={selectedShearstreamBoxes}
+        selectedStarlink={selectedStarlink}
+        selectedCustomerComputers={selectedCustomerComputers}
+        extrasOnLocation={extrasOnLocation}
       />
 
       <ExtrasOnLocationPanel 

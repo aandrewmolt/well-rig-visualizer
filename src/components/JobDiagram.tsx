@@ -198,6 +198,7 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
       <div className="flex-1 flex gap-4">
         <JobDiagramSidebar
           nodes={nodes}
+          edges={edges}
           selectedShearstreamBoxes={selectedShearstreamBoxes}
           selectedStarlink={selectedStarlink}
           selectedCustomerComputers={selectedCustomerComputers}

@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import {
   BaseEdge,
   EdgeLabelRenderer,
@@ -8,7 +8,6 @@ import {
   Edge,
 } from '@xyflow/react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface InteractiveCableEdgeProps {
   id: string;
@@ -40,7 +39,6 @@ const InteractiveCableEdge: React.FC<InteractiveCableEdgeProps> = ({
   data,
 }) => {
   const { setEdges, getNodes } = useReactFlow();
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
   
   const [edgePath, labelX, labelY] = getBezierPath({
     sourceX,
@@ -62,58 +60,55 @@ const InteractiveCableEdge: React.FC<InteractiveCableEdgeProps> = ({
 
   const handleEdgeClick = () => {
     if (isYToWellConnection) {
-      setIsDialogOpen(true);
+      const currentType = data?.connectionType || 'cable';
+      const newType = currentType === 'direct' ? 'cable' : 'direct';
+      
+      setEdges((edges: Edge[]) => 
+        edges.map((edge: Edge) => {
+          if (edge.id === id) {
+            if (newType === 'direct') {
+              return {
+                ...edge,
+                type: 'direct',
+                label: 'Direct Connection',
+                data: {
+                  ...edge.data,
+                  connectionType: 'direct',
+                  label: 'Direct Connection',
+                },
+                style: {
+                  stroke: '#8b5cf6',
+                  strokeWidth: 4,
+                  strokeDasharray: '5,5',
+                },
+                animated: true,
+              };
+            } else {
+              return {
+                ...edge,
+                type: 'cable',
+                label: '100ft Cable',
+                data: {
+                  ...edge.data,
+                  connectionType: 'cable',
+                  label: '100ft Cable',
+                  cableTypeId: '100ft-cable',
+                },
+                style: {
+                  stroke: '#3b82f6',
+                  strokeWidth: 3,
+                  strokeDasharray: undefined,
+                },
+                animated: false,
+              };
+            }
+          }
+          return edge;
+        })
+      );
     }
   };
 
-  const toggleConnectionType = (newType: 'cable' | 'direct') => {
-    setEdges((edges: Edge[]) => 
-      edges.map((edge: Edge) => {
-        if (edge.id === id) {
-          if (newType === 'direct') {
-            return {
-              ...edge,
-              type: 'direct',
-              label: 'Direct Connection',
-              data: {
-                ...edge.data,
-                connectionType: 'direct',
-                label: 'Direct Connection',
-              },
-              style: {
-                stroke: '#8b5cf6',
-                strokeWidth: 4,
-                strokeDasharray: '5,5',
-              },
-              animated: true,
-            };
-          } else {
-            return {
-              ...edge,
-              type: 'cable',
-              label: '100ft Cable',
-              data: {
-                ...edge.data,
-                connectionType: 'cable',
-                label: '100ft Cable',
-                cableTypeId: '100ft-cable',
-              },
-              style: {
-                stroke: '#3b82f6',
-                strokeWidth: 3,
-                strokeDasharray: undefined,
-              },
-              animated: false,
-            };
-          }
-        }
-        return edge;
-      })
-    );
-    setIsDialogOpen(false);
-  };
-
-  const currentType = data?.connectionType || 'cable';
   const currentLabel = data?.label || 'Cable';
 
   return (
@@ -142,38 +137,6 @@ const InteractiveCableEdge: React.FC<InteractiveCableEdgeProps> = ({
           )}
         </div>
       </EdgeLabelRenderer>
-
-      {/* Connection Type Toggle Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Change Connection Type</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <p className="text-sm text-gray-600">
-              Choose connection type between Y Adapter and Well:
-            </p>
-            <div className="grid grid-cols-2 gap-3">
-              <Button
-                onClick={() => toggleConnectionType('cable')}
-                variant={currentType === 'cable' ? 'default' : 'outline'}
-                className="flex flex-col h-auto py-3"
-              >
-                <div className="font-medium">100ft Cable</div>
-                <div className="text-xs text-gray-500">Physical cable connection</div>
-              </Button>
-              <Button
-                onClick={() => toggleConnectionType('direct')}
-                variant={currentType === 'direct' ? 'default' : 'outline'}
-                className="flex flex-col h-auto py-3"
-              >
-                <div className="font-medium">Direct Connection</div>
-                <div className="text-xs text-gray-500">No cable required</div>
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
     </>
   );
 };

@@ -1,31 +1,25 @@
 
 import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus } from 'lucide-react';
-import { EquipmentType, StorageLocation } from '@/types/inventory';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { EquipmentType, IndividualEquipment, StorageLocation } from '@/types/inventory';
+import JobAwareLocationSelector from './JobAwareLocationSelector';
 
 interface IndividualEquipmentFormProps {
   isFormOpen: boolean;
   setIsFormOpen: (open: boolean) => void;
-  editingEquipment: any;
-  setEditingEquipment: (equipment: any) => void;
-  formData: {
-    equipmentId: string;
-    name: string;
-    locationId: string;
-    serialNumber: string;
-    notes: string;
-    selectedPrefix: string;
-  };
+  editingEquipment: IndividualEquipment | null;
+  setEditingEquipment: (equipment: IndividualEquipment | null) => void;
+  formData: any;
   setFormData: (data: any) => void;
   equipmentType: EquipmentType;
   storageLocations: StorageLocation[];
-  allEquipment: any[];
+  allEquipment: IndividualEquipment[];
   onSubmit: (saveImmediate?: boolean) => void;
   onReset: () => void;
   onPrefixChange: (prefix: string) => void;
@@ -45,119 +39,107 @@ const IndividualEquipmentForm: React.FC<IndividualEquipmentFormProps> = ({
   onReset,
   onPrefixChange,
 }) => {
-  const prefixOptions = ['CC', 'CT', 'SL', 'PG', 'BP', equipmentType.defaultIdPrefix].filter(Boolean);
+  const generateSuggestedId = () => {
+    const prefix = formData.selectedPrefix || equipmentType.defaultIdPrefix || 'EQ-';
+    const existingIds = allEquipment
+      .map(eq => eq.equipmentId)
+      .filter(id => id.startsWith(prefix))
+      .map(id => {
+        const num = id.replace(prefix, '').replace('-', '');
+        return parseInt(num) || 0;
+      });
+    
+    const nextNum = Math.max(0, ...existingIds) + 1;
+    return `${prefix}${nextNum.toString().padStart(3, '0')}`;
+  };
 
-  const handleCancel = () => {
-    onReset();
-    setIsFormOpen(false);
+  const handleSubmit = () => {
+    onSubmit(true);
   };
 
   return (
     <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-      <DialogTrigger asChild>
-        <Button size="sm">
-          <Plus className="h-3 w-3 mr-1" />
-          Add Item
-        </Button>
-      </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>
             {editingEquipment ? 'Edit' : 'Add'} {equipmentType.name}
           </DialogTitle>
         </DialogHeader>
-        <div className="space-y-4">
-          <div>
-            <Label htmlFor="prefix">ID Prefix</Label>
-            <Select value={formData.selectedPrefix} onValueChange={onPrefixChange}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {prefixOptions.map(prefix => (
-                  <SelectItem key={prefix} value={prefix}>
-                    {prefix}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
 
+        <div className="space-y-4">
+          {/* Equipment ID */}
           <div>
             <Label htmlFor="equipmentId">Equipment ID</Label>
-            <Input
-              value={formData.equipmentId}
-              onChange={(e) => setFormData(prev => ({ ...prev, equipmentId: e.target.value }))}
-              placeholder="e.g., SS0001, CC01, SL01"
-            />
+            <div className="flex gap-2">
+              <Input
+                id="equipmentId"
+                value={formData.equipmentId}
+                onChange={(e) => setFormData(prev => ({ ...prev, equipmentId: e.target.value }))}
+                placeholder={generateSuggestedId()}
+              />
+              <Button 
+                type="button" 
+                variant="outline" 
+                size="sm"
+                onClick={() => setFormData(prev => ({ ...prev, equipmentId: generateSuggestedId() }))}
+              >
+                Suggest
+              </Button>
+            </div>
           </div>
 
+          {/* Name */}
           <div>
-            <Label htmlFor="name">Equipment Name</Label>
+            <Label htmlFor="name">Name (Optional)</Label>
             <Input
+              id="name"
               value={formData.name}
               onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-              placeholder="e.g., ShearStream-0001, Customer Computer 01, Starlink-01"
+              placeholder={`${equipmentType.name} ${formData.equipmentId || generateSuggestedId()}`}
             />
           </div>
 
+          {/* Location */}
           <div>
-            <Label htmlFor="locationId">Location *</Label>
-            <Select value={formData.locationId} onValueChange={(value) => setFormData(prev => ({ ...prev, locationId: value }))}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select location" />
-              </SelectTrigger>
-              <SelectContent>
-                {storageLocations.map(location => (
-                  <SelectItem key={location.id} value={location.id}>
-                    {location.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label htmlFor="location">Location</Label>
+            <JobAwareLocationSelector
+              value={formData.locationId}
+              onValueChange={(value) => setFormData(prev => ({ ...prev, locationId: value }))}
+              placeholder="Select location"
+            />
           </div>
 
+          {/* Serial Number */}
           <div>
-            <Label htmlFor="serialNumber">Serial Number</Label>
+            <Label htmlFor="serialNumber">Serial Number (Optional)</Label>
             <Input
+              id="serialNumber"
               value={formData.serialNumber}
               onChange={(e) => setFormData(prev => ({ ...prev, serialNumber: e.target.value }))}
-              placeholder="Optional"
+              placeholder="Enter serial number"
             />
           </div>
 
+          {/* Notes */}
           <div>
-            <Label htmlFor="notes">Notes</Label>
+            <Label htmlFor="notes">Notes (Optional)</Label>
             <Textarea
+              id="notes"
               value={formData.notes}
               onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-              placeholder="Optional notes..."
+              placeholder="Any additional notes..."
+              rows={2}
             />
           </div>
 
-          <div className="flex gap-2">
-            {editingEquipment ? (
-              <>
-                <Button onClick={() => onSubmit(true)}>
-                  Update Equipment
-                </Button>
-                <Button variant="outline" onClick={handleCancel}>
-                  Cancel
-                </Button>
-              </>
-            ) : (
-              <>
-                <Button onClick={() => onSubmit(false)}>
-                  Add to Draft
-                </Button>
-                <Button variant="outline" onClick={() => onSubmit(true)}>
-                  Save Immediately
-                </Button>
-                <Button variant="outline" onClick={handleCancel}>
-                  Cancel
-                </Button>
-              </>
-            )}
+          {/* Actions */}
+          <div className="flex justify-end gap-2 pt-4">
+            <Button type="button" variant="outline" onClick={onReset}>
+              Cancel
+            </Button>
+            <Button type="button" onClick={handleSubmit}>
+              {editingEquipment ? 'Update' : 'Add'} Equipment
+            </Button>
           </div>
         </div>
       </DialogContent>

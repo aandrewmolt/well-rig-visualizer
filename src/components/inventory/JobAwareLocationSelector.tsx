@@ -12,23 +12,25 @@ interface JobAwareLocationSelectorProps {
   onValueChange: (value: string) => void;
   placeholder?: string;
   disabled?: boolean;
+  showJobs?: boolean;
 }
 
 const JobAwareLocationSelector: React.FC<JobAwareLocationSelectorProps> = ({
   value,
   onValueChange,
   placeholder = "Select location",
-  disabled = false
+  disabled = false,
+  showJobs = true
 }) => {
   const { data } = useInventory();
 
-  // Fetch jobs from Supabase
+  // Fetch all jobs from Supabase
   const { data: jobs = [] } = useQuery({
-    queryKey: ['jobs'],
+    queryKey: ['jobs-for-location-selector'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('jobs')
-        .select('id, name')
+        .select('id, name, created_at')
         .order('name');
       
       if (error) {
@@ -37,13 +39,29 @@ const JobAwareLocationSelector: React.FC<JobAwareLocationSelectorProps> = ({
       }
       
       return data || [];
-    }
+    },
+    enabled: showJobs
   });
+
+  // Get the display name for the selected value
+  const getDisplayName = (selectedValue: string) => {
+    // Check storage locations first
+    const storageLocation = data.storageLocations.find(loc => loc.id === selectedValue);
+    if (storageLocation) return storageLocation.name;
+    
+    // Check jobs
+    const job = jobs.find(j => j.id === selectedValue);
+    if (job) return job.name;
+    
+    return placeholder;
+  };
 
   return (
     <Select value={value} onValueChange={onValueChange} disabled={disabled}>
       <SelectTrigger>
-        <SelectValue placeholder={placeholder} />
+        <SelectValue placeholder={placeholder}>
+          {value ? getDisplayName(value) : placeholder}
+        </SelectValue>
       </SelectTrigger>
       <SelectContent>
         {/* Storage Locations */}
@@ -65,11 +83,11 @@ const JobAwareLocationSelector: React.FC<JobAwareLocationSelectorProps> = ({
         ))}
         
         {/* Job Locations */}
-        {jobs.length > 0 && (
+        {showJobs && jobs.length > 0 && (
           <>
             <div className="px-2 py-1.5 text-xs font-semibold text-gray-500 flex items-center gap-1 border-t mt-1 pt-2">
               <Briefcase className="h-3 w-3" />
-              Job Sites
+              Job Sites ({jobs.length} active)
             </div>
             {jobs.map((job) => (
               <SelectItem key={`job-${job.id}`} value={job.id}>
@@ -77,7 +95,7 @@ const JobAwareLocationSelector: React.FC<JobAwareLocationSelectorProps> = ({
                   <Briefcase className="h-3 w-3 text-blue-600" />
                   <span>{job.name}</span>
                   <Badge variant="secondary" className="text-xs">
-                    Job
+                    Job Site
                   </Badge>
                 </div>
               </SelectItem>

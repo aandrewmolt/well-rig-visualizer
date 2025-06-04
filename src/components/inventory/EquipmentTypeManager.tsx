@@ -1,10 +1,11 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Settings, Trash2, Edit } from 'lucide-react';
+import { Plus, Settings, Trash2, Edit, AlertTriangle } from 'lucide-react';
 import { useInventory } from '@/contexts/InventoryContext';
 import { toast } from 'sonner';
 import EquipmentTypeForm from './EquipmentTypeForm';
@@ -31,18 +32,31 @@ const EquipmentTypeManager = () => {
     }
   };
 
+  const getEquipmentCountForType = (typeId: string) => {
+    const equipmentItems = data.equipmentItems.filter(item => item.typeId === typeId);
+    const individualEquipment = data.individualEquipment.filter(eq => eq.typeId === typeId);
+    return equipmentItems.length + individualEquipment.length;
+  };
+
   const handleEdit = (type: any) => {
     setEditingType(type);
     setIsDialogOpen(true);
   };
 
-  const handleDelete = async (typeId: string) => {
-    if (window.confirm('Are you sure you want to delete this equipment type?')) {
+  const handleDelete = async (typeId: string, typeName: string) => {
+    const equipmentCount = getEquipmentCountForType(typeId);
+    
+    if (equipmentCount > 0) {
+      toast.error(`Cannot delete "${typeName}" - it has ${equipmentCount} equipment items. Please remove or reassign all equipment first.`);
+      return;
+    }
+
+    if (window.confirm(`Are you sure you want to delete "${typeName}"? This action cannot be undone.`)) {
       try {
         await deleteEquipmentType(typeId);
-        toast.success('Equipment type deleted successfully');
+        toast.success(`Equipment type "${typeName}" deleted successfully`);
       } catch (error) {
-        toast.error('Failed to delete equipment type');
+        toast.error(`Failed to delete equipment type "${typeName}"`);
       }
     }
   };
@@ -111,51 +125,66 @@ const EquipmentTypeManager = () => {
       
       <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredTypes.map((type) => (
-            <Card key={type.id} className="border border-gray-200">
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between mb-2">
-                  <h3 className="font-medium text-sm">{type.name}</h3>
-                  <div className="flex gap-1">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => handleEdit(type)}
-                    >
-                      <Edit className="h-3 w-3" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => handleDelete(type.id)}
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <Badge className={getCategoryColor(type.category)}>
-                    {type.category}
-                  </Badge>
-                  
-                  {type.description && (
-                    <p className="text-xs text-gray-600">{type.description}</p>
-                  )}
-                  
-                  {type.defaultIdPrefix && (
-                    <div className="text-xs text-gray-500">
-                      Prefix: {type.defaultIdPrefix}
+          {filteredTypes.map((type) => {
+            const equipmentCount = getEquipmentCountForType(type.id);
+            const canDelete = equipmentCount === 0;
+            
+            return (
+              <Card key={type.id} className="border border-gray-200">
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between mb-2">
+                    <h3 className="font-medium text-sm">{type.name}</h3>
+                    <div className="flex gap-1">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleEdit(type)}
+                      >
+                        <Edit className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleDelete(type.id, type.name)}
+                        disabled={!canDelete}
+                        className={canDelete ? "hover:text-red-600" : "opacity-50 cursor-not-allowed"}
+                        title={canDelete ? "Delete equipment type" : `Cannot delete - has ${equipmentCount} equipment items`}
+                      >
+                        {!canDelete && <AlertTriangle className="h-3 w-3 mr-1" />}
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
                     </div>
-                  )}
-                  
-                  <div className="text-xs text-gray-500">
-                    Individual Tracking: {type.requiresIndividualTracking ? 'Yes' : 'No'}
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                  
+                  <div className="space-y-2">
+                    <Badge className={getCategoryColor(type.category)}>
+                      {type.category}
+                    </Badge>
+                    
+                    {equipmentCount > 0 && (
+                      <div className="text-xs text-blue-600 font-medium">
+                        {equipmentCount} equipment items
+                      </div>
+                    )}
+                    
+                    {type.description && (
+                      <p className="text-xs text-gray-600">{type.description}</p>
+                    )}
+                    
+                    {type.defaultIdPrefix && (
+                      <div className="text-xs text-gray-500">
+                        Prefix: {type.defaultIdPrefix}
+                      </div>
+                    )}
+                    
+                    <div className="text-xs text-gray-500">
+                      Individual Tracking: {type.requiresIndividualTracking ? 'Yes' : 'No'}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
         
         {filteredTypes.length === 0 && (

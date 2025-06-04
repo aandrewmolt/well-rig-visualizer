@@ -1,4 +1,3 @@
-
 import { useCallback } from 'react';
 import { useInventory } from '@/contexts/InventoryContext';
 import { useEquipmentIdGenerator } from './useEquipmentIdGenerator';
@@ -36,19 +35,25 @@ export const useEquipmentMigration = () => {
         const numberInt = parseInt(numberPart) || 1;
         
         // Apply correct zero padding based on equipment type
+        let correctId = '';
         if (prefix === 'SS') {
           // ShearStream: 4 digits (SS0001, SS0002, etc.)
-          newEquipmentId = `${prefix}${numberInt.toString().padStart(4, '0')}`;
+          correctId = `${prefix}${numberInt.toString().padStart(4, '0')}`;
         } else if (prefix === 'CC' || prefix === 'CT' || prefix === 'SL') {
           // Company Computer, Customer Tablet, Starlink: 2 digits (CC01, CT01, SL01)
-          newEquipmentId = `${prefix}${numberInt.toString().padStart(2, '0')}`;
+          correctId = `${prefix}${numberInt.toString().padStart(2, '0')}`;
         } else if (prefix === 'PG' || prefix === 'BP') {
           // Pressure Gauge, Battery Pack: 3 digits (PG001, BP001)
-          newEquipmentId = `${prefix}${numberInt.toString().padStart(3, '0')}`;
+          correctId = `${prefix}${numberInt.toString().padStart(3, '0')}`;
+        } else {
+          // Default: keep original if no specific rule
+          correctId = newEquipmentId;
         }
 
-        if (newEquipmentId !== equipment.equipmentId) {
+        if (correctId !== equipment.equipmentId) {
+          newEquipmentId = correctId;
           needsUpdate = true;
+          console.log(`ID padding fix: ${equipment.equipmentId} -> ${newEquipmentId}`);
         }
 
         // STEP 2: Update names to match new IDs

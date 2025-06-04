@@ -184,14 +184,26 @@ export const useJobDiagramEquipment = ({
       
       // Update the specific SS box node with equipment ID
       const boxNodeId = index === 0 ? 'main-box' : `main-box-${index + 1}`;
-      updateMainBoxName(boxNodeId, equipment.equipmentId, setNodes);
+      setNodes(nodes => 
+        nodes.map(node => 
+          node.id === boxNodeId
+            ? { ...node, data: { ...node.data, label: equipment.equipmentId, equipmentId: equipment.equipmentId, assigned: true }}
+            : node
+        )
+      );
     } else if (type === 'starlink') {
       if (selectedStarlink) {
         returnEquipment(selectedStarlink);
       }
       setSelectedStarlink(equipmentId);
       deployEquipment(equipmentId, job.id);
-      updateSatelliteName(equipment.equipmentId, setNodes);
+      setNodes(nodes => 
+        nodes.map(node => 
+          node.type === 'satellite'
+            ? { ...node, data: { ...node.data, label: equipment.equipmentId, equipmentId: equipment.equipmentId, assigned: true }}
+            : node
+        )
+      );
     } else if (type === 'customer-computer' && index !== undefined) {
       const newComputers = [...selectedCustomerComputers];
       if (newComputers[index]) {
@@ -202,14 +214,11 @@ export const useJobDiagramEquipment = ({
       deployEquipment(equipmentId, job.id);
       
       // Update customer computer node with equipment ID
-      updateCustomerComputerName(`customer-computer-${index + 1}`, equipment.equipmentId, setNodes);
-      
-      // Update the node data to include isTablet flag based on equipment ID
       const isTablet = equipment.equipmentId.startsWith('CT');
       setNodes(nodes => 
         nodes.map(node => 
           node.id === `customer-computer-${index + 1}`
-            ? { ...node, data: { ...node.data, isTablet, equipmentId: equipment.equipmentId, assigned: true }}
+            ? { ...node, data: { ...node.data, label: equipment.equipmentId, equipmentId: equipment.equipmentId, isTablet, assigned: true }}
             : node
         )
       );
@@ -222,9 +231,6 @@ export const useJobDiagramEquipment = ({
     returnEquipment, 
     deployEquipment, 
     job.id, 
-    updateMainBoxName, 
-    updateSatelliteName, 
-    updateCustomerComputerName, 
     setNodes,
     setSelectedShearstreamBoxes,
     setSelectedStarlink,

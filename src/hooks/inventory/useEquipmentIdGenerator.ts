@@ -9,8 +9,11 @@ export const useEquipmentIdGenerator = () => {
     if (prefix === 'SS') {
       // ShearStream: 4 digits (SS0001, SS0002, SS0010, SS0100, SS1000)
       return `${prefix}${counter.toString().padStart(4, '0')}`;
-    } else if (prefix === 'CC' || prefix === 'CT' || prefix === 'SL') {
-      // Company Computer, Customer Tablet, Starlink: 2 digits (CC01, CT01, SL01)
+    } else if (prefix === 'CC' || prefix === 'CT') {
+      // Company Computer, Customer Tablet: 3 digits (CC001, CT001)
+      return `${prefix}${counter.toString().padStart(3, '0')}`;
+    } else if (prefix === 'SL') {
+      // Starlink: 2 digits (SL01, SL02)
       return `${prefix}${counter.toString().padStart(2, '0')}`;
     } else if (prefix === 'PG' || prefix === 'BP') {
       // Pressure Gauge, Battery Pack: 3 digits (PG001, BP001)
@@ -58,7 +61,7 @@ export const useEquipmentIdGenerator = () => {
     
     if (prefix === 'SS') {
       return `${prefix}XXXX (e.g., ${prefix}0001)`;
-    } else if (prefix === 'CC' || prefix === 'CT' || prefix === 'SL') {
+    } else if (prefix === 'SL') {
       return `${prefix}XX (e.g., ${prefix}01)`;
     } else {
       return `${prefix}XXX (e.g., ${prefix}001)`;

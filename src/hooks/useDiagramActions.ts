@@ -52,8 +52,10 @@ export const useDiagramActions = (
           y: 100 + (row * 250) // Vertical spacing: stack rows with 250px spacing
         },
         data: { 
-          label: `ShearStream Box ${newBoxNumber}`, // Placeholder label until equipment is assigned
-          boxNumber: newBoxNumber
+          label: 'ShearStream Box', // Generic label until equipment is assigned
+          boxNumber: newBoxNumber,
+          equipmentId: null,
+          assigned: false
         },
         draggable: true, // Make boxes draggable
       };
@@ -81,17 +83,24 @@ export const useDiagramActions = (
   const addCompanyComputer = useCallback(() => {
     setNodes((nds) => {
       const existingComputers = nds.filter(node => node.type === 'companyComputer');
+      const newComputerNumber = existingComputers.length + 1;
+      
       const newComputer: Node = {
-        id: `company-computer-${nodeIdCounter}`,
+        id: `customer-computer-${newComputerNumber}`,
         type: 'companyComputer',
         // Position further left with more spacing to prevent overlap
         position: { x: -150 + (existingComputers.length * 200), y: 300 + (existingComputers.length * 150) },
-        data: { label: `Company Computer ${existingComputers.length + 1}` },
+        data: { 
+          label: 'Customer Computer', // Generic label until equipment is assigned
+          equipmentId: null,
+          assigned: false,
+          isTablet: false
+        },
         draggable: true,
       };
       
       setNodeIdCounter(nodeIdCounter + 1);
-      toast.success('Company Computer added!');
+      toast.success('Customer Computer added!');
       return [...nds, newComputer];
     });
   }, [nodeIdCounter, setNodes, setNodeIdCounter]);

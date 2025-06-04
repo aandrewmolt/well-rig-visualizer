@@ -11,11 +11,20 @@ const MainBoxNode = ({ data }: { data: any }) => {
     { id: 'p4', label: 'P4', coms: 'COM7,8' },
   ];
 
+  // Show equipment ID if assigned, otherwise show generic label
+  const displayLabel = data.equipmentId || data.label || 'ShearStream Box';
+  const isAssigned = data.assigned && data.equipmentId;
+
   return (
     <div className="bg-gray-800 text-white rounded-lg p-4 border-2 border-gray-600 min-w-[200px]">
       <div className="flex items-center gap-2 mb-3">
         <Square className="h-5 w-5" />
-        <h3 className="font-bold text-lg">{data.label || 'ShearStream Box'}</h3>
+        <div>
+          <h3 className="font-bold text-lg">{displayLabel}</h3>
+          {isAssigned && (
+            <p className="text-xs text-green-300">Assigned</p>
+          )}
+        </div>
       </div>
       
       <div className="space-y-2">

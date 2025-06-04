@@ -21,16 +21,6 @@ const CommunicationEquipmentManager: React.FC = () => {
     updateIndividualEquipment(equipment);
   });
 
-  const getTypeIcon = (typeName: string) => {
-    switch (typeName) {
-      case 'Starlink': return <Wifi className="h-5 w-5" />;
-      case 'Customer Computer': return <Monitor className="h-5 w-5" />;
-      case 'Customer Tablet': return <Tablet className="h-5 w-5" />;
-      case 'ShearStream Box': return <Box className="h-5 w-5" />;
-      default: return <Monitor className="h-5 w-5" />;
-    }
-  };
-
   const getEquipmentForType = (typeId: string) => {
     const existing = data.individualEquipment.filter(eq => eq.typeId === typeId);
     const drafts = draftEquipment.filter(eq => eq.typeId === typeId);

@@ -46,23 +46,39 @@ const StorageTransferManager = () => {
     }
 
     try {
-      // Find source item to deduct from
-      const sourceItem = data.equipmentItems.find(
-        item => item.typeId === selectedEquipmentType && 
-                item.locationId === fromLocation && 
-                item.status === 'available' &&
-                item.quantity >= quantity
-      );
+      // Get all source items with available quantity
+      const sourceItems = data.equipmentItems
+        .filter(item => 
+          item.typeId === selectedEquipmentType && 
+          item.locationId === fromLocation && 
+          item.status === 'available' &&
+          item.quantity > 0
+        )
+        .sort((a, b) => b.quantity - a.quantity); // Start with largest quantities
 
-      if (!sourceItem) {
-        toast.error('Source equipment not found');
-        return;
+      let remainingToTransfer = quantity;
+      const sourceUpdates: Array<{id: string, newQuantity: number}> = [];
+
+      // Calculate how much to deduct from each source item
+      for (const sourceItem of sourceItems) {
+        if (remainingToTransfer <= 0) break;
+        
+        const deductAmount = Math.min(sourceItem.quantity, remainingToTransfer);
+        sourceUpdates.push({
+          id: sourceItem.id,
+          newQuantity: sourceItem.quantity - deductAmount
+        });
+        remainingToTransfer -= deductAmount;
       }
 
-      // Deduct from source
-      await updateSingleEquipmentItem(sourceItem.id, {
-        quantity: sourceItem.quantity - quantity,
-      });
+      // Update all source items
+      await Promise.all(
+        sourceUpdates.map(update => 
+          updateSingleEquipmentItem(update.id, {
+            quantity: update.newQuantity,
+          })
+        )
+      );
 
       // Find existing destination item to merge with
       const destinationItem = data.equipmentItems.find(
@@ -88,7 +104,7 @@ const StorageTransferManager = () => {
         });
       }
 
-      toast.success('Equipment transferred and merged successfully');
+      toast.success('Equipment transferred successfully');
       resetForm();
     } catch (error) {
       console.error('Transfer failed:', error);

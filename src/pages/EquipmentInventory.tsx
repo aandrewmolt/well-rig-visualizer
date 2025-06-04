@@ -14,7 +14,6 @@ import EquipmentReportsExporter from '@/components/inventory/EquipmentReportsExp
 import MaintenanceSchedulePanel from '@/components/inventory/MaintenanceSchedulePanel';
 import DataSetupVerifier from '@/components/inventory/DataSetupVerifier';
 import CommunicationEquipmentManager from '@/components/inventory/CommunicationEquipmentManager';
-import InventoryCleanupButton from '@/components/inventory/InventoryCleanupButton';
 import { useDefaultDataSetup } from '@/hooks/useDefaultDataSetup';
 import { useInventory } from '@/contexts/InventoryContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -115,10 +114,7 @@ const EquipmentInventory = () => {
             </TabsList>
 
             <TabsContent value="dashboard">
-              <div className="space-y-6">
-                <InventoryCleanupButton />
-                <ComprehensiveInventoryDashboard onSwitchToTab={handleSwitchToTab} />
-              </div>
+              <ComprehensiveInventoryDashboard onSwitchToTab={handleSwitchToTab} />
             </TabsContent>
 
             <TabsContent value="equipment-types">
@@ -158,10 +154,7 @@ const EquipmentInventory = () => {
             </TabsContent>
 
             <TabsContent value="system">
-              <div className="space-y-6">
-                <InventoryCleanupButton />
-                <DataSetupVerifier />
-              </div>
+              <DataSetupVerifier />
             </TabsContent>
           </Tabs>
         </div>

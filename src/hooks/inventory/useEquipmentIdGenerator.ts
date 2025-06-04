@@ -5,9 +5,9 @@ export const useEquipmentIdGenerator = () => {
   const getIdPadding = (equipmentType: EquipmentType): number => {
     const prefix = equipmentType.defaultIdPrefix || '';
     
-    // ShearStream Box uses 3-digit padding
+    // ShearStream Box uses 4-digit padding
     if (prefix === 'SS') {
-      return 3;
+      return 4;
     }
     
     // Starlink, Customer Computer, and Customer Tablet use 2-digit padding

@@ -23,12 +23,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { useInventoryData } from '@/hooks/useInventoryData';
+import { useSupabaseInventory } from '@/hooks/useSupabaseInventory';
 import StorageTransferManager from '@/components/inventory/StorageTransferManager';
 import RedTagManager from '@/components/inventory/RedTagManager';
 
 const Inventory = () => {
-  const { data, updateSingleEquipmentItem } = useInventoryData();
+  const { data, updateSingleEquipmentItem } = useSupabaseInventory();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">

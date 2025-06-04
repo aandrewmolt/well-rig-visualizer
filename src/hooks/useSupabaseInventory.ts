@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { InventoryData } from '@/types/inventory';
 import { useSupabaseEquipmentQueries } from './supabase/useSupabaseEquipmentQueries';
 import { useSupabaseEquipmentMutations } from './supabase/useSupabaseEquipmentMutations';
@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 export const useSupabaseInventory = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const subscriptionRef = useRef<boolean>(false);
   
   const {
     equipmentTypes,
@@ -22,9 +23,14 @@ export const useSupabaseInventory = () => {
   
   const utils = useSupabaseEquipmentUtils(equipmentItems, individualEquipment);
 
-  // Set up real-time subscriptions
+  // Set up real-time subscriptions only once
   useEffect(() => {
+    if (subscriptionRef.current) {
+      return; // Already subscribed
+    }
+
     console.log('Setting up real-time subscriptions for inventory...');
+    subscriptionRef.current = true;
     
     const channel = supabase
       .channel('inventory-changes')
@@ -48,9 +54,10 @@ export const useSupabaseInventory = () => {
 
     return () => {
       console.log('Cleaning up real-time subscriptions...');
+      subscriptionRef.current = false;
       supabase.removeChannel(channel);
     };
-  }, [refetch]);
+  }, []); // Empty dependency array to run only once
 
   // Combined data object
   const data: InventoryData = {

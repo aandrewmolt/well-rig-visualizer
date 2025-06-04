@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,13 +7,13 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertTriangle, Camera, MapPin, Calendar, Tag, Upload, X } from 'lucide-react';
-import { useInventoryData } from '@/hooks/useInventoryData';
+import { useSupabaseInventory } from '@/hooks/useSupabaseInventory';
 import { supabase } from '@/integrations/supabase/client';
 import { optimizeImage, getOptimizedFileName } from '@/utils/imageOptimizer';
 import { toast } from 'sonner';
 
 const RedTagManager: React.FC = () => {
-  const { data, updateSingleEquipmentItem, updateSingleIndividualEquipment } = useInventoryData();
+  const { data, updateSingleEquipmentItem, updateSingleIndividualEquipment } = useSupabaseInventory();
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);

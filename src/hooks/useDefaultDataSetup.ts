@@ -27,8 +27,17 @@ export const useDefaultDataSetup = () => {
 
   useEffect(() => {
     const initializeDefaults = async () => {
-      // Don't run if we already have data or if we're already initializing
-      if (hasInitialized || isInitializing || data.equipmentTypes.length > 0 || data.storageLocations.length > 0) {
+      // Only run if we have no data and haven't already initialized
+      if (hasInitialized || isInitializing) {
+        return;
+      }
+
+      const hasEquipmentTypes = data.equipmentTypes.length > 0;
+      const hasStorageLocations = data.storageLocations.length > 0;
+
+      // If we already have data, mark as initialized and don't create defaults
+      if (hasEquipmentTypes && hasStorageLocations) {
+        setHasInitialized(true);
         return;
       }
 
@@ -36,14 +45,32 @@ export const useDefaultDataSetup = () => {
       console.log('Initializing default data...');
 
       try {
-        // Create default storage location first
-        console.log('Creating default storage location...');
-        await createStorageLocation(DEFAULT_STORAGE_LOCATION);
+        // Create default storage location if none exist
+        if (!hasStorageLocations) {
+          console.log('Creating default storage location...');
+          const existingLocation = data.storageLocations.find(loc => loc.name === DEFAULT_STORAGE_LOCATION.name);
+          if (!existingLocation) {
+            await createStorageLocation(DEFAULT_STORAGE_LOCATION);
+          }
+        }
 
-        // Create default equipment types
-        console.log('Creating default equipment types...');
-        for (const equipmentType of DEFAULT_EQUIPMENT_TYPES) {
-          await createEquipmentType(equipmentType);
+        // Create default equipment types if none exist
+        if (!hasEquipmentTypes) {
+          console.log('Creating default equipment types...');
+          for (const equipmentType of DEFAULT_EQUIPMENT_TYPES) {
+            const existingType = data.equipmentTypes.find(type => type.name === equipmentType.name);
+            if (!existingType) {
+              try {
+                await createEquipmentType(equipmentType);
+              } catch (error: any) {
+                // Skip if already exists (duplicate key error)
+                if (!error.message?.includes('duplicate key') && !error.message?.includes('already exists')) {
+                  throw error;
+                }
+                console.log(`Equipment type '${equipmentType.name}' already exists, skipping...`);
+              }
+            }
+          }
         }
 
         setHasInitialized(true);
@@ -57,11 +84,11 @@ export const useDefaultDataSetup = () => {
       }
     };
 
-    // Only run initialization if we have no data
-    if (data.equipmentTypes.length === 0 && data.storageLocations.length === 0 && !isInitializing && !hasInitialized) {
+    // Only initialize if we don't have both types of data
+    if ((data.equipmentTypes.length === 0 || data.storageLocations.length === 0) && !isInitializing && !hasInitialized) {
       initializeDefaults();
     }
-  }, [data.equipmentTypes.length, data.storageLocations.length, hasInitialized, isInitializing, createEquipmentType, createStorageLocation]);
+  }, [data.equipmentTypes.length, data.storageLocations.length, hasInitialized, isInitializing, createEquipmentType, createStorageLocation, data.equipmentTypes, data.storageLocations]);
 
   return {
     isInitializing,

@@ -67,6 +67,16 @@ const InteractiveCableEdge: React.FC<InteractiveCableEdgeProps> = ({
   const labelResult = getCurrentLabel(data, currentEdge);
   const currentLabel: string = typeof labelResult === 'string' ? labelResult : 'Cable';
 
+  // Safely extract connectionType with proper type conversion
+  const getConnectionType = (): string => {
+    if (data?.connectionType) return data.connectionType;
+    if (currentEdge.data?.connectionType) {
+      // Safely convert unknown to string
+      return String(currentEdge.data.connectionType);
+    }
+    return '';
+  };
+
   // Log debugging information with properly typed parameters
   logEdgeDebugging(
     id,
@@ -75,7 +85,7 @@ const InteractiveCableEdge: React.FC<InteractiveCableEdgeProps> = ({
     sourceNode?.type || '',
     targetNode?.type || '',
     currentEdge.type || '',
-    data?.connectionType || currentEdge.data?.connectionType || '',
+    getConnectionType(),
     currentLabel
   );
 

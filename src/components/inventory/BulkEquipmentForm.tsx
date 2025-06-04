@@ -17,6 +17,7 @@ interface BulkEquipmentFormProps {
     prefix: string;
     startNumber: number;
     locationId: string;
+    selectedPrefix?: string;
   };
   setBulkCreateData: (data: any) => void;
   storageLocations: StorageLocation[];
@@ -35,8 +36,29 @@ const BulkEquipmentForm: React.FC<BulkEquipmentFormProps> = ({
 }) => {
   const { generateEquipmentId, getIdFormat } = useEquipmentIdGenerator();
   
-  const exampleId = generateEquipmentId(equipmentType, bulkCreateData.startNumber);
-  const idFormat = getIdFormat(equipmentType);
+  // Show prefix selector for Customer Computer types
+  const showPrefixSelector = equipmentType.name === 'Customer Computer';
+  const prefixOptions = showPrefixSelector ? [
+    { value: 'CC', label: 'CC - Customer Computer' },
+    { value: 'CT', label: 'CT - Customer Tablet' }
+  ] : [];
+
+  // Use selected prefix or default equipment type prefix
+  const currentPrefix = showPrefixSelector 
+    ? (bulkCreateData.selectedPrefix || 'CC')
+    : equipmentType.defaultIdPrefix || '';
+  
+  // Create a temporary equipment type with the selected prefix for ID generation
+  const tempEquipmentType = showPrefixSelector 
+    ? { ...equipmentType, defaultIdPrefix: currentPrefix }
+    : equipmentType;
+  
+  const exampleId = generateEquipmentId(tempEquipmentType, bulkCreateData.startNumber);
+  const idFormat = getIdFormat(tempEquipmentType);
+
+  const handlePrefixChange = (prefix: string) => {
+    setBulkCreateData({...bulkCreateData, selectedPrefix: prefix});
+  };
 
   return (
     <Dialog open={isBulkCreateOpen} onOpenChange={setIsBulkCreateOpen}>
@@ -50,12 +72,33 @@ const BulkEquipmentForm: React.FC<BulkEquipmentFormProps> = ({
           <DialogTitle>Bulk Create {equipmentType.name}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
+          {showPrefixSelector && (
+            <div>
+              <Label>Equipment Type</Label>
+              <Select 
+                value={bulkCreateData.selectedPrefix || 'CC'} 
+                onValueChange={handlePrefixChange}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select equipment type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {prefixOptions.map(option => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          
           <div className="p-3 bg-blue-50 border border-blue-200 rounded">
             <p className="text-sm text-blue-700">
               <strong>ID Format:</strong> {idFormat} (e.g., {exampleId})
             </p>
             <p className="text-xs text-blue-600 mt-1">
-              Will create: {exampleId} to {generateEquipmentId(equipmentType, bulkCreateData.startNumber + bulkCreateData.count - 1)}
+              Will create: {exampleId} to {generateEquipmentId(tempEquipmentType, bulkCreateData.startNumber + bulkCreateData.count - 1)}
             </p>
           </div>
           

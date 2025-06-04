@@ -13,11 +13,16 @@ export const useIndividualEquipmentBulkCreate = (
 ) => {
   const { generateEquipmentId, generateEquipmentName } = useEquipmentIdGenerator();
   const [isBulkCreateOpen, setIsBulkCreateOpen] = useState(false);
+  
+  // Initialize selectedPrefix for Customer Computer types
+  const initialSelectedPrefix = equipmentType.name === 'Customer Computer' ? 'CC' : undefined;
+  
   const [bulkCreateData, setBulkCreateData] = useState<BulkCreateData>({
     count: 5,
     prefix: equipmentType.defaultIdPrefix || '',
     startNumber: 1,
-    locationId: ''
+    locationId: '',
+    selectedPrefix: initialSelectedPrefix
   });
 
   const handleBulkCreate = useCallback((saveImmediate = false) => {
@@ -33,9 +38,14 @@ export const useIndividualEquipmentBulkCreate = (
     const newEquipment: DraftEquipment[] = [];
     const existingIds = allEquipment.map(eq => eq.equipmentId);
 
+    // Create a temporary equipment type with the selected prefix for ID generation
+    const effectiveEquipmentType = equipmentType.name === 'Customer Computer' && bulkCreateData.selectedPrefix
+      ? { ...equipmentType, defaultIdPrefix: bulkCreateData.selectedPrefix }
+      : equipmentType;
+
     for (let i = 0; i < bulkCreateData.count; i++) {
       const number = bulkCreateData.startNumber + i;
-      const equipmentId = generateEquipmentId(equipmentType, number);
+      const equipmentId = generateEquipmentId(effectiveEquipmentType, number);
       
       if (existingIds.includes(equipmentId)) {
         toast({
@@ -46,8 +56,8 @@ export const useIndividualEquipmentBulkCreate = (
         return;
       }
 
-      // Use the new name generation function
-      const equipmentName = generateEquipmentName(equipmentType, equipmentId);
+      // Use the effective equipment type for name generation
+      const equipmentName = generateEquipmentName(effectiveEquipmentType, equipmentId);
 
       newEquipment.push({
         equipmentId,
@@ -70,9 +80,10 @@ export const useIndividualEquipmentBulkCreate = (
       count: 5,
       prefix: equipmentType.defaultIdPrefix || '',
       startNumber: bulkCreateData.startNumber + bulkCreateData.count,
-      locationId: ''
+      locationId: '',
+      selectedPrefix: initialSelectedPrefix
     });
-  }, [bulkCreateData, allEquipment, equipmentType, addBulkDraftEquipment, generateEquipmentId, generateEquipmentName]);
+  }, [bulkCreateData, allEquipment, equipmentType, addBulkDraftEquipment, generateEquipmentId, generateEquipmentName, initialSelectedPrefix]);
 
   return {
     isBulkCreateOpen,

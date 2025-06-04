@@ -13,4 +13,5 @@ export interface BulkCreateData {
   prefix: string;
   startNumber: number;
   locationId: string;
+  selectedPrefix?: string;
 }

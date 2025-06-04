@@ -107,7 +107,10 @@ export const useEquipmentUsageAnalyzer = (nodes: Node[], edges: Edge[]) => {
         }
       } else {
         // Check if this edge has a label that indicates it's a cable
-        const label = edgeData?.label?.toLowerCase() || edge.label?.toLowerCase() || '';
+        // Fix: Safely handle edge.label which can be ReactNode or undefined
+        const edgeLabel = typeof edge.label === 'string' ? edge.label : '';
+        const dataLabel = edgeData?.label || '';
+        const label = (dataLabel || edgeLabel).toLowerCase();
         
         if (label.includes('cable') && !label.includes('direct')) {
           // This is a cable connection based on label

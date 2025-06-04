@@ -36,8 +36,8 @@ const BulkEquipmentForm: React.FC<BulkEquipmentFormProps> = ({
 }) => {
   const { generateEquipmentId, getIdFormat } = useEquipmentIdGenerator();
   
-  // Show prefix selector for Customer Computer types
-  const showPrefixSelector = equipmentType.name === 'Customer Computer';
+  // Show prefix selector for Company Computer types
+  const showPrefixSelector = equipmentType.name === 'Company Computer';
   const prefixOptions = showPrefixSelector ? [
     { value: 'CC', label: 'CC - Customer Computer' },
     { value: 'CT', label: 'CT - Customer Tablet' }

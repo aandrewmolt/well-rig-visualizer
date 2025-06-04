@@ -14,8 +14,8 @@ export const useIndividualEquipmentBulkCreate = (
   const { generateEquipmentId, generateEquipmentName } = useEquipmentIdGenerator();
   const [isBulkCreateOpen, setIsBulkCreateOpen] = useState(false);
   
-  // Initialize selectedPrefix for Customer Computer types
-  const initialSelectedPrefix = equipmentType.name === 'Customer Computer' ? 'CC' : undefined;
+  // Initialize selectedPrefix for Company Computer types
+  const initialSelectedPrefix = equipmentType.name === 'Company Computer' ? 'CC' : undefined;
   
   const [bulkCreateData, setBulkCreateData] = useState<BulkCreateData>({
     count: 5,
@@ -39,7 +39,7 @@ export const useIndividualEquipmentBulkCreate = (
     const existingIds = allEquipment.map(eq => eq.equipmentId);
 
     // Create a temporary equipment type with the selected prefix for ID generation
-    const effectiveEquipmentType = equipmentType.name === 'Customer Computer' && bulkCreateData.selectedPrefix
+    const effectiveEquipmentType = equipmentType.name === 'Company Computer' && bulkCreateData.selectedPrefix
       ? { ...equipmentType, defaultIdPrefix: bulkCreateData.selectedPrefix }
       : equipmentType;
 

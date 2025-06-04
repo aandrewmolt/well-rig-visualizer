@@ -6,6 +6,10 @@ interface UseEdgeToggleLogicProps {
   id: string;
   data?: {
     connectionType?: string;
+    label?: string;
+    cableTypeId?: string;
+    sourceHandle?: string;
+    targetHandle?: string;
     immediateSave?: () => void;
   };
   currentEdge: Edge | undefined;

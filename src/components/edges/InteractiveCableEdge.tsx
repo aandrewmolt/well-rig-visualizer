@@ -72,7 +72,7 @@ const InteractiveCableEdge: React.FC<InteractiveCableEdgeProps> = ({
     targetNode?.type,
     currentEdge.type,
     data?.connectionType || currentEdge.data?.connectionType,
-    data?.label || currentEdge.label
+    typeof (data?.label || currentEdge.label) === 'string' ? (data?.label || currentEdge.label) : undefined
   );
 
   // Check if this is a Y to Well connection (can toggle between 100ft and direct)

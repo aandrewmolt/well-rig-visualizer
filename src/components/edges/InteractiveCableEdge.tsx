@@ -42,7 +42,7 @@ const InteractiveCableEdge: React.FC<InteractiveCableEdgeProps> = ({
   markerEnd,
   data,
 }) => {
-  const { getNodes, getEdges } = useReactFlow();
+  const { getNodes, getEdges, setEdges } = useReactFlow();
   
   const [edgePath, labelX, labelY] = getBezierPath({
     sourceX,
@@ -101,6 +101,18 @@ const InteractiveCableEdge: React.FC<InteractiveCableEdgeProps> = ({
   // Use the edge toggle logic hook
   const { handleEdgeToggle } = useEdgeToggleLogic({ id, data, currentEdge });
 
+  // Handle edge deletion
+  const handleEdgeDelete = () => {
+    console.log('Deleting edge:', id);
+    setEdges((edges) => edges.filter(edge => edge.id !== id));
+    
+    // Trigger immediate save if available
+    if (data?.immediateSave) {
+      console.log('Triggering immediate save after edge deletion');
+      setTimeout(() => data.immediateSave!(), 50);
+    }
+  };
+
   console.log('Edge label:', currentLabel);
 
   return (
@@ -111,6 +123,7 @@ const InteractiveCableEdge: React.FC<InteractiveCableEdgeProps> = ({
           label={currentLabel}
           isInteractive={isYToWellConnection}
           onToggle={handleEdgeToggle}
+          onDelete={handleEdgeDelete}
           labelX={labelX}
           labelY={labelY}
         />

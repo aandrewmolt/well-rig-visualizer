@@ -9,6 +9,7 @@ import {
   Node,
   Edge,
   Connection,
+  ConnectionLineType,
 } from '@xyflow/react';
 import { Card, CardContent } from '@/components/ui/card';
 import MainBoxNode from '../nodes/MainBoxNode';
@@ -92,7 +93,7 @@ const DiagramCanvas: React.FC<DiagramCanvasProps> = ({
               animated: false,
             }}
             connectionLineStyle={{ strokeWidth: 3, stroke: '#6366f1' }}
-            connectionLineType="smoothstep"
+            connectionLineType={ConnectionLineType.SmoothStep}
           >
             <Controls position="top-left" />
             <MiniMap 

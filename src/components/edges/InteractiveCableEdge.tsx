@@ -23,6 +23,8 @@ interface InteractiveCableEdgeProps {
     connectionType?: string;
     label?: string;
     cableTypeId?: string;
+    sourceHandle?: string;
+    targetHandle?: string;
   };
 }
 
@@ -67,7 +69,8 @@ const InteractiveCableEdge: React.FC<InteractiveCableEdgeProps> = ({
     targetNodeType: targetNode?.type,
     edgeType: currentEdge.type,
     connectionType: data?.connectionType,
-    label: data?.label
+    label: data?.label,
+    currentEdgeData: currentEdge.data
   });
 
   // Check if this is a Y to Well connection (can toggle between 100ft and direct)
@@ -78,9 +81,10 @@ const InteractiveCableEdge: React.FC<InteractiveCableEdgeProps> = ({
   console.log('InteractiveCableEdge - Is Y to Well connection:', isYToWellConnection);
 
   const handleEdgeClick = () => {
-    console.log('InteractiveCableEdge - Edge clicked:', { id, isYToWellConnection });
+    console.log('InteractiveCableEdge - Edge clicked:', { id, isYToWellConnection, currentEdge });
     
     if (isYToWellConnection) {
+      // Determine current type from multiple sources
       const currentType = data?.connectionType || currentEdge.type || 'cable';
       const newType = currentType === 'direct' ? 'cable' : 'direct';
       
@@ -89,26 +93,39 @@ const InteractiveCableEdge: React.FC<InteractiveCableEdgeProps> = ({
       setEdges((edges: Edge[]) => 
         edges.map((edge: Edge) => {
           if (edge.id === id) {
+            const updatedEdge = {
+              ...edge,
+              // Preserve all edge properties
+              source: edge.source,
+              target: edge.target,
+              sourceHandle: edge.sourceHandle || data?.sourceHandle,
+              targetHandle: edge.targetHandle || data?.targetHandle,
+            };
+
             if (newType === 'direct') {
               return {
-                ...edge,
+                ...updatedEdge,
                 type: 'direct',
                 label: 'Direct Connection',
                 data: {
                   ...edge.data,
                   connectionType: 'direct',
                   label: 'Direct Connection',
+                  sourceHandle: updatedEdge.sourceHandle,
+                  targetHandle: updatedEdge.targetHandle,
+                  // Clear cable-specific data
+                  cableTypeId: undefined,
                 },
                 style: {
-                  stroke: '#8b5cf6',
-                  strokeWidth: 4,
+                  stroke: '#10b981',
+                  strokeWidth: 3,
                   strokeDasharray: '5,5',
                 },
                 animated: true,
               };
             } else {
               return {
-                ...edge,
+                ...updatedEdge,
                 type: 'cable',
                 label: '100ft Cable',
                 data: {
@@ -116,6 +133,8 @@ const InteractiveCableEdge: React.FC<InteractiveCableEdgeProps> = ({
                   connectionType: 'cable',
                   label: '100ft Cable',
                   cableTypeId: '1', // 100ft cable type ID
+                  sourceHandle: updatedEdge.sourceHandle,
+                  targetHandle: updatedEdge.targetHandle,
                 },
                 style: {
                   stroke: '#3b82f6',
@@ -132,7 +151,20 @@ const InteractiveCableEdge: React.FC<InteractiveCableEdgeProps> = ({
     }
   };
 
-  const currentLabel = data?.label || 'Cable';
+  // Get current label with fallback logic
+  const getCurrentLabel = () => {
+    // First check data.label, then currentEdge.label, then default
+    if (data?.label) return data.label;
+    if (currentEdge.label) return typeof currentEdge.label === 'string' ? currentEdge.label : 'Cable';
+    
+    // Determine label based on connection type
+    const connectionType = data?.connectionType || currentEdge.type || 'cable';
+    if (connectionType === 'direct') return 'Direct Connection';
+    if (data?.cableTypeId === '1') return '100ft Cable';
+    return 'Cable';
+  };
+
+  const currentLabel = getCurrentLabel();
 
   return (
     <>

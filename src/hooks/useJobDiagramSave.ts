@@ -48,58 +48,94 @@ export const useJobDiagramSave = ({
 
   // Enhanced save data preparation with complete edge preservation
   const saveDataMemo = useMemo(() => {
-    // Preserve ALL edge data without validation during save
-    const preservedEdges = edges.map(edge => ({
-      ...edge,
-      // Ensure all edge properties are preserved
-      id: edge.id,
-      source: edge.source,
-      target: edge.target,
-      sourceHandle: edge.sourceHandle,
-      targetHandle: edge.targetHandle,
-      type: edge.type || 'cable',
-      data: {
-        ...edge.data,
-        // Preserve sourceHandle in data as backup
-        sourceHandle: edge.data?.sourceHandle || edge.sourceHandle,
-        targetHandle: edge.data?.targetHandle || edge.targetHandle,
-      },
-      style: edge.style || {},
-      label: edge.label,
-      animated: edge.animated,
-    }));
+    // Preserve ALL edge data with enhanced data structure
+    const preservedEdges = edges.map(edge => {
+      const edgeData = {
+        // Core edge properties
+        id: edge.id,
+        source: edge.source,
+        target: edge.target,
+        sourceHandle: edge.sourceHandle,
+        targetHandle: edge.targetHandle,
+        type: edge.type || 'cable',
+        label: edge.label,
+        animated: edge.animated || false,
+        style: edge.style || {},
+        
+        // Enhanced data preservation
+        data: {
+          ...edge.data,
+          // Ensure sourceHandle and targetHandle are preserved in data as well
+          sourceHandle: edge.data?.sourceHandle || edge.sourceHandle,
+          targetHandle: edge.data?.targetHandle || edge.targetHandle,
+          // Preserve connection type and label
+          connectionType: edge.data?.connectionType || (edge.type === 'direct' ? 'direct' : 'cable'),
+          label: edge.data?.label || edge.label,
+          // Preserve cable type if it exists
+          cableTypeId: edge.data?.cableTypeId,
+        },
+      };
 
-    // Preserve ALL node data including colors, positions, and custom properties
+      console.log('Saving edge:', {
+        id: edge.id,
+        type: edgeData.type,
+        connectionType: edgeData.data.connectionType,
+        label: edgeData.data.label,
+        sourceHandle: edgeData.sourceHandle,
+        handles: {
+          source: edge.sourceHandle,
+          target: edge.targetHandle,
+          dataSource: edge.data?.sourceHandle,
+          dataTarget: edge.data?.targetHandle
+        }
+      });
+
+      return edgeData;
+    });
+
+    // Preserve ALL node data with enhanced structure
     const preservedNodes = nodes.map(node => ({
-      ...node,
       id: node.id,
       type: node.type,
       position: node.position,
+      style: node.style || {},
+      draggable: node.draggable,
+      deletable: node.deletable,
       data: {
         ...node.data,
-        // Preserve all node data properties
+        // Preserve all existing node data
         label: node.data?.label,
         color: node.data?.color,
         wellNumber: node.data?.wellNumber,
         boxNumber: node.data?.boxNumber,
         equipmentId: node.data?.equipmentId,
         assigned: node.data?.assigned,
+        // Explicitly preserve COM port and baud rate settings
         fracBaudRate: node.data?.fracBaudRate,
         gaugeBaudRate: node.data?.gaugeBaudRate,
         fracComPort: node.data?.fracComPort,
         gaugeComPort: node.data?.gaugeComPort,
+        // Preserve job reference
+        jobId: job.id,
       },
-      style: node.style || {},
-      draggable: node.draggable,
-      deletable: node.deletable,
     }));
 
-    // Extract configuration data from MainBox nodes
-    const mainBoxNode = preservedNodes.find(node => node.type === 'mainBox');
-    const fracBaudRate = mainBoxNode?.data?.fracBaudRate || '19200';
-    const gaugeBaudRate = mainBoxNode?.data?.gaugeBaudRate || '9600';
-    const fracComPort = mainBoxNode?.data?.fracComPort || '';
-    const gaugeComPort = mainBoxNode?.data?.gaugeComPort || '';
+    // Extract configuration data from MainBox nodes with better fallbacks
+    const mainBoxNodes = preservedNodes.filter(node => node.type === 'mainBox');
+    const primaryMainBox = mainBoxNodes[0]; // Use first MainBox as primary source
+    
+    const fracBaudRate = primaryMainBox?.data?.fracBaudRate || '19200';
+    const gaugeBaudRate = primaryMainBox?.data?.gaugeBaudRate || '9600';
+    const fracComPort = primaryMainBox?.data?.fracComPort || '';
+    const gaugeComPort = primaryMainBox?.data?.gaugeComPort || '';
+
+    console.log('Saving MainBox configuration:', {
+      fracBaudRate,
+      gaugeBaudRate,
+      fracComPort,
+      gaugeComPort,
+      mainBoxCount: mainBoxNodes.length
+    });
 
     return {
       id: job.id,
@@ -159,10 +195,17 @@ export const useJobDiagramSave = ({
       console.log('Edge details being saved:', saveDataMemo.edges.map(e => ({ 
         id: e.id, 
         type: e.type, 
+        connectionType: e.data?.connectionType,
         sourceHandle: e.sourceHandle || e.data?.sourceHandle,
-        label: e.label,
+        label: e.label || e.data?.label,
         style: e.style 
       })));
+      console.log('MainBox settings being saved:', {
+        fracComPort: saveDataMemo.fracComPort,
+        gaugeComPort: saveDataMemo.gaugeComPort,
+        fracBaudRate: saveDataMemo.fracBaudRate,
+        gaugeBaudRate: saveDataMemo.gaugeBaudRate
+      });
       
       saveInProgressRef.current = true;
       lastSavedDataRef.current = currentDataString;
@@ -177,7 +220,7 @@ export const useJobDiagramSave = ({
     }
   }, [isInitialized, currentDataString, saveJob, saveDataMemo]);
 
-  const { debouncedSave, cleanup } = useDebouncedSave(performSave, 1000); // Reduced to 1 second
+  const { debouncedSave, cleanup } = useDebouncedSave(performSave, 1000);
 
   // Mark initial load as complete after shorter delay
   useEffect(() => {
@@ -186,7 +229,7 @@ export const useJobDiagramSave = ({
         initialLoadCompleteRef.current = true;
         lastSavedDataRef.current = currentDataString;
         console.log('Initial load complete, ready for auto-save');
-      }, 2000); // Reduced to 2 seconds
+      }, 2000);
 
       return () => clearTimeout(timer);
     }

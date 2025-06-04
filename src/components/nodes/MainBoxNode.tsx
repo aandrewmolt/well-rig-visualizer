@@ -6,26 +6,73 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useSupabaseJobs } from '@/hooks/useSupabaseJobs';
 
 const MainBoxNode = ({ id, data }: { id: string; data: any }) => {
-  const { getNodes } = useReactFlow();
+  const { getNodes, setNodes } = useReactFlow();
   const { saveJob } = useSupabaseJobs();
   const [fracDataPort, setFracDataPort] = useState<string>(data.fracComPort || '');
   const [gaugeDataPort, setGaugeDataPort] = useState<string>(data.gaugeComPort || '');
   const [fracBaudRate, setFracBaudRate] = useState<string>(data.fracBaudRate || '19200');
   const [gaugeBaudRate, setGaugeBaudRate] = useState<string>(data.gaugeBaudRate || '9600');
 
-  // Save settings whenever they change
+  // Update node data immediately when values change
+  const updateNodeData = (updates: any) => {
+    setNodes((nodes) =>
+      nodes.map((node) =>
+        node.id === id
+          ? {
+              ...node,
+              data: {
+                ...node.data,
+                ...updates,
+              },
+            }
+          : node
+      )
+    );
+  };
+
+  // Handle frac data port change
+  const handleFracDataPortChange = (value: string) => {
+    setFracDataPort(value);
+    updateNodeData({ fracComPort: value });
+    console.log('Updated frac COM port:', value);
+  };
+
+  // Handle gauge data port change
+  const handleGaugeDataPortChange = (value: string) => {
+    setGaugeDataPort(value);
+    updateNodeData({ gaugeComPort: value });
+    console.log('Updated gauge COM port:', value);
+  };
+
+  // Handle frac baud rate change
+  const handleFracBaudRateChange = (value: string) => {
+    setFracBaudRate(value);
+    updateNodeData({ fracBaudRate: value });
+    console.log('Updated frac baud rate:', value);
+  };
+
+  // Handle gauge baud rate change
+  const handleGaugeBaudRateChange = (value: string) => {
+    setGaugeBaudRate(value);
+    updateNodeData({ gaugeBaudRate: value });
+    console.log('Updated gauge baud rate:', value);
+  };
+
+  // Sync state with node data when data changes (for loading saved data)
   useEffect(() => {
-    if (data.jobId) {
-      const jobData = {
-        id: data.jobId,
-        fracComPort: fracDataPort,
-        gaugeComPort: gaugeDataPort,
-        fracBaudRate,
-        gaugeBaudRate,
-      };
-      saveJob(jobData);
+    if (data.fracComPort !== undefined && data.fracComPort !== fracDataPort) {
+      setFracDataPort(data.fracComPort);
     }
-  }, [fracDataPort, gaugeDataPort, fracBaudRate, gaugeBaudRate, data.jobId, saveJob]);
+    if (data.gaugeComPort !== undefined && data.gaugeComPort !== gaugeDataPort) {
+      setGaugeDataPort(data.gaugeComPort);
+    }
+    if (data.fracBaudRate !== undefined && data.fracBaudRate !== fracBaudRate) {
+      setFracBaudRate(data.fracBaudRate);
+    }
+    if (data.gaugeBaudRate !== undefined && data.gaugeBaudRate !== gaugeBaudRate) {
+      setGaugeBaudRate(data.gaugeBaudRate);
+    }
+  }, [data.fracComPort, data.gaugeComPort, data.fracBaudRate, data.gaugeBaudRate]);
 
   // Available COM ports for selection
   const comPorts = [
@@ -74,7 +121,7 @@ const MainBoxNode = ({ id, data }: { id: string; data: any }) => {
       <div className="mb-4 space-y-3">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium text-slate-200 w-12">Frac:</span>
-          <Select value={fracDataPort} onValueChange={setFracDataPort}>
+          <Select value={fracDataPort} onValueChange={handleFracDataPortChange}>
             <SelectTrigger className="h-8 text-sm bg-slate-700 border-slate-500 text-white hover:bg-slate-600 flex-1">
               <SelectValue placeholder="COM" />
             </SelectTrigger>
@@ -86,7 +133,7 @@ const MainBoxNode = ({ id, data }: { id: string; data: any }) => {
               ))}
             </SelectContent>
           </Select>
-          <Select value={fracBaudRate} onValueChange={setFracBaudRate}>
+          <Select value={fracBaudRate} onValueChange={handleFracBaudRateChange}>
             <SelectTrigger className="h-8 text-sm bg-slate-700 border-slate-500 text-white hover:bg-slate-600 w-20">
               <SelectValue />
             </SelectTrigger>
@@ -102,7 +149,7 @@ const MainBoxNode = ({ id, data }: { id: string; data: any }) => {
         
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium text-slate-200 w-12">Gauge:</span>
-          <Select value={gaugeDataPort} onValueChange={setGaugeDataPort}>
+          <Select value={gaugeDataPort} onValueChange={handleGaugeDataPortChange}>
             <SelectTrigger className="h-8 text-sm bg-slate-700 border-slate-500 text-white hover:bg-slate-600 flex-1">
               <SelectValue placeholder="COM" />
             </SelectTrigger>
@@ -114,7 +161,7 @@ const MainBoxNode = ({ id, data }: { id: string; data: any }) => {
               ))}
             </SelectContent>
           </Select>
-          <Select value={gaugeBaudRate} onValueChange={setGaugeBaudRate}>
+          <Select value={gaugeBaudRate} onValueChange={handleGaugeBaudRateChange}>
             <SelectTrigger className="h-8 text-sm bg-slate-700 border-slate-500 text-white hover:bg-slate-600 w-20">
               <SelectValue />
             </SelectTrigger>

@@ -9,8 +9,12 @@ import EquipmentTransferSystem from '@/components/inventory/EquipmentTransferSys
 import RedTagManager from '@/components/inventory/RedTagManager';
 import AdvancedSearchPanel from '@/components/inventory/AdvancedSearchPanel';
 import InventoryStatusIndicator from '@/components/inventory/InventoryStatusIndicator';
+import EquipmentHistoryViewer from '@/components/inventory/EquipmentHistoryViewer';
+import EquipmentReportsExporter from '@/components/inventory/EquipmentReportsExporter';
+import MaintenanceSchedulePanel from '@/components/inventory/MaintenanceSchedulePanel';
+import DataSetupVerifier from '@/components/inventory/DataSetupVerifier';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Package, Settings, MapPin, List, ArrowRightLeft, AlertTriangle, Search } from 'lucide-react';
+import { Package, Settings, MapPin, List, ArrowRightLeft, AlertTriangle, Search, History, FileText, Wrench, CheckSquare } from 'lucide-react';
 
 const EquipmentInventory = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -35,7 +39,7 @@ const EquipmentInventory = () => {
           </div>
           
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-7 mb-6">
+            <TabsList className="grid w-full grid-cols-5 lg:grid-cols-10 mb-6">
               <TabsTrigger value="dashboard" className="flex items-center gap-2">
                 <Package className="h-4 w-4" />
                 Dashboard
@@ -46,7 +50,7 @@ const EquipmentInventory = () => {
               </TabsTrigger>
               <TabsTrigger value="search" className="flex items-center gap-2">
                 <Search className="h-4 w-4" />
-                Advanced Search
+                Search
               </TabsTrigger>
               <TabsTrigger value="transfers" className="flex items-center gap-2">
                 <ArrowRightLeft className="h-4 w-4" />
@@ -56,13 +60,25 @@ const EquipmentInventory = () => {
                 <AlertTriangle className="h-4 w-4" />
                 Red Tagged
               </TabsTrigger>
-              <TabsTrigger value="equipment-types" className="flex items-center gap-2">
-                <Settings className="h-4 w-4" />
-                Equipment Types
+              <TabsTrigger value="history" className="flex items-center gap-2">
+                <History className="h-4 w-4" />
+                History
               </TabsTrigger>
-              <TabsTrigger value="storage-locations" className="flex items-center gap-2">
-                <MapPin className="h-4 w-4" />
-                Storage Locations
+              <TabsTrigger value="reports" className="flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                Reports
+              </TabsTrigger>
+              <TabsTrigger value="maintenance" className="flex items-center gap-2">
+                <Wrench className="h-4 w-4" />
+                Maintenance
+              </TabsTrigger>
+              <TabsTrigger value="system" className="flex items-center gap-2">
+                <CheckSquare className="h-4 w-4" />
+                System
+              </TabsTrigger>
+              <TabsTrigger value="settings" className="flex items-center gap-2">
+                <Settings className="h-4 w-4" />
+                Settings
               </TabsTrigger>
             </TabsList>
 
@@ -86,12 +102,41 @@ const EquipmentInventory = () => {
               <RedTagManager />
             </TabsContent>
 
-            <TabsContent value="equipment-types">
-              <EquipmentTypeManager />
+            <TabsContent value="history">
+              <EquipmentHistoryViewer />
             </TabsContent>
 
-            <TabsContent value="storage-locations">
-              <StorageLocationManager />
+            <TabsContent value="reports">
+              <EquipmentReportsExporter />
+            </TabsContent>
+
+            <TabsContent value="maintenance">
+              <MaintenanceSchedulePanel />
+            </TabsContent>
+
+            <TabsContent value="system">
+              <DataSetupVerifier />
+            </TabsContent>
+
+            <TabsContent value="settings">
+              <Tabs defaultValue="equipment-types" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="equipment-types" className="flex items-center gap-2">
+                    <Settings className="h-4 w-4" />
+                    Equipment Types
+                  </TabsTrigger>
+                  <TabsTrigger value="storage-locations" className="flex items-center gap-2">
+                    <MapPin className="h-4 w-4" />
+                    Storage Locations
+                  </TabsTrigger>
+                </TabsList>
+                <TabsContent value="equipment-types">
+                  <EquipmentTypeManager />
+                </TabsContent>
+                <TabsContent value="storage-locations">
+                  <StorageLocationManager />
+                </TabsContent>
+              </Tabs>
             </TabsContent>
           </Tabs>
         </div>

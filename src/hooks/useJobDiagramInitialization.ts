@@ -1,18 +1,10 @@
 
 import { useCallback } from 'react';
 import { Node } from '@xyflow/react';
-import { useSupabaseJobs } from '@/hooks/useSupabaseJobs';
-
-interface Job {
-  id: string;
-  name: string;
-  wellCount: number;
-  hasWellsideGauge: boolean;
-  createdAt: Date;
-}
+import { useSupabaseJobs, JobDiagram } from '@/hooks/useSupabaseJobs';
 
 interface UseJobDiagramInitializationProps {
-  job: Job;
+  job: JobDiagram;
   nodes: any[];
   edges: any[];
   isInitialized: boolean;
@@ -41,6 +33,7 @@ const generateWellPositions = (wellCount: number) => {
   for (let i = 0; i < wellCount; i++) {
     const x = 75 + (i % 5) * 150; // 5 wells per row
     const y = 450 + Math.floor(i / 5) * 150; // Adjust y position for each row
+    positions.push({ x, y });
   }
   return positions;
 };

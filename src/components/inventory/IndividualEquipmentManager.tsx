@@ -2,331 +2,182 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Save, RotateCcw } from 'lucide-react';
-import { EquipmentType, StorageLocation, IndividualEquipment } from '@/types/inventory';
+import { Card, CardContent } from '@/components/ui/card';
+import { Package, Plus, Save } from 'lucide-react';
 import { useSupabaseInventory } from '@/hooks/useSupabaseInventory';
-import { toast } from 'sonner';
+import { EquipmentType, StorageLocation } from '@/types/inventory';
 import IndividualEquipmentForm from './IndividualEquipmentForm';
-import BulkEquipmentForm from './BulkEquipmentForm';
-import EquipmentGrid from './EquipmentGrid';
 
 interface IndividualEquipmentManagerProps {
   equipmentType: EquipmentType;
   storageLocations: StorageLocation[];
-  onDraftCountChange?: (count: number) => void;
+  onDraftCountChange: (count: number) => void;
 }
 
 const IndividualEquipmentManager: React.FC<IndividualEquipmentManagerProps> = ({
   equipmentType,
   storageLocations,
-  onDraftCountChange
+  onDraftCountChange,
 }) => {
-  const { data, addIndividualEquipment, addBulkIndividualEquipment, updateSingleIndividualEquipment } = useSupabaseInventory();
+  const { data, addIndividualEquipment } = useSupabaseInventory();
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [isBulkCreateOpen, setIsBulkCreateOpen] = useState(false);
-  const [editingEquipment, setEditingEquipment] = useState<IndividualEquipment | null>(null);
-  const [draftEquipment, setDraftEquipment] = useState<any[]>([]);
-  
+  const [draftItems, setDraftItems] = useState<any[]>([]);
   const [formData, setFormData] = useState({
     equipmentId: '',
     name: '',
     locationId: '',
     serialNumber: '',
     notes: '',
-    selectedPrefix: equipmentType.name === 'Company Computer' ? 'CC' : equipmentType.defaultIdPrefix || ''
+    selectedPrefix: 'CC'
   });
 
-  const [bulkCreateData, setBulkCreateData] = useState({
-    count: 5,
-    prefix: equipmentType.defaultIdPrefix || '',
-    startNumber: 1,
-    locationId: '',
-    selectedPrefix: equipmentType.name === 'Company Computer' ? 'CC' : undefined
-  });
+  const existingEquipment = data.individualEquipment.filter(eq => eq.typeId === equipmentType.id);
 
-  const individualEquipment = data.individualEquipment.filter(eq => eq.typeId === equipmentType.id);
-
-  // Call onDraftCountChange when draft equipment changes
-  React.useEffect(() => {
-    if (onDraftCountChange) {
-      onDraftCountChange(draftEquipment.length);
-    }
-  }, [draftEquipment.length, onDraftCountChange]);
-
-  const generateEquipmentId = (prefix: string, number: number) => {
-    return `${prefix}${number.toString().padStart(3, '0')}`;
-  };
-
-  const generateEquipmentName = (prefix: string, id: string) => {
-    if (prefix === 'CC') return `Customer Computer ${id.replace('CC', '')}`;
-    if (prefix === 'CT') return `Customer Tablet ${id.replace('CT', '')}`;
-    if (prefix === 'SL') return `Starlink ${id.replace('SL', '')}`;
-    if (prefix === 'SS') return `ShearStream Box ${id.replace('SS', '')}`;
-    if (prefix === 'PG') return `Pressure Gauge ${id.replace('PG', '')}`;
-    return `${equipmentType.name} ${id}`;
-  };
-
-  const getNextEquipmentId = (prefix: string) => {
-    const existingIds = [...individualEquipment, ...draftEquipment].map(eq => eq.equipmentId);
-    let counter = 1;
-    let newId = generateEquipmentId(prefix, counter);
+  const generateNextId = (prefix: string = equipmentType.defaultIdPrefix || 'EQ') => {
+    const allEquipment = [...existingEquipment, ...draftItems];
+    const existingIds = allEquipment
+      .map(eq => eq.equipmentId || eq.equipment_id)
+      .filter(id => id?.startsWith(prefix))
+      .map(id => {
+        const num = id.replace(prefix, '').replace('-', '');
+        return parseInt(num) || 0;
+      });
     
-    while (existingIds.includes(newId)) {
-      counter++;
-      newId = generateEquipmentId(prefix, counter);
-    }
-    
-    return newId;
+    const nextNum = Math.max(0, ...existingIds) + 1;
+    return `${prefix}-${nextNum.toString().padStart(3, '0')}`;
   };
 
   const handleSubmit = async (saveImmediate = false) => {
-    if (!formData.equipmentId.trim() || !formData.name.trim() || !formData.locationId) {
-      toast.error('Equipment ID, name, and location are required');
-      return;
-    }
-
-    const existingEquipment = [...individualEquipment, ...draftEquipment].find(eq => 
-      eq.equipmentId === formData.equipmentId && (!editingEquipment || eq.id !== editingEquipment.id)
-    );
+    const finalPrefix = formData.selectedPrefix || equipmentType.defaultIdPrefix || 'EQ';
+    const equipmentId = formData.equipmentId || generateNextId(finalPrefix);
     
-    if (existingEquipment) {
-      toast.error('Equipment ID already exists');
-      return;
-    }
+    const newItem = {
+      equipmentId,
+      name: formData.name || `${equipmentType.name} ${equipmentId}`,
+      typeId: equipmentType.id,
+      locationId: formData.locationId,
+      status: 'available',
+      serialNumber: formData.serialNumber,
+      notes: formData.notes,
+      location_type: 'storage'
+    };
 
-    try {
-      if (editingEquipment) {
-        await updateSingleIndividualEquipment(editingEquipment.id, {
-          ...formData,
-          typeId: equipmentType.id,
-          status: editingEquipment.status
-        });
-        toast.success('Equipment updated successfully');
-      } else {
-        const newEquipment = {
-          equipmentId: formData.equipmentId,
-          name: formData.name,
-          typeId: equipmentType.id,
-          locationId: formData.locationId,
-          status: 'available' as const,
-          serialNumber: formData.serialNumber,
-          notes: formData.notes
-        };
-
-        if (saveImmediate) {
-          await addIndividualEquipment(newEquipment);
-          toast.success('Equipment saved successfully');
-        } else {
-          setDraftEquipment(prev => [...prev, { ...newEquipment, id: `draft-${Date.now()}` }]);
-          toast.success('Equipment added to drafts (will auto-save in 0.5 seconds)');
-          setTimeout(async () => {
-            try {
-              await addIndividualEquipment(newEquipment);
-              setDraftEquipment(prev => prev.filter(draft => draft.equipmentId !== newEquipment.equipmentId));
-            } catch (error) {
-              console.error('Error auto-saving equipment:', error);
-              toast.error('Failed to auto-save equipment');
-            }
-          }, 500);
-        }
+    if (saveImmediate) {
+      try {
+        await addIndividualEquipment(newItem);
+        onReset();
+      } catch (error) {
+        console.error('Failed to save equipment:', error);
       }
-
-      resetForm();
-    } catch (error) {
-      console.error('Error saving equipment:', error);
-      toast.error('Failed to save equipment');
+    } else {
+      setDraftItems(prev => [...prev, newItem]);
+      onDraftCountChange(draftItems.length + 1);
+      onReset();
     }
   };
 
-  const handleBulkCreate = async (saveImmediate = false) => {
-    if (!bulkCreateData.locationId || bulkCreateData.count <= 0) {
-      toast.error('Location and valid count are required');
-      return;
-    }
-
-    const currentPrefix = equipmentType.name === 'Company Computer' 
-      ? (bulkCreateData.selectedPrefix || 'CC')
-      : equipmentType.defaultIdPrefix || '';
-
-    const newEquipment = [];
-    const existingIds = [...individualEquipment, ...draftEquipment].map(eq => eq.equipmentId);
-
-    for (let i = 0; i < bulkCreateData.count; i++) {
-      const number = bulkCreateData.startNumber + i;
-      const equipmentId = generateEquipmentId(currentPrefix, number);
-      
-      if (existingIds.includes(equipmentId)) {
-        toast.error(`Equipment ID ${equipmentId} already exists`);
-        return;
-      }
-
-      const equipmentName = generateEquipmentName(currentPrefix, equipmentId);
-
-      newEquipment.push({
-        equipmentId,
-        name: equipmentName,
-        typeId: equipmentType.id,
-        locationId: bulkCreateData.locationId,
-        status: 'available' as const,
-      });
-    }
-
-    try {
-      if (saveImmediate) {
-        await addBulkIndividualEquipment(newEquipment);
-        toast.success(`${bulkCreateData.count} equipment items saved successfully`);
-      } else {
-        const drafts = newEquipment.map(eq => ({ ...eq, id: `draft-${Date.now()}-${eq.equipmentId}` }));
-        setDraftEquipment(prev => [...prev, ...drafts]);
-        toast.success(`${bulkCreateData.count} equipment items added to drafts (will auto-save in 0.5 seconds)`);
-        setTimeout(async () => {
-          try {
-            await addBulkIndividualEquipment(newEquipment);
-            setDraftEquipment(prev => prev.filter(draft => !newEquipment.some(eq => eq.equipmentId === draft.equipmentId)));
-          } catch (error) {
-            console.error('Error auto-saving bulk equipment:', error);
-            toast.error('Failed to auto-save bulk equipment');
-          }
-        }, 500);
-      }
-      
-      setIsBulkCreateOpen(false);
-      setBulkCreateData(prev => ({
-        ...prev,
-        startNumber: prev.startNumber + prev.count,
-        count: 5
-      }));
-    } catch (error) {
-      console.error('Error creating bulk equipment:', error);
-      toast.error('Failed to create bulk equipment');
-    }
-  };
-
-  const handleEdit = (equipment: IndividualEquipment) => {
-    setEditingEquipment(equipment);
+  const onReset = () => {
     setFormData({
-      equipmentId: equipment.equipmentId,
-      name: equipment.name,
-      locationId: equipment.locationId,
-      serialNumber: equipment.serialNumber || '',
-      notes: equipment.notes || '',
-      selectedPrefix: equipment.equipmentId.substring(0, 2)
-    });
-    setIsFormOpen(true);
-  };
-
-  const handleDelete = (equipmentId: string) => {
-    const equipment = individualEquipment.find(eq => eq.id === equipmentId);
-    if (equipment?.status === 'deployed') {
-      toast.error('Cannot delete deployed equipment');
-      return;
-    }
-    // Delete functionality would go here
-    toast.success('Equipment deleted');
-  };
-
-  const resetForm = () => {
-    const prefix = equipmentType.name === 'Company Computer' ? 'CC' : equipmentType.defaultIdPrefix || '';
-    const nextId = getNextEquipmentId(prefix);
-    
-    setFormData({
-      equipmentId: nextId,
-      name: generateEquipmentName(prefix, nextId),
-      locationId: '',
+      equipmentId: '',
+      name: '',
+      locationId: storageLocations.find(loc => loc.isDefault)?.id || '',
       serialNumber: '',
       notes: '',
-      selectedPrefix: prefix
+      selectedPrefix: 'CC'
     });
-    setEditingEquipment(null);
     setIsFormOpen(false);
   };
 
-  const handlePrefixChange = (prefix: string) => {
-    const nextId = getNextEquipmentId(prefix);
-    setFormData(prev => ({
-      ...prev,
-      equipmentId: nextId,
-      name: generateEquipmentName(prefix, nextId),
-      selectedPrefix: prefix
-    }));
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'available': return 'bg-green-100 text-green-800';
-      case 'deployed': return 'bg-blue-100 text-blue-800';
-      case 'maintenance': return 'bg-yellow-100 text-yellow-800';
-      case 'red-tagged': return 'bg-red-100 text-red-800';
-      case 'retired': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
+  const saveDraftItems = async () => {
+    try {
+      for (const item of draftItems) {
+        await addIndividualEquipment(item);
+      }
+      setDraftItems([]);
+      onDraftCountChange(0);
+    } catch (error) {
+      console.error('Failed to save draft items:', error);
     }
   };
 
-  const getLocationName = (locationId: string) => {
-    const location = storageLocations.find(l => l.id === locationId);
-    return location?.name || 'Unknown Location';
-  };
-
   return (
-    <div className="border-t pt-6 mt-6">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-4">
-          <h3 className="text-lg font-semibold">Individual {equipmentType.name} Items</h3>
-          {draftEquipment.length > 0 && (
-            <Badge variant="outline" className="bg-orange-100 text-orange-800">
-              {draftEquipment.length} pending
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Package className="h-4 w-4" />
+          <span className="text-sm font-medium">Individual Items</span>
+          {draftItems.length > 0 && (
+            <Badge variant="outline" className="bg-orange-50">
+              {draftItems.length} draft
             </Badge>
           )}
         </div>
         
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2">
+          {draftItems.length > 0 && (
+            <Button size="sm" onClick={saveDraftItems} variant="outline">
+              <Save className="h-3 w-3 mr-1" />
+              Save All Drafts
+            </Button>
+          )}
+          
           <IndividualEquipmentForm
             isFormOpen={isFormOpen}
             setIsFormOpen={setIsFormOpen}
-            editingEquipment={editingEquipment}
-            setEditingEquipment={handleEdit}
+            editingEquipment={null}
+            setEditingEquipment={() => {}}
             formData={formData}
             setFormData={setFormData}
             equipmentType={equipmentType}
             storageLocations={storageLocations}
-            allEquipment={[...individualEquipment, ...draftEquipment]}
+            allEquipment={existingEquipment}
             onSubmit={handleSubmit}
-            onReset={resetForm}
-            onPrefixChange={handlePrefixChange}
+            onReset={onReset}
+            onPrefixChange={(prefix) => setFormData(prev => ({ ...prev, selectedPrefix: prefix }))}
           />
-          
-          <BulkEquipmentForm
-            isBulkCreateOpen={isBulkCreateOpen}
-            setIsBulkCreateOpen={setIsBulkCreateOpen}
-            bulkCreateData={bulkCreateData}
-            setBulkCreateData={setBulkCreateData}
-            storageLocations={storageLocations}
-            equipmentType={equipmentType}
-            onBulkCreate={handleBulkCreate}
-          />
-          
-          {draftEquipment.length > 0 && (
-            <Button
-              onClick={() => setDraftEquipment([])}
-              size="sm"
-              variant="outline"
-              className="text-red-600"
-            >
-              <RotateCcw className="mr-2 h-4 w-4" />
-              Discard Drafts
-            </Button>
-          )}
         </div>
       </div>
 
-      <EquipmentGrid
-        equipment={[...individualEquipment, ...draftEquipment]}
-        draftEquipment={draftEquipment}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-        getStatusColor={getStatusColor}
-        getLocationName={getLocationName}
-      />
+      {existingEquipment.length > 0 && (
+        <Card>
+          <CardContent className="p-3">
+            <div className="text-xs text-gray-600 mb-2">Existing Items:</div>
+            <div className="grid grid-cols-1 gap-1 max-h-32 overflow-y-auto">
+              {existingEquipment.slice(0, 5).map(item => (
+                <div key={item.id} className="flex justify-between text-xs p-1 bg-gray-50 rounded">
+                  <span>{item.equipmentId}</span>
+                  <Badge variant="outline" className="text-xs px-1">
+                    {item.status}
+                  </Badge>
+                </div>
+              ))}
+              {existingEquipment.length > 5 && (
+                <div className="text-xs text-gray-500 text-center">
+                  +{existingEquipment.length - 5} more...
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {draftItems.length > 0 && (
+        <Card className="border-orange-200 bg-orange-50">
+          <CardContent className="p-3">
+            <div className="text-xs text-orange-700 mb-2">Draft Items (not saved):</div>
+            <div className="space-y-1">
+              {draftItems.map((item, index) => (
+                <div key={index} className="flex justify-between text-xs p-1 bg-white rounded border">
+                  <span>{item.equipmentId}</span>
+                  <Badge variant="outline" className="text-xs px-1 border-orange-300">
+                    draft
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

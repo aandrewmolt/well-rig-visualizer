@@ -8,7 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 export const useSupabaseInventory = () => {
   const [isLoading, setIsLoading] = useState(false);
-  const subscriptionRef = useRef<boolean>(false);
+  const channelRef = useRef<any>(null);
   
   const {
     equipmentTypes,
@@ -25,12 +25,11 @@ export const useSupabaseInventory = () => {
 
   // Set up real-time subscriptions only once
   useEffect(() => {
-    if (subscriptionRef.current) {
+    if (channelRef.current) {
       return; // Already subscribed
     }
 
     console.log('Setting up real-time subscriptions for inventory...');
-    subscriptionRef.current = true;
     
     const channel = supabase
       .channel('inventory-changes')
@@ -52,10 +51,14 @@ export const useSupabaseInventory = () => {
       })
       .subscribe();
 
+    channelRef.current = channel;
+
     return () => {
       console.log('Cleaning up real-time subscriptions...');
-      subscriptionRef.current = false;
-      supabase.removeChannel(channel);
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
     };
   }, []); // Empty dependency array to run only once
 

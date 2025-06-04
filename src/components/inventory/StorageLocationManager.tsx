@@ -8,11 +8,11 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
 import { Plus, MapPin, Trash2, Edit } from 'lucide-react';
-import { useSupabaseInventory } from '@/hooks/useSupabaseInventory';
+import { useInventory } from '@/contexts/InventoryContext';
 import { toast } from 'sonner';
 
 const StorageLocationManager = () => {
-  const { data, createStorageLocation, updateStorageLocations } = useSupabaseInventory();
+  const { data, createStorageLocation, updateStorageLocations } = useInventory();
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingLocation, setEditingLocation] = useState<any>(null);

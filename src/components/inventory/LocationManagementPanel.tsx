@@ -7,11 +7,11 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { MapPin, Plus, Edit2, Trash2, Building } from 'lucide-react';
-import { useSupabaseInventory } from '@/hooks/useSupabaseInventory';
+import { useInventory } from '@/contexts/InventoryContext';
 import { toast } from 'sonner';
 
 const LocationManagementPanel = () => {
-  const { data, createStorageLocation, updateStorageLocation, deleteStorageLocation } = useSupabaseInventory();
+  const { data, createStorageLocation, updateStorageLocations } = useInventory();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingLocation, setEditingLocation] = useState<any>(null);
@@ -26,7 +26,7 @@ const LocationManagementPanel = () => {
     }
 
     try {
-      createStorageLocation({
+      await createStorageLocation({
         name: newLocationName.trim(),
         address: newLocationAddress.trim() || undefined,
         isDefault: isDefault,
@@ -35,8 +35,10 @@ const LocationManagementPanel = () => {
       setNewLocationName('');
       setNewLocationAddress('');
       setIsDefault(false);
+      toast.success('Storage location created successfully');
     } catch (error) {
       console.error('Error creating location:', error);
+      toast.error('Failed to create storage location');
     }
   };
 
@@ -57,7 +59,7 @@ const LocationManagementPanel = () => {
     if (!editingLocation) return;
 
     try {
-      updateStorageLocation(editingLocation.id, {
+      await updateStorageLocations(editingLocation.id, {
         name: newLocationName.trim(),
         address: newLocationAddress.trim() || undefined,
         isDefault: isDefault,
@@ -67,18 +69,10 @@ const LocationManagementPanel = () => {
       setNewLocationName('');
       setNewLocationAddress('');
       setIsDefault(false);
+      toast.success('Storage location updated successfully');
     } catch (error) {
       console.error('Error updating location:', error);
-    }
-  };
-
-  const handleDeleteLocation = async (locationId: string) => {
-    if (window.confirm('Are you sure you want to delete this location? This cannot be undone.')) {
-      try {
-        deleteStorageLocation(locationId);
-      } catch (error) {
-        console.error('Error deleting location:', error);
-      }
+      toast.error('Failed to update storage location');
     }
   };
 
@@ -163,22 +157,18 @@ const LocationManagementPanel = () => {
                 >
                   <Edit2 className="h-4 w-4" />
                 </Button>
-                {!location.isDefault && (
-                  <Button
-                    onClick={() => handleDeleteLocation(location.id)}
-                    variant="ghost"
-                    size="sm"
-                    className="text-red-600 hover:text-red-700"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                )}
               </div>
             </div>
           ))}
         </div>
+        
+        {data.storageLocations.length === 0 && (
+          <div className="text-center py-8">
+            <p className="text-gray-500">No storage locations found.</p>
+            <p className="text-sm text-gray-400 mt-1">Create your first storage location to get started.</p>
+          </div>
+        )}
 
-        {/* Edit Dialog */}
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
@@ -214,9 +204,14 @@ const LocationManagementPanel = () => {
                 />
                 <Label htmlFor="editIsDefault">Set as default location</Label>
               </div>
-              <Button onClick={handleUpdateLocation} className="w-full">
-                Update Location
-              </Button>
+              <div className="flex gap-2">
+                <Button onClick={handleUpdateLocation} className="flex-1">
+                  Update Location
+                </Button>
+                <Button variant="outline" onClick={() => setIsEditDialogOpen(false)} className="flex-1">
+                  Cancel
+                </Button>
+              </div>
             </div>
           </DialogContent>
         </Dialog>

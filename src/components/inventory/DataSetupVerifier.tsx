@@ -4,12 +4,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, AlertCircle, Clock, RefreshCw } from 'lucide-react';
-import { useSupabaseInventory } from '@/hooks/useSupabaseInventory';
+import { useInventory } from '@/contexts/InventoryContext';
 import { useSupabaseRealTimeInventory } from '@/hooks/supabase/useSupabaseRealTimeInventory';
 import { toast } from 'sonner';
 
 const DataSetupVerifier: React.FC = () => {
-  const { data, isLoading } = useSupabaseInventory();
+  const { data, isLoading } = useInventory();
   const { isConnected, lastSync, forceSync } = useSupabaseRealTimeInventory();
   const [verificationResults, setVerificationResults] = useState<{
     equipmentTypes: boolean;

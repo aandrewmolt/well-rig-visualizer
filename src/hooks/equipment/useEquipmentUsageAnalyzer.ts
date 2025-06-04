@@ -48,14 +48,16 @@ export const useEquipmentUsageAnalyzer = (nodes: Node[], edges: Edge[]) => {
 
       const edgeData = edge.data as EdgeData;
 
-      if (edgeData?.connectionType === 'direct') {
+      // Only count as direct connection if explicitly marked as direct
+      if (edgeData?.connectionType === 'direct' || edge.type === 'direct') {
         usage.directConnections++;
+        console.log(`Direct connection found: ${edge.id}`, edgeData);
       } else if (edgeData?.connectionType === 'cable' && typeof edgeData.cableTypeId === 'string') {
-        // Migrate old cable type ID to new format
+        // Only count cables if explicitly marked as cable with a valid cableTypeId
         const originalCableTypeId = edgeData.cableTypeId;
         const migratedCableTypeId = migrateCableTypeId(originalCableTypeId);
         
-        console.log(`Cable type migration: ${originalCableTypeId} -> ${migratedCableTypeId}`);
+        console.log(`Cable connection found: ${edge.id}, type: ${originalCableTypeId} -> ${migratedCableTypeId}`);
         
         const equipmentType = data.equipmentTypes.find(type => type.id === migratedCableTypeId);
         
@@ -92,10 +94,48 @@ export const useEquipmentUsageAnalyzer = (nodes: Node[], edges: Edge[]) => {
           usage.cables[migratedCableTypeId].quantity++;
         } else {
           console.warn(`Cable type ${migratedCableTypeId} (migrated from ${originalCableTypeId}) not found in equipment types`);
-          // Only show error for final migrated ID, not original
-          if (originalCableTypeId !== migratedCableTypeId) {
-            console.log(`Attempted migration from old ID ${originalCableTypeId} to ${migratedCableTypeId}`);
+        }
+      } else {
+        // If no explicit connection type, try to infer from edge type or default to direct
+        if (edge.type === 'cable' && edgeData?.cableTypeId) {
+          // This is a legacy cable connection, treat as cable
+          const migratedCableTypeId = migrateCableTypeId(edgeData.cableTypeId);
+          const equipmentType = data.equipmentTypes.find(type => type.id === migratedCableTypeId);
+          
+          if (equipmentType) {
+            if (!usage.cables[migratedCableTypeId]) {
+              const name = equipmentType.name.toLowerCase();
+              let length = '200ft';
+              let category = 'cable';
+              let version = undefined;
+              
+              if (name.includes('100ft')) length = '100ft';
+              else if (name.includes('200ft')) length = '200ft';
+              else if (name.includes('300ft')) {
+                length = '300ft';
+                if (name.includes('old') || name.includes('legacy')) {
+                  version = 'old (Y adapter only)';
+                } else if (name.includes('new') || name.includes('direct')) {
+                  version = 'new (direct to wells)';
+                }
+              }
+              
+              if (name.includes('reel')) category = 'reel';
+
+              usage.cables[migratedCableTypeId] = {
+                typeName: equipmentType.name,
+                quantity: 0,
+                category,
+                length,
+                version,
+              };
+            }
+            usage.cables[migratedCableTypeId].quantity++;
           }
+        } else {
+          // No cable type ID and not explicitly marked as cable = direct connection
+          usage.directConnections++;
+          console.log(`Inferred direct connection: ${edge.id}`);
         }
       }
     });
@@ -119,6 +159,7 @@ export const useEquipmentUsageAnalyzer = (nodes: Node[], edges: Edge[]) => {
       }
     });
 
+    console.log('Final equipment usage analysis:', usage);
     return usage;
   };
 

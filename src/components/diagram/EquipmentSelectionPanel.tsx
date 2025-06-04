@@ -3,7 +3,6 @@ import React, { useMemo } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Monitor, Satellite, Square, Plus, X } from 'lucide-react';
 import { useInventory } from '@/contexts/InventoryContext';
@@ -52,15 +51,6 @@ const EquipmentSelectionPanel: React.FC<EquipmentSelectionPanelProps> = ({
       computers: available.filter(eq => eq.equipmentId.startsWith('CC') || eq.equipmentId.startsWith('CT')),
     };
   }, [data.individualEquipment]);
-
-  const getEquipmentDisplay = (equipment: IndividualEquipment) => (
-    <div className="flex items-center justify-between w-full">
-      <span>{equipment.equipmentId} - {equipment.name}</span>
-      <Badge variant={equipment.status === 'available' ? 'default' : 'secondary'}>
-        {equipment.status}
-      </Badge>
-    </div>
-  );
 
   const getSelectedEquipment = (equipmentId: string) => {
     return data.individualEquipment.find(eq => eq.id === equipmentId);
@@ -120,7 +110,7 @@ const EquipmentSelectionPanel: React.FC<EquipmentSelectionPanelProps> = ({
                 <SelectTrigger className="h-8">
                   <SelectValue placeholder="Select SS Box..." />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-white z-50">
                   {availableEquipment.ssBoxes
                     .filter(eq => !selectedShearstreamBoxes.includes(eq.id) || selectedShearstreamBoxes[index] === eq.id)
                     .length === 0 ? (
@@ -130,7 +120,7 @@ const EquipmentSelectionPanel: React.FC<EquipmentSelectionPanelProps> = ({
                       .filter(eq => !selectedShearstreamBoxes.includes(eq.id) || selectedShearstreamBoxes[index] === eq.id)
                       .map(equipment => (
                         <SelectItem key={equipment.id} value={equipment.id}>
-                          {getEquipmentDisplay(equipment)}
+                          {equipment.equipmentId}
                         </SelectItem>
                       ))
                   )}
@@ -189,7 +179,7 @@ const EquipmentSelectionPanel: React.FC<EquipmentSelectionPanelProps> = ({
                   <SelectTrigger className="h-8">
                     <SelectValue placeholder="Select Starlink..." />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-white z-50">
                     {availableEquipment.starlinks
                       .filter(eq => !selectedStarlinks.includes(eq.id) || selectedStarlinks[index] === eq.id)
                       .length === 0 ? (
@@ -199,7 +189,7 @@ const EquipmentSelectionPanel: React.FC<EquipmentSelectionPanelProps> = ({
                         .filter(eq => !selectedStarlinks.includes(eq.id) || selectedStarlinks[index] === eq.id)
                         .map(equipment => (
                           <SelectItem key={equipment.id} value={equipment.id}>
-                            {getEquipmentDisplay(equipment)}
+                            {equipment.equipmentId}
                           </SelectItem>
                         ))
                     )}
@@ -259,7 +249,7 @@ const EquipmentSelectionPanel: React.FC<EquipmentSelectionPanelProps> = ({
                   <SelectTrigger className="h-8">
                     <SelectValue placeholder="Select Computer..." />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-white z-50">
                     {availableEquipment.computers
                       .filter(eq => !selectedCustomerComputers.includes(eq.id) || selectedCustomerComputers[index] === eq.id)
                       .length === 0 ? (
@@ -269,7 +259,7 @@ const EquipmentSelectionPanel: React.FC<EquipmentSelectionPanelProps> = ({
                         .filter(eq => !selectedCustomerComputers.includes(eq.id) || selectedCustomerComputers[index] === eq.id)
                         .map(equipment => (
                           <SelectItem key={equipment.id} value={equipment.id}>
-                            {getEquipmentDisplay(equipment)}
+                            {equipment.equipmentId}
                           </SelectItem>
                         ))
                     )}

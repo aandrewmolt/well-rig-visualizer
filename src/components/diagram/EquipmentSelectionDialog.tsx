@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -102,13 +103,13 @@ const EquipmentSelectionDialog: React.FC<EquipmentSelectionDialogProps> = ({
               <SelectTrigger>
                 <SelectValue placeholder="Select ShearStream Box" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-white z-50">
                 {availableSSBoxes.map(equipment => {
                   const lastDeployment = getLastDeployment(equipment.id);
                   return (
                     <SelectItem key={equipment.id} value={equipment.id}>
                       <div className="flex items-center justify-between w-full">
-                        <span>{equipment.equipmentId} - {equipment.name}</span>
+                        <span>{equipment.equipmentId}</span>
                         {lastDeployment && (
                           <Badge variant="outline" className="ml-2 text-xs">
                             Last: {lastDeployment.jobName}
@@ -143,13 +144,13 @@ const EquipmentSelectionDialog: React.FC<EquipmentSelectionDialogProps> = ({
                 <SelectTrigger>
                   <SelectValue placeholder="Select Starlink" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-white z-50">
                   {availableStarlinks.map(equipment => {
                     const lastDeployment = getLastDeployment(equipment.id);
                     return (
                       <SelectItem key={equipment.id} value={equipment.id}>
                         <div className="flex items-center justify-between w-full">
-                          <span>{equipment.equipmentId} - {equipment.name}</span>
+                          <span>{equipment.equipmentId}</span>
                           {lastDeployment && (
                             <Badge variant="outline" className="ml-2 text-xs">
                               Last: {lastDeployment.jobName}
@@ -191,7 +192,7 @@ const EquipmentSelectionDialog: React.FC<EquipmentSelectionDialogProps> = ({
                     <SelectTrigger>
                       <SelectValue placeholder="Select Customer Computer" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-white z-50">
                       {availableComputers
                         .filter(eq => !selectedCustomerComputers.includes(eq.id) || selectedCustomerComputers[index] === eq.id)
                         .map(equipment => {
@@ -199,7 +200,7 @@ const EquipmentSelectionDialog: React.FC<EquipmentSelectionDialogProps> = ({
                           return (
                             <SelectItem key={equipment.id} value={equipment.id}>
                               <div className="flex items-center justify-between w-full">
-                                <span>{equipment.equipmentId} - {equipment.name}</span>
+                                <span>{equipment.equipmentId}</span>
                                 {lastDeployment && (
                                   <Badge variant="outline" className="ml-2 text-xs">
                                     Last: {lastDeployment.jobName}

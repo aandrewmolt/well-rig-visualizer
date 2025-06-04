@@ -13,6 +13,7 @@ export const getCurrentLabel = (
     return data.label;
   }
   if (currentEdge?.label) {
+    // Safely handle the unknown type from @xyflow/react
     const label = typeof currentEdge.label === 'string' ? currentEdge.label : 'Cable';
     return label;
   }
@@ -43,7 +44,7 @@ export const logEdgeDebugging = (
   targetNodeType?: string,
   edgeType?: string,
   connectionType?: string,
-  label?: string | undefined
+  label?: string
 ) => {
   console.log('InteractiveCableEdge debugging:', {
     id,

@@ -44,19 +44,6 @@ const CompactEquipmentSelectionPanel: React.FC<CompactEquipmentSelectionPanelPro
     };
   }, [data.individualEquipment]);
 
-  const getEquipmentDisplay = (equipment: IndividualEquipment) => (
-    <div className="flex items-center justify-between w-full">
-      <span className="truncate text-xs font-medium">{equipment.equipmentId}</span>
-      <Badge 
-        variant={equipment.status === 'available' ? 'default' : 'secondary'} 
-        className={`ml-1 text-xs ${equipment.status === 'available' ? 'bg-green-100 text-green-800 border-green-300' : 'bg-gray-100 text-gray-800 border-gray-300'}`}
-      >
-        <div className={`w-2 h-2 rounded-full mr-1 ${equipment.status === 'available' ? 'bg-green-500' : 'bg-gray-400'}`}></div>
-        {equipment.status}
-      </Badge>
-    </div>
-  );
-
   const getSelectedEquipment = (equipmentId: string) => {
     return data.individualEquipment.find(eq => eq.id === equipmentId);
   };
@@ -132,7 +119,7 @@ const CompactEquipmentSelectionPanel: React.FC<CompactEquipmentSelectionPanelPro
             <SelectTrigger className="h-8 text-xs border-2 border-gray-200 hover:border-blue-300 focus:border-blue-400 transition-all duration-200">
               <SelectValue placeholder={`Select ${type}...`} />
             </SelectTrigger>
-            <SelectContent className="bg-white border-2 border-gray-100 shadow-xl">
+            <SelectContent className="bg-white border-2 border-gray-100 shadow-xl z-50">
               {availableItems
                 .filter(eq => !selectedItems.includes(eq.id) || selectedItems[index] === eq.id)
                 .length === 0 ? (
@@ -147,7 +134,7 @@ const CompactEquipmentSelectionPanel: React.FC<CompactEquipmentSelectionPanelPro
                   .filter(eq => !selectedItems.includes(eq.id) || selectedItems[index] === eq.id)
                   .map(equipment => (
                     <SelectItem key={equipment.id} value={equipment.id} className="hover:bg-blue-50">
-                      {getEquipmentDisplay(equipment)}
+                      <span className="font-medium">{equipment.equipmentId}</span>
                     </SelectItem>
                   ))
               )}

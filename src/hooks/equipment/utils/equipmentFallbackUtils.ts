@@ -1,5 +1,11 @@
 
-import { FallbackEquipmentType } from '../types/equipmentUsageTypes';
+interface FallbackEquipmentType {
+  id: string;
+  name: string;
+  category: 'cables' | 'gauges' | 'adapters' | 'communication' | 'power' | 'other';
+  length: string;
+  version?: string;
+}
 
 export const createFallbackEquipmentType = (typeId: string, label: string): FallbackEquipmentType => {
   const name = label.toLowerCase();

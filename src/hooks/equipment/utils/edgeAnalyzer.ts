@@ -3,6 +3,13 @@ import { Edge } from '@xyflow/react';
 import { EquipmentType } from '@/types/inventory';
 import { DetailedEquipmentUsage } from '../types/equipmentUsageTypes';
 
+interface EdgeData {
+  connectionType?: string;
+  cableTypeId?: string;
+  cableType?: string;
+  label?: string;
+}
+
 export const analyzeEdges = (
   edges: Edge[], 
   equipmentTypes: EquipmentType[], 
@@ -10,7 +17,8 @@ export const analyzeEdges = (
 ): void => {
   edges.forEach(edge => {
     // Handle different edge types and data structures
-    const connectionType = edge.data?.connectionType || edge.type || 'cable';
+    const edgeData = edge.data as EdgeData;
+    const connectionType = edgeData?.connectionType || edge.type || 'cable';
     
     if (connectionType === 'direct') {
       usage.directConnections += 1;
@@ -20,17 +28,17 @@ export const analyzeEdges = (
     // For cable connections, determine cable type
     let cableTypeId: string;
     
-    if (edge.data?.cableTypeId) {
+    if (edgeData?.cableTypeId) {
       // Use explicit cable type ID if available
-      cableTypeId = edge.data.cableTypeId;
-    } else if (edge.data?.cableType) {
+      cableTypeId = edgeData.cableTypeId;
+    } else if (edgeData?.cableType) {
       // Map legacy cable type names to IDs
       const typeMapping: { [key: string]: string } = {
         '100ft': '1',
         '200ft': '2', 
         '300ft': '4',
       };
-      cableTypeId = typeMapping[edge.data.cableType] || '2'; // Default to 200ft
+      cableTypeId = typeMapping[edgeData.cableType] || '2'; // Default to 200ft
     } else {
       // Default to 200ft cable if no type specified
       cableTypeId = '2';

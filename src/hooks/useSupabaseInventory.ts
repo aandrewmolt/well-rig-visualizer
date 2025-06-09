@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { InventoryData } from '@/types/inventory';
 import { useSupabaseEquipmentQueries } from './supabase/useSupabaseEquipmentQueries';
@@ -13,6 +14,7 @@ export const useSupabaseInventory = () => {
     equipmentItems,
     individualEquipment,
     isLoading: queriesLoading,
+    refetch,
   } = useSupabaseEquipmentQueries();
 
   const mutations = useSupabaseEquipmentMutations();
@@ -31,32 +33,30 @@ export const useSupabaseInventory = () => {
   // Enhanced mutation wrappers with better error handling
   const createEquipmentType = async (type: any) => {
     try {
-      return await mutations.addEquipmentType(type);
+      const result = await mutations.addEquipmentType(type);
+      refetch.refetchEquipmentTypes();
+      return result;
     } catch (error: any) {
-      // Don't throw for expected duplicate errors during initialization
       if (error.message?.includes('duplicate key') || 
           error.message?.includes('already exists') ||
           error.message?.includes('violates unique constraint')) {
-        console.log(`Equipment type '${type.name}' already exists, skipping...`);
         return null;
       }
-      console.error('Failed to create equipment type:', error);
       throw error;
     }
   };
 
   const createStorageLocation = async (location: any) => {
     try {
-      return await mutations.addStorageLocation(location);
+      const result = await mutations.addStorageLocation(location);
+      refetch.refetchStorageLocations();
+      return result;
     } catch (error: any) {
-      // Don't throw for expected duplicate errors during initialization
       if (error.message?.includes('duplicate key') || 
           error.message?.includes('already exists') ||
           error.message?.includes('violates unique constraint')) {
-        console.log(`Storage location '${location.name}' already exists, skipping...`);
         return null;
       }
-      console.error('Failed to create storage location:', error);
       throw error;
     }
   };
@@ -64,8 +64,8 @@ export const useSupabaseInventory = () => {
   const updateSingleEquipmentItem = async (id: string, updates: any) => {
     try {
       await mutations.updateEquipmentItem(id, updates);
+      refetch.refetchEquipmentItems();
     } catch (error) {
-      console.error('Failed to update equipment item:', error);
       throw error;
     }
   };
@@ -73,26 +73,28 @@ export const useSupabaseInventory = () => {
   const addEquipmentItem = async (item: any) => {
     try {
       await mutations.addEquipmentItem(item);
+      refetch.refetchEquipmentItems();
     } catch (error) {
-      console.error('Failed to add equipment item:', error);
       throw error;
     }
   };
 
   const deleteEquipmentItem = async (id: string) => {
     try {
-      return await mutations.deleteEquipmentItem(id);
+      const result = await mutations.deleteEquipmentItem(id);
+      refetch.refetchEquipmentItems();
+      return result;
     } catch (error) {
-      console.error('Failed to delete equipment item:', error);
       throw error;
     }
   };
 
   const deleteEquipmentType = async (id: string) => {
     try {
-      return await mutations.deleteEquipmentType(id);
+      const result = await mutations.deleteEquipmentType(id);
+      refetch.refetchEquipmentTypes();
+      return result;
     } catch (error) {
-      console.error('Failed to delete equipment type:', error);
       throw error;
     }
   };
@@ -121,9 +123,9 @@ export const useSupabaseInventory = () => {
         const results = await Promise.all(
           equipment.map(eq => mutations.addIndividualEquipment(eq))
         );
+        refetch.refetchIndividualEquipment();
         return results;
       } catch (error) {
-        console.error('Failed to add bulk individual equipment:', error);
         throw error;
       }
     },
@@ -139,5 +141,8 @@ export const useSupabaseInventory = () => {
     syncData: async () => data,
     resetToDefaultInventory: () => {},
     cleanupDuplicateDeployments: () => equipmentItems,
+    
+    // Refetch methods for real-time updates
+    refetch,
   };
 };

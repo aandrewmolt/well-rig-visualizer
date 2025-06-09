@@ -3,11 +3,15 @@ import { useInventoryData } from '@/hooks/useInventoryData';
 import { useComprehensiveEquipmentTracking } from './useComprehensiveEquipmentTracking';
 import { toast } from 'sonner';
 
-export const useEquipmentValidation = (jobId: string, nodes: any[], edges: any[]) => {
+export const useEquipmentValidation = (jobId?: string, nodes?: any[], edges?: any[]) => {
   const { data } = useInventoryData();
-  const { analyzeEquipmentUsage } = useComprehensiveEquipmentTracking(nodes, edges);
+  const { analyzeEquipmentUsage } = useComprehensiveEquipmentTracking(nodes || [], edges || []);
 
   const validateInventoryConsistency = () => {
+    if (!jobId || !nodes || !edges) {
+      return true; // No validation needed if no job context
+    }
+
     const usage = analyzeEquipmentUsage();
     const deployedItems = data.equipmentItems.filter(
       item => item.status === 'deployed' && item.jobId === jobId
@@ -66,13 +70,11 @@ export const useEquipmentValidation = (jobId: string, nodes: any[], edges: any[]
 
     // Provide user feedback based on validation results
     if (inconsistencies.length > 0) {
-      console.warn('Equipment inconsistencies detected:', inconsistencies);
       toast.error(`Equipment shortfalls: ${inconsistencies.length} items need attention`);
       return false;
     }
 
     if (warnings.length > 0) {
-      console.warn('Equipment warnings detected:', warnings);
       toast.warning(`Equipment over-allocation: ${warnings.length} items have excess`);
       return true; // Still consistent, just over-allocated
     }
@@ -85,6 +87,16 @@ export const useEquipmentValidation = (jobId: string, nodes: any[], edges: any[]
   };
 
   const getEquipmentSummary = () => {
+    if (!jobId || !nodes || !edges) {
+      return {
+        required: { cables: {}, gauges: 0, adapters: 0, computers: 0, satellite: 0 },
+        deployed: [],
+        isConsistent: true,
+        totalRequired: 0,
+        totalDeployed: 0,
+      };
+    }
+
     const usage = analyzeEquipmentUsage();
     const deployedItems = data.equipmentItems.filter(
       item => item.status === 'deployed' && item.jobId === jobId
@@ -102,7 +114,7 @@ export const useEquipmentValidation = (jobId: string, nodes: any[], edges: any[]
     return summary;
   };
 
-  const performQuickValidationFix = () => {
+  const performQuickValidationFix = async () => {
     const summary = getEquipmentSummary();
     
     if (summary.isConsistent) {
@@ -110,16 +122,28 @@ export const useEquipmentValidation = (jobId: string, nodes: any[], edges: any[]
       return true;
     }
 
-    // For now, just provide feedback about what needs to be fixed
-    // In a full implementation, this could auto-fix some issues
     toast.info('Use the Quick Allocate feature to resolve equipment issues');
     return false;
+  };
+
+  const runFullValidation = async () => {
+    if (!jobId) {
+      toast.info('No job context available for validation');
+      return;
+    }
+
+    const isConsistent = validateInventoryConsistency();
+    
+    if (!isConsistent) {
+      await performQuickValidationFix();
+    }
   };
 
   return {
     validateInventoryConsistency,
     getEquipmentSummary,
     performQuickValidationFix,
+    runFullValidation,
     analyzeEquipmentUsage,
   };
 };

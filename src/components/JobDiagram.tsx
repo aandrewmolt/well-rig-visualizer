@@ -1,3 +1,4 @@
+
 import React, { useCallback, useState } from 'react';
 
 import '@xyflow/react/dist/style.css';
@@ -11,8 +12,8 @@ import { useDiagramValidation } from '@/hooks/useDiagramValidation';
 import { useJobDiagramActions } from '@/hooks/useJobDiagramActions';
 import { useJobDiagramEquipmentHandlers } from '@/hooks/useJobDiagramEquipmentHandlers';
 import { useStarlinkCustomerComputerHandlers } from '@/hooks/useStarlinkCustomerComputerHandlers';
-import { useJobPhotos } from '@/hooks/useJobPhotos';
 import { useRobustEquipmentTracking } from '@/hooks/useRobustEquipmentTracking';
+import { useEquipmentValidation } from '@/hooks/equipment/useEquipmentValidation';
 import { JobDiagram as JobDiagramType } from '@/hooks/useSupabaseJobs';
 
 // Import components
@@ -80,26 +81,24 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
     selectedCustomerComputers,
   });
 
-  // Equipment tracking
+  // Equipment tracking and validation
   const {
     validateInventoryConsistency,
     analyzeEquipmentUsage,
   } = useRobustEquipmentTracking(job.id, nodes, edges);
 
+  const { runFullValidation } = useEquipmentValidation();
+
   // Enhanced connection handler with immediate save for edge toggles
   const enhancedOnConnect = useCallback((connection: any) => {
-    console.log('Enhanced connection handler:', connection);
     onConnect(connection);
-    // Trigger immediate save after connection
     setTimeout(() => immediateSave(), 100);
   }, [onConnect, immediateSave]);
 
   // Enhanced edges change handler to detect Y→Well toggles
   const enhancedOnEdgesChange = useCallback((changes: any[]) => {
-    console.log('Enhanced edges change handler:', changes);
     onEdgesChange(changes);
     
-    // Check if this is a Y→Well toggle (edge update)
     const hasEdgeUpdate = changes.some(change => 
       change.type === 'reset' || 
       (change.type === 'replace' && change.item) ||
@@ -107,24 +106,20 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
     );
     
     if (hasEdgeUpdate) {
-      console.log('Detected edge toggle, triggering immediate save');
       setTimeout(() => immediateSave(), 100);
     }
   }, [onEdgesChange, immediateSave]);
 
   // Enhanced nodes change handler to detect COM port changes
   const enhancedOnNodesChange = useCallback((changes: any[]) => {
-    console.log('Enhanced nodes change handler:', changes);
     onNodesChange(changes);
     
-    // Check if this includes MainBox data changes (COM ports)
     const hasMainBoxUpdate = changes.some(change => 
       change.type === 'reset' || 
       (change.item && change.item.type === 'mainBox')
     );
     
     if (hasMainBoxUpdate) {
-      console.log('Detected MainBox change, triggering immediate save');
       setTimeout(() => immediateSave(), 100);
     }
   }, [onNodesChange, immediateSave]);
@@ -202,16 +197,12 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
     setNodeIdCounter,
   });
 
-  const handleValidateEquipment = useCallback(() => {
+  const handleValidateEquipment = useCallback(async () => {
     const isConsistent = validateInventoryConsistency();
     if (!isConsistent) {
-      const issues = validateEquipmentAllocations();
-      if (issues.length > 0) {
-        const fixedCount = fixEquipmentAllocations(issues);
-        console.log(`Fixed ${fixedCount} equipment issues`);
-      }
+      await runFullValidation();
     }
-  }, [validateInventoryConsistency, validateEquipmentAllocations, fixEquipmentAllocations]);
+  }, [validateInventoryConsistency, runFullValidation]);
 
   // Get equipment status for UI indicators
   const usage = analyzeEquipmentUsage();

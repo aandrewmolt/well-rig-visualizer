@@ -9,6 +9,48 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      approval_requests: {
+        Row: {
+          approved_at: string | null
+          approver_id: string | null
+          comments: string | null
+          created_at: string
+          expense_id: string
+          id: string
+          rejected_at: string | null
+          status: string
+          submitted_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approver_id?: string | null
+          comments?: string | null
+          created_at?: string
+          expense_id: string
+          id?: string
+          rejected_at?: string | null
+          status?: string
+          submitted_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          approved_at?: string | null
+          approver_id?: string | null
+          comments?: string | null
+          created_at?: string
+          expense_id?: string
+          id?: string
+          rejected_at?: string | null
+          status?: string
+          submitted_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       contact_types: {
         Row: {
           created_at: string | null
@@ -286,6 +328,81 @@ export type Database = {
         }
         Relationships: []
       }
+      expense_categories: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+        }
+        Relationships: []
+      }
+      expenses: {
+        Row: {
+          category: string
+          confidence: Json | null
+          created_at: string
+          date: string
+          description: string | null
+          expense_type: string
+          id: string
+          is_manual: boolean | null
+          merchant: string
+          month_lock_type: string | null
+          receipt_file_name: string | null
+          total: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category: string
+          confidence?: Json | null
+          created_at?: string
+          date: string
+          description?: string | null
+          expense_type?: string
+          id?: string
+          is_manual?: boolean | null
+          merchant: string
+          month_lock_type?: string | null
+          receipt_file_name?: string | null
+          total: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          confidence?: Json | null
+          created_at?: string
+          date?: string
+          description?: string | null
+          expense_type?: string
+          id?: string
+          is_manual?: boolean | null
+          merchant?: string
+          month_lock_type?: string | null
+          receipt_file_name?: string | null
+          total?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       individual_equipment: {
         Row: {
           created_at: string
@@ -499,6 +616,90 @@ export type Database = {
         }
         Relationships: []
       }
+      merchant_templates: {
+        Row: {
+          created_at: string
+          default_category: string
+          frequency: number
+          id: string
+          last_used: string
+          location_patterns: string[] | null
+          merchant_name: string
+          typical_amounts: number[] | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          default_category: string
+          frequency?: number
+          id?: string
+          last_used?: string
+          location_patterns?: string[] | null
+          merchant_name: string
+          typical_amounts?: number[] | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          default_category?: string
+          frequency?: number
+          id?: string
+          last_used?: string
+          location_patterns?: string[] | null
+          merchant_name?: string
+          typical_amounts?: number[] | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      mileage_entries: {
+        Row: {
+          created_at: string
+          date: string
+          end_location: string
+          id: string
+          miles: number
+          notes: string | null
+          purpose: string | null
+          rate_per_mile: number
+          start_location: string
+          total_amount: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          end_location: string
+          id?: string
+          miles: number
+          notes?: string | null
+          purpose?: string | null
+          rate_per_mile?: number
+          start_location: string
+          total_amount: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          end_location?: string
+          id?: string
+          miles?: number
+          notes?: string | null
+          purpose?: string | null
+          rate_per_mile?: number
+          start_location?: string
+          total_amount?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           company: string | null
@@ -528,6 +729,47 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      receipts: {
+        Row: {
+          created_at: string
+          expense_id: string | null
+          file_name: string
+          file_size: number | null
+          file_type: string | null
+          id: string
+          storage_path: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          expense_id?: string | null
+          file_name: string
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          storage_path: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          expense_id?: string | null
+          file_name?: string
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          storage_path?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "receipts_expense_id_fkey"
+            columns: ["expense_id"]
+            isOneToOne: false
+            referencedRelation: "expenses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       red_tag_photos: {
         Row: {
@@ -615,6 +857,30 @@ export type Database = {
           created_at?: string | null
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_settings: {
+        Row: {
+          created_at: string
+          id: string
+          settings: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          settings?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          settings?: Json
+          updated_at?: string
           user_id?: string
         }
         Relationships: []

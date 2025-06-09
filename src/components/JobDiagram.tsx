@@ -1,4 +1,3 @@
-
 import React, { useCallback, useState } from 'react';
 
 import '@xyflow/react/dist/style.css';
@@ -11,6 +10,7 @@ import { useWellConfiguration } from '@/hooks/useWellConfiguration';
 import { useDiagramValidation } from '@/hooks/useDiagramValidation';
 import { useJobDiagramActions } from '@/hooks/useJobDiagramActions';
 import { useJobDiagramEquipmentHandlers } from '@/hooks/useJobDiagramEquipmentHandlers';
+import { useStarlinkCustomerComputerHandlers } from '@/hooks/useStarlinkCustomerComputerHandlers';
 import { useJobPhotos } from '@/hooks/useJobPhotos';
 import { useRobustEquipmentTracking } from '@/hooks/useRobustEquipmentTracking';
 import { JobDiagram as JobDiagramType } from '@/hooks/useSupabaseJobs';
@@ -190,6 +190,18 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
     removeShearstreamBox,
   });
 
+  // Add Starlink and Customer Computer handlers
+  const {
+    handleAddStarlink,
+    handleRemoveStarlink,
+    handleAddCustomerComputer: handleAddCustomerComputerWrapper,
+    handleRemoveCustomerComputer,
+  } = useStarlinkCustomerComputerHandlers({
+    setNodes,
+    nodeIdCounter,
+    setNodeIdCounter,
+  });
+
   const handleValidateEquipment = useCallback(() => {
     const isConsistent = validateInventoryConsistency();
     if (!isConsistent) {
@@ -205,26 +217,6 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
   const usage = analyzeEquipmentUsage();
   const totalEquipmentRequired = Object.values(usage.cables).reduce((sum, cable) => sum + cable.quantity, 0) + 
                                 usage.gauges + usage.adapters + usage.computers + usage.satellite;
-
-  // Add handlers for Starlink and Customer Computer management
-  const handleAddStarlink = () => {
-    console.log('Add starlink - functionality to be implemented');
-    // This would add a new starlink node to the diagram
-  };
-
-  const handleRemoveStarlink = (index: number) => {
-    console.log('Remove starlink:', index);
-    // This would remove a starlink node from the diagram
-  };
-
-  const handleAddCustomerComputerWrapper = () => {
-    addCustomerComputer();
-  };
-
-  const handleRemoveCustomerComputer = (index: number) => {
-    console.log('Remove customer computer:', index);
-    // This would remove a customer computer node from the diagram
-  };
 
   return (
     <div className="w-full h-screen flex flex-col">

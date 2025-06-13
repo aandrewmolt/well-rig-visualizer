@@ -26,6 +26,9 @@ interface UseJobDiagramEquipmentProps {
   updateCustomerComputerName: (nodeId: string, name: string, setNodes: (updater: (nodes: Node[]) => Node[]) => void) => void;
   addShearstreamBox: () => void;
   removeShearstreamBox: (boxId: string) => void;
+  validateEquipmentAvailability?: (equipmentId: string, jobId: string) => Promise<boolean>;
+  allocateEquipment?: (equipmentId: string, jobId: string, jobName: string) => Promise<void>;
+  releaseEquipment?: (equipmentId: string, jobId: string) => Promise<void>;
 }
 
 export const useJobDiagramEquipment = ({
@@ -42,6 +45,9 @@ export const useJobDiagramEquipment = ({
   updateCustomerComputerName,
   addShearstreamBox,
   removeShearstreamBox,
+  validateEquipmentAvailability,
+  allocateEquipment,
+  releaseEquipment,
 }: UseJobDiagramEquipmentProps) => {
   const { deployEquipment, returnEquipment } = useEquipmentDeployment();
 
@@ -57,6 +63,9 @@ export const useJobDiagramEquipment = ({
     setSelectedStarlink,
     setSelectedCustomerComputers,
     setNodes,
+    validateEquipmentAvailability,
+    allocateEquipment,
+    releaseEquipment,
   });
 
   const {
@@ -67,7 +76,9 @@ export const useJobDiagramEquipment = ({
     setSelectedShearstreamBoxes,
     addShearstreamBox,
     removeShearstreamBox,
-    returnEquipment,
+    returnEquipment: releaseEquipment ? 
+      (equipmentId: string) => releaseEquipment(equipmentId, job.id) : 
+      returnEquipment,
   });
 
   return {

@@ -1,19 +1,25 @@
 
 import { useInventoryData } from '@/hooks/useInventoryData';
 import { useComprehensiveEquipmentTracking } from './useComprehensiveEquipmentTracking';
+import { useInventoryMapperSync } from '@/hooks/useInventoryMapperSync';
 import { toast } from 'sonner';
 
 export const useEquipmentAllocation = (jobId: string) => {
   const { data, updateEquipmentItems } = useInventoryData();
   const { analyzeEquipmentUsage, validateEquipmentAvailability, generateEquipmentReport } = useComprehensiveEquipmentTracking([], []);
+  const { 
+    validateEquipmentAvailability: validateEquipmentSync, 
+    allocateEquipment: allocateEquipmentSync 
+  } = useInventoryMapperSync();
 
-  const allocateEquipmentType = (
+  const allocateEquipmentType = async (
     updatedItems: any[], 
     typeId: string, 
     quantity: number, 
     locationId: string, 
-    jobId: string
-  ): boolean => {
+    jobId: string,
+    jobName: string = 'Current Job'
+  ): Promise<boolean> => {
     // Find available equipment at location
     const availableItem = updatedItems.find(
       item => 
@@ -28,13 +34,20 @@ export const useEquipmentAllocation = (jobId: string) => {
       return false;
     }
 
+    // Validate using sync hook before allocation
+    const isValid = await validateEquipmentSync(availableItem.id, jobId);
+    if (!isValid) {
+      return false;
+    }
+
     // Deduct from available
     availableItem.quantity -= quantity;
     availableItem.lastUpdated = new Date();
 
     // Create deployed record
+    const deployedId = `deployed-${typeId}-${jobId}-${Date.now()}`;
     updatedItems.push({
-      id: `deployed-${typeId}-${jobId}-${Date.now()}`,
+      id: deployedId,
       typeId,
       locationId,
       quantity,
@@ -44,10 +57,17 @@ export const useEquipmentAllocation = (jobId: string) => {
       notes: `Manually allocated from diagram analysis`,
     });
 
+    // Allocate using sync hook
+    try {
+      await allocateEquipmentSync(deployedId, jobId, jobName);
+    } catch (error) {
+      console.error('Failed to sync equipment allocation:', error);
+    }
+
     return true;
   };
 
-  const performComprehensiveAllocation = (locationId: string, nodes: any[], edges: any[]) => {
+  const performComprehensiveAllocation = async (locationId: string, nodes: any[], edges: any[], jobName: string = 'Current Job') => {
     if (!locationId) {
       toast.error('Please select a location before allocating equipment');
       return;
@@ -74,14 +94,14 @@ export const useEquipmentAllocation = (jobId: string) => {
     const allocatedItems: string[] = [];
 
     // Allocate cables with precise tracking
-    Object.entries(usage.cables).forEach(([typeId, details]) => {
+    for (const [typeId, details] of Object.entries(usage.cables)) {
       if (details.quantity > 0) {
-        const success = allocateEquipmentType(updatedItems, typeId, details.quantity, locationId, jobId);
+        const success = await allocateEquipmentType(updatedItems, typeId, details.quantity, locationId, jobId, jobName);
         if (success) {
           allocatedItems.push(`${details.quantity}x ${details.typeName}`);
         }
       }
-    });
+    }
 
     // Allocate other equipment
     const equipmentAllocations = [
@@ -91,14 +111,14 @@ export const useEquipmentAllocation = (jobId: string) => {
       { typeId: '10', quantity: usage.satellite, name: 'Satellite Equipment' },
     ];
 
-    equipmentAllocations.forEach(({ typeId, quantity, name }) => {
+    for (const { typeId, quantity, name } of equipmentAllocations) {
       if (quantity > 0) {
-        const success = allocateEquipmentType(updatedItems, typeId, quantity, locationId, jobId);
+        const success = await allocateEquipmentType(updatedItems, typeId, quantity, locationId, jobId, jobName);
         if (success) {
           allocatedItems.push(`${quantity}x ${name}`);
         }
       }
-    });
+    }
 
     // Update inventory
     updateEquipmentItems(updatedItems);

@@ -22,6 +22,9 @@ interface UseEquipmentSelectionProps {
   setSelectedStarlink: (starlink: string) => void;
   setSelectedCustomerComputers: (computers: string[]) => void;
   setNodes: (updater: (nodes: Node[]) => Node[]) => void;
+  validateEquipmentAvailability?: (equipmentId: string, jobId: string) => Promise<boolean>;
+  allocateEquipment?: (equipmentId: string, jobId: string, jobName: string) => Promise<void>;
+  releaseEquipment?: (equipmentId: string, jobId: string) => Promise<void>;
 }
 
 export const useEquipmentSelection = ({
@@ -33,6 +36,9 @@ export const useEquipmentSelection = ({
   setSelectedStarlink,
   setSelectedCustomerComputers,
   setNodes,
+  validateEquipmentAvailability,
+  allocateEquipment,
+  releaseEquipment,
 }: UseEquipmentSelectionProps) => {
   const { data } = useInventory();
   const { deployEquipment, returnEquipment } = useEquipmentDeployment();
@@ -43,7 +49,7 @@ export const useEquipmentSelection = ({
     updateAllNodes 
   } = useEquipmentNodeUpdater();
 
-  const handleEquipmentSelect = useCallback((
+  const handleEquipmentSelect = useCallback(async (
     type: 'shearstream-box' | 'starlink' | 'customer-computer', 
     equipmentId: string, 
     index?: number
@@ -51,31 +57,81 @@ export const useEquipmentSelection = ({
     const equipment = data.individualEquipment.find(eq => eq.id === equipmentId);
     if (!equipment) return;
 
+    // Use sync validation if available
+    if (validateEquipmentAvailability) {
+      const isAvailable = await validateEquipmentAvailability(equipmentId, job.id);
+      if (!isAvailable) {
+        // Validation failed, equipment is not available
+        return;
+      }
+    }
+
     if (type === 'shearstream-box' && index !== undefined) {
       const newBoxes = [...selectedShearstreamBoxes];
-      if (newBoxes[index]) {
-        returnEquipment(newBoxes[index]);
+      const previousEquipment = newBoxes[index];
+      
+      // Release previous equipment
+      if (previousEquipment) {
+        if (releaseEquipment) {
+          await releaseEquipment(previousEquipment, job.id);
+        } else {
+          returnEquipment(previousEquipment);
+        }
       }
+      
+      // Allocate new equipment
       newBoxes[index] = equipmentId;
       setSelectedShearstreamBoxes(newBoxes);
-      deployEquipment(equipmentId, job.id);
+      
+      if (allocateEquipment) {
+        await allocateEquipment(equipmentId, job.id, job.name);
+      } else {
+        deployEquipment(equipmentId, job.id);
+      }
       
       setNodes(nodes => updateShearstreamBoxNode(nodes, index, equipmentId));
     } else if (type === 'starlink') {
+      // Release previous equipment
       if (selectedStarlink) {
-        returnEquipment(selectedStarlink);
+        if (releaseEquipment) {
+          await releaseEquipment(selectedStarlink, job.id);
+        } else {
+          returnEquipment(selectedStarlink);
+        }
       }
+      
+      // Allocate new equipment
       setSelectedStarlink(equipmentId);
-      deployEquipment(equipmentId, job.id);
+      
+      if (allocateEquipment) {
+        await allocateEquipment(equipmentId, job.id, job.name);
+      } else {
+        deployEquipment(equipmentId, job.id);
+      }
+      
       setNodes(nodes => updateStarlinkNode(nodes, equipmentId));
     } else if (type === 'customer-computer' && index !== undefined) {
       const newComputers = [...selectedCustomerComputers];
-      if (newComputers[index]) {
-        returnEquipment(newComputers[index]);
+      const previousEquipment = newComputers[index];
+      
+      // Release previous equipment
+      if (previousEquipment) {
+        if (releaseEquipment) {
+          await releaseEquipment(previousEquipment, job.id);
+        } else {
+          returnEquipment(previousEquipment);
+        }
       }
+      
+      // Allocate new equipment
       newComputers[index] = equipmentId;
       setSelectedCustomerComputers(newComputers);
-      deployEquipment(equipmentId, job.id);
+      
+      if (allocateEquipment) {
+        await allocateEquipment(equipmentId, job.id, job.name);
+      } else {
+        deployEquipment(equipmentId, job.id);
+      }
       
       setNodes(nodes => updateCustomerComputerNode(nodes, index, equipmentId));
     }
@@ -86,14 +142,18 @@ export const useEquipmentSelection = ({
     selectedCustomerComputers, 
     returnEquipment, 
     deployEquipment, 
-    job.id, 
+    job.id,
+    job.name,
     setNodes,
     setSelectedShearstreamBoxes,
     setSelectedStarlink,
     setSelectedCustomerComputers,
     updateShearstreamBoxNode,
     updateStarlinkNode,
-    updateCustomerComputerNode
+    updateCustomerComputerNode,
+    validateEquipmentAvailability,
+    allocateEquipment,
+    releaseEquipment
   ]);
 
   const handleEquipmentAssignment = useCallback((assignments: {

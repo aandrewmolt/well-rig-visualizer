@@ -12,12 +12,15 @@ import {
   RefreshCw, 
   Settings, 
   TrendingUp,
-  Zap 
+  Zap,
+  AlertCircle
 } from 'lucide-react';
 import { useInventoryData } from '@/hooks/useInventoryData';
 import { useRobustEquipmentTracking } from '@/hooks/useRobustEquipmentTracking';
+import { useInventoryMapperSync } from '@/hooks/useInventoryMapperSync';
 import { Node, Edge } from '@xyflow/react';
 import { toast } from 'sonner';
+import ConflictIndicator from './ConflictIndicator';
 
 interface CompactJobEquipmentPanelProps {
   jobId: string;
@@ -36,6 +39,16 @@ const CompactJobEquipmentPanel: React.FC<CompactJobEquipmentPanelProps> = ({
   const [selectedLocation, setSelectedLocation] = useState<string>(data.storageLocations[0]?.id || '');
   const [autoAllocationEnabled, setAutoAllocationEnabled] = useState(false);
   
+  // Get sync data
+  const {
+    conflicts,
+    allocations,
+    getEquipmentStatus,
+    getJobEquipment,
+    resolveConflict,
+    syncInventoryStatus
+  } = useInventoryMapperSync();
+  
   const {
     performComprehensiveAllocation,
     returnAllJobEquipment,
@@ -51,6 +64,10 @@ const CompactJobEquipmentPanel: React.FC<CompactJobEquipmentPanelProps> = ({
     item => item.status === 'deployed' && item.jobId === jobId
   );
   const isConsistent = validateInventoryConsistency();
+  
+  // Get real-time job equipment
+  const jobEquipmentIds = getJobEquipment(jobId);
+  const jobConflicts = conflicts.filter(c => c.requestedJobId === jobId || c.currentJobId === jobId);
 
   // Enhanced availability check with detailed feedback
   const checkDetailedAvailability = () => {
@@ -160,12 +177,29 @@ const CompactJobEquipmentPanel: React.FC<CompactJobEquipmentPanelProps> = ({
     <div className="space-y-4 h-full overflow-y-auto">
       <Card className="bg-white shadow-sm">
         <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            {getStatusIcon()}
-            Equipment Status
-            <Badge variant="secondary" className="text-xs">
-              {deployedEquipment.length} deployed
-            </Badge>
+          <CardTitle className="flex items-center justify-between text-lg">
+            <span className="flex items-center gap-2">
+              {getStatusIcon()}
+              Equipment Status
+              <Badge variant="secondary" className="text-xs">
+                {deployedEquipment.length} deployed
+              </Badge>
+            </span>
+            <div className="flex items-center gap-2">
+              {jobConflicts.length > 0 && (
+                <ConflictIndicator 
+                  conflicts={jobConflicts} 
+                  onResolveConflict={resolveConflict}
+                  className="text-xs"
+                />
+              )}
+              {!isConsistent && (
+                <Badge variant="destructive" className="text-xs">
+                  <AlertTriangle className="h-3 w-3 mr-1" />
+                  Sync Issue
+                </Badge>
+              )}
+            </div>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -303,22 +337,42 @@ const CompactJobEquipmentPanel: React.FC<CompactJobEquipmentPanelProps> = ({
             </div>
           </div>
 
-          {/* Currently Deployed Summary */}
+          {/* Currently Deployed Summary with Real-time Status */}
           {deployedEquipment.length > 0 && (
             <>
               <Separator />
               <div>
-                <h4 className="font-medium mb-2 flex items-center gap-2">
-                  <TrendingUp className="h-4 w-4" />
-                  Deployed Equipment
-                </h4>
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="font-medium flex items-center gap-2">
+                    <TrendingUp className="h-4 w-4" />
+                    Deployed Equipment
+                  </h4>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => syncInventoryStatus()}
+                    className="h-6 px-2"
+                  >
+                    <RefreshCw className="h-3 w-3 mr-1" />
+                    Sync
+                  </Button>
+                </div>
                 <div className="space-y-1 max-h-32 overflow-y-auto">
                   {deployedEquipment.slice(0, 5).map(item => {
                     const equipmentType = data.equipmentTypes.find(type => type.id === item.typeId);
+                    const status = getEquipmentStatus(item.id);
                     return (
-                      <div key={item.id} className="flex justify-between text-sm p-2 bg-green-50 rounded">
+                      <div key={item.id} className="flex justify-between items-center text-sm p-2 bg-green-50 rounded">
                         <span className="truncate">{equipmentType?.name || 'Unknown'}</span>
-                        <Badge variant="secondary" className="text-xs">{item.quantity}</Badge>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="secondary" className="text-xs">{item.quantity}</Badge>
+                          {status === 'deployed' && (
+                            <CheckCircle className="h-3 w-3 text-green-600" />
+                          )}
+                          {status === 'allocated' && (
+                            <AlertCircle className="h-3 w-3 text-yellow-600" />
+                          )}
+                        </div>
                       </div>
                     );
                   })}

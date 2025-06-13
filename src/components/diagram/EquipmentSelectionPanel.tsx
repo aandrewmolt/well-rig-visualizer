@@ -4,7 +4,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Monitor, Satellite, Square, Plus, X } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Monitor, Satellite, Square, Plus, X, AlertCircle, CheckCircle } from 'lucide-react';
 import { useInventory } from '@/contexts/InventoryContext';
 import { IndividualEquipment } from '@/types/inventory';
 
@@ -22,6 +23,7 @@ interface EquipmentSelectionPanelProps {
   onAddCustomerComputer?: () => void;
   onRemoveCustomerComputer?: (index: number) => void;
   hasWellsideGauge: boolean;
+  getEquipmentStatus?: (equipmentId: string) => 'available' | 'allocated' | 'deployed' | 'unavailable';
 }
 
 const EquipmentSelectionPanel: React.FC<EquipmentSelectionPanelProps> = ({
@@ -38,6 +40,7 @@ const EquipmentSelectionPanel: React.FC<EquipmentSelectionPanelProps> = ({
   onAddCustomerComputer,
   onRemoveCustomerComputer,
   hasWellsideGauge,
+  getEquipmentStatus,
 }) => {
   const { data } = useInventory();
 
@@ -59,6 +62,46 @@ const EquipmentSelectionPanel: React.FC<EquipmentSelectionPanelProps> = ({
   // Convert selectedStarlink to array for consistent handling
   const selectedStarlinks = selectedStarlink ? [selectedStarlink] : [];
   const starlinkCount = selectedStarlinks.length;
+
+  // Helper function to get equipment status badge
+  const getStatusBadge = (equipmentId: string) => {
+    if (!getEquipmentStatus) return null;
+    
+    const status = getEquipmentStatus(equipmentId);
+    
+    switch (status) {
+      case 'available':
+        return (
+          <Badge variant="outline" className="ml-2 text-xs bg-green-50 text-green-700 border-green-200">
+            <CheckCircle className="w-3 h-3 mr-1" />
+            Available
+          </Badge>
+        );
+      case 'allocated':
+        return (
+          <Badge variant="outline" className="ml-2 text-xs bg-yellow-50 text-yellow-700 border-yellow-200">
+            <AlertCircle className="w-3 h-3 mr-1" />
+            Allocated
+          </Badge>
+        );
+      case 'deployed':
+        return (
+          <Badge variant="outline" className="ml-2 text-xs bg-blue-50 text-blue-700 border-blue-200">
+            <AlertCircle className="w-3 h-3 mr-1" />
+            Deployed
+          </Badge>
+        );
+      case 'unavailable':
+        return (
+          <Badge variant="outline" className="ml-2 text-xs bg-red-50 text-red-700 border-red-200">
+            <X className="w-3 h-3 mr-1" />
+            Unavailable
+          </Badge>
+        );
+      default:
+        return null;
+    }
+  };
 
   return (
     <Card className="bg-white shadow-lg">
@@ -120,7 +163,10 @@ const EquipmentSelectionPanel: React.FC<EquipmentSelectionPanelProps> = ({
                       .filter(eq => !selectedShearstreamBoxes.includes(eq.id) || selectedShearstreamBoxes[index] === eq.id)
                       .map(equipment => (
                         <SelectItem key={equipment.id} value={equipment.id}>
-                          {equipment.equipmentId}
+                          <div className="flex items-center">
+                            <span>{equipment.equipmentId}</span>
+                            {getStatusBadge(equipment.id)}
+                          </div>
                         </SelectItem>
                       ))
                   )}
@@ -189,7 +235,10 @@ const EquipmentSelectionPanel: React.FC<EquipmentSelectionPanelProps> = ({
                         .filter(eq => !selectedStarlinks.includes(eq.id) || selectedStarlinks[index] === eq.id)
                         .map(equipment => (
                           <SelectItem key={equipment.id} value={equipment.id}>
-                            {equipment.equipmentId}
+                            <div className="flex items-center">
+                              <span>{equipment.equipmentId}</span>
+                              {getStatusBadge(equipment.id)}
+                            </div>
                           </SelectItem>
                         ))
                     )}
@@ -259,7 +308,10 @@ const EquipmentSelectionPanel: React.FC<EquipmentSelectionPanelProps> = ({
                         .filter(eq => !selectedCustomerComputers.includes(eq.id) || selectedCustomerComputers[index] === eq.id)
                         .map(equipment => (
                           <SelectItem key={equipment.id} value={equipment.id}>
-                            {equipment.equipmentId}
+                            <div className="flex items-center">
+                              <span>{equipment.equipmentId}</span>
+                              {getStatusBadge(equipment.id)}
+                            </div>
                           </SelectItem>
                         ))
                     )}

@@ -1,17 +1,29 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Package, Plus } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Package, Plus, WifiOff, Wifi, RefreshCw } from 'lucide-react';
 import { useInventory } from '@/contexts/InventoryContext';
+import { useInventoryMapperSync } from '@/hooks/useInventoryMapperSync';
+import { useOfflineFirst } from '@/hooks/offline/useOfflineFirst';
 import { toast } from 'sonner';
 import EquipmentListFilters from './EquipmentListFilters';
 import EquipmentFormDialog from './EquipmentFormDialog';
 import EquipmentTable from './EquipmentTable';
 import IndividualEquipmentTable from './IndividualEquipmentTable';
 import EquipmentMigrationButton from './EquipmentMigrationButton';
+import ConflictIndicator from './ConflictIndicator';
+import { SyncStatusIndicator } from '@/components/InventoryMapperSync';
 
 const EquipmentListView = () => {
   const { data, updateSingleEquipmentItem, addEquipmentItem, deleteEquipmentItem, updateIndividualEquipment } = useInventory();
+  const { conflicts, getEquipmentStatus, syncInventoryStatus, isValidating } = useInventoryMapperSync();
+  const { 
+    isOnline, 
+    isSyncing, 
+    sync: manualSync,
+    data: offlineEquipment 
+  } = useOfflineFirst({ tableName: 'equipment' });
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterLocation, setFilterLocation] = useState('all');
@@ -187,9 +199,45 @@ const EquipmentListView = () => {
           <CardTitle className="flex items-center gap-2 text-lg">
             <Package className="h-5 w-5" />
             Equipment List ({totalItems} items)
+            <SyncStatusIndicator />
+            
+            {/* Offline Status Badge */}
+            {!isOnline && (
+              <Badge variant="outline" className="gap-1">
+                <WifiOff className="h-3 w-3" />
+                Offline
+              </Badge>
+            )}
           </CardTitle>
           
           <div className="flex gap-2">
+            <ConflictIndicator conflicts={conflicts} />
+            
+            {/* Enhanced Sync Button */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={isOnline ? manualSync : syncInventoryStatus}
+              disabled={isValidating || isSyncing}
+              className="gap-2"
+            >
+              {isSyncing ? (
+                <>
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                  Syncing...
+                </>
+              ) : isOnline ? (
+                <>
+                  <Wifi className="h-4 w-4" />
+                  Sync Now
+                </>
+              ) : (
+                <>
+                  <WifiOff className="h-4 w-4" />
+                  Sync Status
+                </>
+              )}
+            </Button>
             <EquipmentMigrationButton />
             <div className="flex rounded-lg border">
               <button
@@ -252,6 +300,8 @@ const EquipmentListView = () => {
               getStatusColor={getStatusColor}
               getCategoryColor={getCategoryColor}
               onClearFilters={clearFilters}
+              conflicts={conflicts}
+              getEquipmentStatus={getEquipmentStatus}
             />
           </div>
         )}
@@ -268,6 +318,8 @@ const EquipmentListView = () => {
               getLocationName={getLocationName}
               getStatusColor={getStatusColor}
               getCategoryColor={getCategoryColor}
+              conflicts={conflicts}
+              getEquipmentStatus={getEquipmentStatus}
             />
           </div>
         )}

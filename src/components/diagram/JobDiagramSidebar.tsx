@@ -6,6 +6,7 @@ import EquipmentSelectionPanel from './EquipmentSelectionPanel';
 import ExtrasOnLocationPanel from './ExtrasOnLocationPanel';
 import EquipmentSummaryPanel from './EquipmentSummaryPanel';
 import RedTagPanel from './RedTagPanel';
+import ConflictIndicator from './ConflictIndicator';
 import { ExtrasOnLocationItem } from '@/hooks/useExtrasOnLocation';
 
 interface JobDiagramSidebarProps {
@@ -28,6 +29,9 @@ interface JobDiagramSidebarProps {
   onRemoveStarlink: (index: number) => void;
   onAddCustomerComputer: () => void;
   onRemoveCustomerComputer: (index: number) => void;
+  getEquipmentStatus?: (equipmentId: string) => 'available' | 'allocated' | 'deployed' | 'unavailable';
+  conflicts?: any[];
+  resolveConflict?: (conflict: any, resolution: 'current' | 'requested') => Promise<void>;
 }
 
 const JobDiagramSidebar: React.FC<JobDiagramSidebarProps> = ({
@@ -50,6 +54,9 @@ const JobDiagramSidebar: React.FC<JobDiagramSidebarProps> = ({
   onRemoveStarlink,
   onAddCustomerComputer,
   onRemoveCustomerComputer,
+  getEquipmentStatus,
+  conflicts,
+  resolveConflict,
 }) => {
   // Get well and wellside gauge nodes for configuration
   const wellNodes = nodes.filter(node => node.type === 'well');
@@ -62,6 +69,17 @@ const JobDiagramSidebar: React.FC<JobDiagramSidebarProps> = ({
 
   return (
     <div className="w-80 space-y-4 p-4 bg-gray-50 overflow-y-auto">
+      {/* Conflict Indicator at the top if there are conflicts */}
+      {conflicts && conflicts.length > 0 && (
+        <div className="flex justify-center">
+          <ConflictIndicator 
+            conflicts={conflicts} 
+            onResolveConflict={resolveConflict}
+            className="text-sm"
+          />
+        </div>
+      )}
+      
       <EquipmentSelectionPanel
         selectedShearstreamBoxes={selectedShearstreamBoxes}
         selectedStarlink={selectedStarlink}
@@ -76,6 +94,7 @@ const JobDiagramSidebar: React.FC<JobDiagramSidebarProps> = ({
         onAddCustomerComputer={onAddCustomerComputer}
         onRemoveCustomerComputer={onRemoveCustomerComputer}
         hasWellsideGauge={hasWellsideGauge}
+        getEquipmentStatus={getEquipmentStatus}
       />
 
       <WellConfigurationPanel

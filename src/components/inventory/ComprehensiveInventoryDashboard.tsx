@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useInventory } from '@/contexts/InventoryContext';
 import EquipmentLocationOverview from './EquipmentLocationOverview';
+import EquipmentSyncStatus from './EquipmentSyncStatus';
 
 interface ComprehensiveInventoryDashboardProps {
   onSwitchToTab?: (tab: string) => void;
@@ -223,6 +224,9 @@ const ComprehensiveInventoryDashboard: React.FC<ComprehensiveInventoryDashboardP
           </div>
         </CardContent>
       </Card>
+
+      {/* Equipment Sync Status */}
+      <EquipmentSyncStatus />
 
       {/* Location Breakdown */}
       <Card>

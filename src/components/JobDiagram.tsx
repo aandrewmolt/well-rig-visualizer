@@ -14,6 +14,7 @@ import { useJobDiagramEquipmentHandlers } from '@/hooks/useJobDiagramEquipmentHa
 import { useStarlinkCustomerComputerHandlers } from '@/hooks/useStarlinkCustomerComputerHandlers';
 import { useRobustEquipmentTracking } from '@/hooks/useRobustEquipmentTracking';
 import { useEquipmentValidation } from '@/hooks/equipment/useEquipmentValidation';
+import { useInventoryMapperSync } from '@/hooks/useInventoryMapperSync';
 import { JobDiagram as JobDiagramType } from '@/hooks/useSupabaseJobs';
 
 // Import components
@@ -33,6 +34,20 @@ interface JobDiagramProps {
 const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
   const [isPhotosPanelOpen, setIsPhotosPanelOpen] = useState(false);
   const [isEquipmentPanelOpen, setIsEquipmentPanelOpen] = useState(false);
+
+  // Initialize inventory mapper sync
+  const {
+    isValidating: isSyncValidating,
+    conflicts,
+    allocations,
+    validateEquipmentAvailability,
+    allocateEquipment,
+    releaseEquipment,
+    resolveConflict,
+    syncInventoryStatus,
+    getEquipmentStatus,
+    getJobEquipment
+  } = useInventoryMapperSync();
 
   const {
     reactFlowWrapper,
@@ -164,7 +179,7 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
     reactFlowWrapper,
   });
 
-  // Add equipment handlers
+  // Add equipment handlers with sync integration
   const {
     handleEquipmentSelect,
     handleAddShearstreamBox,
@@ -183,6 +198,10 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
     updateCustomerComputerName,
     addShearstreamBox,
     removeShearstreamBox,
+    // Pass sync methods
+    validateEquipmentAvailability,
+    allocateEquipment,
+    releaseEquipment,
   });
 
   // Add Starlink and Customer Computer handlers
@@ -251,6 +270,11 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
                   {totalEquipmentRequired}
                 </span>
               )}
+              {conflicts.length > 0 && (
+                <span className="ml-1 px-1 bg-red-500 text-white text-xs rounded">
+                  {conflicts.length} conflicts
+                </span>
+              )}
               {!validateInventoryConsistency() && (
                 <AlertTriangle className="h-3 w-3 ml-1 text-yellow-500" />
               )}
@@ -288,6 +312,10 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
           onRemoveStarlink={handleRemoveStarlink}
           onAddCustomerComputer={handleAddCustomerComputerWrapper}
           onRemoveCustomerComputer={handleRemoveCustomerComputer}
+          // Pass sync data
+          getEquipmentStatus={getEquipmentStatus}
+          conflicts={conflicts}
+          resolveConflict={resolveConflict}
         />
 
         <JobDiagramCanvas

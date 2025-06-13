@@ -5,11 +5,13 @@ import { Separator } from '@/components/ui/separator';
 import { Package, AlertTriangle, CheckCircle, RefreshCw, Wrench } from 'lucide-react';
 import { useInventoryData } from '@/hooks/useInventoryData';
 import { useRobustEquipmentTracking } from '@/hooks/useRobustEquipmentTracking';
+import { useInventoryMapperSync } from '@/hooks/useInventoryMapperSync';
 import ExtrasOnLocationPanel from './ExtrasOnLocationPanel';
 import EquipmentLocationSelector from './equipment/EquipmentLocationSelector';
 import EquipmentAvailabilityStatus from './equipment/EquipmentAvailabilityStatus';
 import { Node, Edge } from '@xyflow/react';
 import { Badge } from '@/components/ui/badge';
+import { SyncStatusIndicator } from '@/components/InventoryMapperSync';
 
 interface JobEquipmentPanelProps {
   jobId: string;
@@ -39,6 +41,7 @@ const JobEquipmentPanel: React.FC<JobEquipmentPanelProps> = ({
 }) => {
   const { data } = useInventoryData();
   const [selectedLocation, setSelectedLocation] = useState<string>(data.storageLocations[0]?.id || '');
+  const { conflicts, getJobEquipment, isValidating } = useInventoryMapperSync();
   
   const {
     performComprehensiveAllocation,
@@ -48,6 +51,11 @@ const JobEquipmentPanel: React.FC<JobEquipmentPanelProps> = ({
     generateEquipmentReport,
     isProcessing
   } = useRobustEquipmentTracking(jobId, nodes, edges);
+  
+  // Get equipment conflicts for this job
+  const jobConflicts = conflicts.filter(
+    c => c.currentJobId === jobId || c.requestedJobId === jobId
+  );
 
   const usage = analyzeEquipmentUsage();
   const report = generateEquipmentReport(usage);
@@ -102,6 +110,7 @@ const JobEquipmentPanel: React.FC<JobEquipmentPanelProps> = ({
           <CardTitle className="flex items-center gap-2 text-lg">
             <Package className="h-5 w-5" />
             Equipment Overview - {jobName}
+            <SyncStatusIndicator />
             {isConsistent ? (
               <CheckCircle className="h-4 w-4 text-green-500" />
             ) : (
@@ -110,6 +119,11 @@ const JobEquipmentPanel: React.FC<JobEquipmentPanelProps> = ({
             {deployedEquipment.length > 0 && (
               <Badge variant="secondary" className="text-xs">
                 {deployedEquipment.length} deployed
+              </Badge>
+            )}
+            {jobConflicts.length > 0 && (
+              <Badge variant="destructive" className="text-xs">
+                {jobConflicts.length} conflict{jobConflicts.length > 1 ? 's' : ''}
               </Badge>
             )}
           </CardTitle>
@@ -190,6 +204,32 @@ const JobEquipmentPanel: React.FC<JobEquipmentPanelProps> = ({
           )}
 
           <Separator />
+
+          {/* Equipment Conflicts */}
+          {jobConflicts.length > 0 && (
+            <>
+              <div className="bg-red-50 p-3 rounded-lg">
+                <h4 className="font-medium mb-2 flex items-center gap-2 text-red-800">
+                  <AlertTriangle className="h-4 w-4" />
+                  Equipment Conflicts
+                </h4>
+                <div className="space-y-2">
+                  {jobConflicts.map((conflict) => (
+                    <div key={conflict.equipmentId} className="text-sm">
+                      <div className="font-medium text-red-700">{conflict.equipmentName}</div>
+                      <div className="text-red-600">
+                        {conflict.currentJobId === jobId 
+                          ? `Requested by: ${conflict.requestedJobName}`
+                          : `Currently deployed to: ${conflict.currentJobName}`
+                        }
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <Separator />
+            </>
+          )}
 
           {/* Currently Deployed Equipment */}
           <div>

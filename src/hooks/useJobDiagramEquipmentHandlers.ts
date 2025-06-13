@@ -23,6 +23,9 @@ interface UseJobDiagramEquipmentHandlersProps {
   updateCustomerComputerName: (nodeId: string, name: string, setNodes: (updater: (nodes: any[]) => any[]) => void) => void;
   addShearstreamBox: () => void;
   removeShearstreamBox: (boxId: string) => void;
+  validateEquipmentAvailability?: (equipmentId: string, jobId: string) => Promise<boolean>;
+  allocateEquipment?: (equipmentId: string, jobId: string, jobName: string) => Promise<void>;
+  releaseEquipment?: (equipmentId: string, jobId: string) => Promise<void>;
 }
 
 export const useJobDiagramEquipmentHandlers = ({
@@ -39,6 +42,9 @@ export const useJobDiagramEquipmentHandlers = ({
   updateCustomerComputerName,
   addShearstreamBox,
   removeShearstreamBox,
+  validateEquipmentAvailability,
+  allocateEquipment,
+  releaseEquipment,
 }: UseJobDiagramEquipmentHandlersProps) => {
   const {
     handleEquipmentSelect,
@@ -58,6 +64,9 @@ export const useJobDiagramEquipmentHandlers = ({
     updateCustomerComputerName,
     addShearstreamBox,
     removeShearstreamBox,
+    validateEquipmentAvailability,
+    allocateEquipment,
+    releaseEquipment,
   });
 
   return {

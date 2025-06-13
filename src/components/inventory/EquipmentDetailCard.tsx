@@ -3,8 +3,9 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Package, MapPin, AlertTriangle } from 'lucide-react';
+import { Package, MapPin, AlertTriangle, Briefcase } from 'lucide-react';
 import { EquipmentItem, EquipmentType } from '@/hooks/useInventoryData';
+import { useInventoryMapperSync } from '@/hooks/useInventoryMapperSync';
 
 interface EquipmentDetailCardProps {
   equipmentType: EquipmentType;
@@ -19,6 +20,7 @@ const EquipmentDetailCard: React.FC<EquipmentDetailCardProps> = ({
   onMoveEquipment,
   onRedTag,
 }) => {
+  const { getEquipmentStatus, allocations } = useInventoryMapperSync();
   const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
   const availableQuantity = items
     .filter(item => item.status === 'available')
@@ -78,31 +80,42 @@ const EquipmentDetailCard: React.FC<EquipmentDetailCardProps> = ({
         {items.length > 0 && (
           <div className="space-y-2">
             <h4 className="font-medium text-sm">Items by Location:</h4>
-            {items.map((item) => (
-              <div key={item.id} className="flex items-center justify-between p-2 bg-gray-50 rounded text-sm">
-                <div className="flex items-center gap-2">
-                  <MapPin className="h-3 w-3 text-gray-500" />
-                  <span>{item.quantity}x</span>
-                  <Badge 
-                    variant={item.status === 'available' ? 'default' : 
-                           item.status === 'deployed' ? 'secondary' : 'destructive'}
-                    className="text-xs"
-                  >
-                    {item.status}
-                  </Badge>
+            {items.map((item) => {
+              const allocation = allocations.get(item.id);
+              const syncStatus = getEquipmentStatus(item.id);
+              
+              return (
+                <div key={item.id} className="flex items-center justify-between p-2 bg-gray-50 rounded text-sm">
+                  <div className="flex items-center gap-2">
+                    <MapPin className="h-3 w-3 text-gray-500" />
+                    <span>{item.quantity}x</span>
+                    <Badge 
+                      variant={syncStatus === 'available' ? 'default' : 
+                             syncStatus === 'deployed' || syncStatus === 'allocated' ? 'secondary' : 'destructive'}
+                      className="text-xs"
+                    >
+                      {syncStatus}
+                    </Badge>
+                    {allocation && (
+                      <div className="flex items-center gap-1 text-xs text-gray-600">
+                        <Briefcase className="h-3 w-3" />
+                        <span>{allocation.jobName}</span>
+                      </div>
+                    )}
+                  </div>
+                  {syncStatus === 'available' && onRedTag && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => onRedTag(item.id)}
+                      className="h-6 px-2 text-xs"
+                    >
+                      Red Tag
+                    </Button>
+                  )}
                 </div>
-                {item.status === 'available' && onRedTag && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => onRedTag(item.id)}
-                    className="h-6 px-2 text-xs"
-                  >
-                    Red Tag
-                  </Button>
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </CardContent>

@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { InventoryData, SyncStatus } from '@/types/inventory';
 import { useInventoryDefaults } from './inventory/useInventoryDefaults';
+import { useCreateDefaultIndividualEquipment } from './inventory/useCreateDefaultIndividualEquipment';
 import { useInventoryStorage } from './inventory/useInventoryStorage';
 import { useInventoryOperations } from './inventory/useInventoryOperations';
 import { useInventoryValidation } from './inventory/useInventoryValidation';
@@ -18,6 +19,7 @@ export type {
 
 export const useInventoryData = () => {
   const { resetToDefaultInventory, createDefaultInventory, DEFAULT_EQUIPMENT_TYPES, DEFAULT_STORAGE_LOCATIONS } = useInventoryDefaults();
+  const { createDefaultIndividualEquipment } = useCreateDefaultIndividualEquipment();
   const { loadFromLocalStorage, saveToLocalStorage, syncData } = useInventoryStorage();
   const { cleanupDuplicateDeployments, ensureMinimumInventory } = useInventoryValidation();
 
@@ -46,6 +48,10 @@ export const useInventoryData = () => {
           ...storedData,
           equipmentTypes: DEFAULT_EQUIPMENT_TYPES, // Always use latest equipment types
           storageLocations: storedData.storageLocations.length > 0 ? storedData.storageLocations : DEFAULT_STORAGE_LOCATIONS,
+          // If no individual equipment exists, create defaults
+          individualEquipment: storedData.individualEquipment && storedData.individualEquipment.length > 0 
+            ? storedData.individualEquipment 
+            : createDefaultIndividualEquipment(),
         };
         
         // Enhanced cleanup and validation on initialization
@@ -69,7 +75,7 @@ export const useInventoryData = () => {
           equipmentTypes: DEFAULT_EQUIPMENT_TYPES,
           storageLocations: DEFAULT_STORAGE_LOCATIONS,
           equipmentItems: createDefaultInventory(),
-          individualEquipment: [],
+          individualEquipment: createDefaultIndividualEquipment(),
           lastSync: new Date(),
         };
         setData(initialData);

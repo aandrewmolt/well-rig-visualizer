@@ -19,10 +19,10 @@ export const useEquipmentValidatorV2 = (jobId: string) => {
     });
 
     // Add other equipment requirements
-    if (usage.gauges > 0) requiredQuantities['7'] = usage.gauges;
-    if (usage.adapters > 0) requiredQuantities['9'] = usage.adapters;
-    if (usage.computers > 0) requiredQuantities['11'] = usage.computers;
-    if (usage.satellite > 0) requiredQuantities['10'] = usage.satellite;
+    if (usage.gauges > 0) requiredQuantities['pressure-gauge-1502'] = usage.gauges;
+    if (usage.adapters > 0) requiredQuantities['y-adapter'] = usage.adapters;
+    if (usage.computers > 0) requiredQuantities['customer-computer'] = usage.computers;
+    if (usage.satellite > 0) requiredQuantities['starlink'] = usage.satellite;
 
     // Check consistency
     let isConsistent = true;
@@ -58,10 +58,10 @@ export const useEquipmentValidatorV2 = (jobId: string) => {
 
     // Check other equipment availability
     const equipmentChecks = [
-      { typeId: '7', quantity: usage.gauges, name: '1502 Pressure Gauge' },
-      { typeId: '9', quantity: usage.adapters, name: 'Y Adapters' },
-      { typeId: '11', quantity: usage.computers, name: 'Customer Computer' },
-      { typeId: '10', quantity: usage.satellite, name: 'Starlink' },
+      { typeId: 'pressure-gauge-1502', quantity: usage.gauges, name: '1502 Pressure Gauge' },
+      { typeId: 'y-adapter', quantity: usage.adapters, name: 'Y Adapter' },
+      { typeId: 'customer-computer', quantity: usage.computers, name: 'Customer Computer' },
+      { typeId: 'starlink', quantity: usage.satellite, name: 'Starlink' },
     ];
 
     equipmentChecks.forEach(({ typeId, quantity, name }) => {

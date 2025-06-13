@@ -36,9 +36,9 @@ const JobValidationHelper: React.FC<JobValidationHelperProps> = ({
 
     // Define type mapping for cable types to equipment type IDs
     const typeMapping: { [key: string]: string } = {
-      '100ft': '1',
-      '200ft': '2',
-      '300ft': '4',
+      '100ft': '100ft-cable',
+      '200ft': '200ft-cable',
+      '300ft': '300ft-cable-new',
     };
 
     // Check deployed equipment consistency
@@ -129,10 +129,10 @@ const JobValidationHelper: React.FC<JobValidationHelperProps> = ({
 
     // Check other equipment with enhanced validation
     const otherEquipment = [
-      { typeId: '7', needed: equipmentUsage.gauges, name: '1502 Pressure Gauge' },
-      { typeId: '9', needed: equipmentUsage.adapters, name: 'Y Adapters' },
-      { typeId: '11', needed: equipmentUsage.computers, name: 'Customer Computer' },
-      { typeId: '10', needed: equipmentUsage.satellite, name: 'Starlink' },
+      { typeId: 'pressure-gauge-1502', needed: equipmentUsage.gauges, name: '1502 Pressure Gauge' },
+      { typeId: 'y-adapter', needed: equipmentUsage.adapters, name: 'Y Adapter' },
+      { typeId: 'customer-computer', needed: equipmentUsage.computers, name: 'Customer Computer' },
+      { typeId: 'starlink', needed: equipmentUsage.satellite, name: 'Starlink' },
     ];
 
     otherEquipment.forEach(({ typeId, needed, name }) => {

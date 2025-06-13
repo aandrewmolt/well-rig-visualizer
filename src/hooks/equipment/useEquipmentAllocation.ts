@@ -105,10 +105,10 @@ export const useEquipmentAllocation = (jobId: string) => {
 
     // Allocate other equipment
     const equipmentAllocations = [
-      { typeId: '7', quantity: usage.gauges, name: '1502 Pressure Gauge' },
-      { typeId: '9', quantity: usage.adapters, name: 'Y Adapters' },
-      { typeId: '11', quantity: usage.computers, name: 'Customer Computer' },
-      { typeId: '10', quantity: usage.satellite, name: 'Starlink' },
+      { typeId: 'pressure-gauge-1502', quantity: usage.gauges, name: '1502 Pressure Gauge' },
+      { typeId: 'y-adapter', quantity: usage.adapters, name: 'Y Adapter' },
+      { typeId: 'customer-computer', quantity: usage.computers, name: 'Customer Computer' },
+      { typeId: 'starlink', quantity: usage.satellite, name: 'Starlink' },
     ];
 
     for (const { typeId, quantity, name } of equipmentAllocations) {

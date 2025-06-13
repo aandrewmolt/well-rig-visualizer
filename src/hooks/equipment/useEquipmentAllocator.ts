@@ -154,9 +154,9 @@ export const useEquipmentAllocator = (jobId: string) => {
 
     // Type mapping for allocation
     const typeMapping: { [key: string]: string } = {
-      '100ft': '1',
-      '200ft': '2',
-      '300ft': '4',
+      '100ft': '100ft-cable',
+      '200ft': '200ft-cable',
+      '300ft': '300ft-cable-new',
     };
 
     // Allocate cables
@@ -177,10 +177,10 @@ export const useEquipmentAllocator = (jobId: string) => {
 
     // Allocate other equipment
     const allocations = [
-      { typeId: '7', quantity: usage.gauges, name: '1502 Pressure Gauge' },
-      { typeId: '9', quantity: usage.adapters, name: 'Y Adapters' },
-      { typeId: '11', quantity: usage.computers, name: 'Customer Computer' },
-      { typeId: '10', quantity: usage.satellite, name: 'Starlink' },
+      { typeId: 'pressure-gauge-1502', quantity: usage.gauges, name: '1502 Pressure Gauge' },
+      { typeId: 'y-adapter', quantity: usage.adapters, name: 'Y Adapter' },
+      { typeId: 'customer-computer', quantity: usage.computers, name: 'Customer Computer' },
+      { typeId: 'starlink', quantity: usage.satellite, name: 'Starlink' },
     ];
 
     allocations.forEach(({ typeId, quantity, name }) => {

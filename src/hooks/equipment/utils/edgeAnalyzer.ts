@@ -34,14 +34,14 @@ export const analyzeEdges = (
     } else if (edgeData?.cableType) {
       // Map legacy cable type names to IDs
       const typeMapping: { [key: string]: string } = {
-        '100ft': '1',
-        '200ft': '2', 
-        '300ft': '4',
+        '100ft': '100ft-cable',
+        '200ft': '200ft-cable', 
+        '300ft': '300ft-cable-new',
       };
-      cableTypeId = typeMapping[edgeData.cableType] || '2'; // Default to 200ft
+      cableTypeId = typeMapping[edgeData.cableType] || '200ft-cable'; // Default to 200ft
     } else {
       // Default to 200ft cable if no type specified
-      cableTypeId = '2';
+      cableTypeId = '200ft-cable';
     }
 
     // Find equipment type details

@@ -3,24 +3,28 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, AlertCircle, Clock, RefreshCw } from 'lucide-react';
+import { CheckCircle, AlertCircle, Clock, RefreshCw, Package } from 'lucide-react';
 import { useInventory } from '@/contexts/InventoryContext';
 import { useSupabaseRealTimeInventory } from '@/hooks/supabase/useSupabaseRealTimeInventory';
+import { usePopulateIndividualEquipment } from '@/hooks/inventory/usePopulateIndividualEquipment';
 import { toast } from 'sonner';
 
 const DataSetupVerifier: React.FC = () => {
   const { data, isLoading } = useInventory();
   const { isConnected, lastSync, forceSync } = useSupabaseRealTimeInventory();
+  const { populateMissingIndividualEquipment } = usePopulateIndividualEquipment();
   const [verificationResults, setVerificationResults] = useState<{
     equipmentTypes: boolean;
     storageLocations: boolean;
     realTimeConnection: boolean;
     dataConsistency: boolean;
+    individualEquipment: boolean;
   }>({
     equipmentTypes: false,
     storageLocations: false,
     realTimeConnection: false,
-    dataConsistency: false
+    dataConsistency: false,
+    individualEquipment: false
   });
 
   useEffect(() => {
@@ -50,12 +54,16 @@ const DataSetupVerifier: React.FC = () => {
         data.storageLocations.some(location => location.id === item.locationId)
       );
       const dataConsistency = allEquipmentTypesValid && allLocationsValid;
+      
+      // Check individual equipment
+      const hasIndividualEquipment = data.individualEquipment.length >= 20; // Expected minimum
 
       setVerificationResults({
         equipmentTypes: hasRequiredTypes,
         storageLocations: hasStorageLocations,
         realTimeConnection: isConnected,
-        dataConsistency
+        dataConsistency,
+        individualEquipment: hasIndividualEquipment
       });
     };
 
@@ -167,6 +175,31 @@ const DataSetupVerifier: React.FC = () => {
             </div>
             {getStatusBadge(verificationResults.dataConsistency)}
           </div>
+          
+          <div className="flex items-center justify-between p-3 border rounded-lg">
+            <div className="flex items-center gap-3">
+              {getStatusIcon(verificationResults.individualEquipment)}
+              <div>
+                <div className="font-medium">Individual Equipment</div>
+                <div className="text-sm text-gray-500">
+                  {data.individualEquipment.length} items tracked
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              {getStatusBadge(verificationResults.individualEquipment)}
+              {!verificationResults.individualEquipment && (
+                <Button 
+                  onClick={populateMissingIndividualEquipment} 
+                  variant="outline" 
+                  size="sm"
+                >
+                  <Package className="h-4 w-4 mr-2" />
+                  Populate
+                </Button>
+              )}
+            </div>
+          </div>
         </div>
 
         <div className="pt-4 border-t">
@@ -199,6 +232,9 @@ const DataSetupVerifier: React.FC = () => {
               )}
               {!verificationResults.dataConsistency && (
                 <li>• Some equipment items reference invalid types or locations</li>
+              )}
+              {!verificationResults.individualEquipment && (
+                <li>• Click "Populate" to create individual equipment items (CC01-CC18, SL01-SL09, etc.)</li>
               )}
             </ul>
           </div>

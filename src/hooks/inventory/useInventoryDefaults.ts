@@ -1,5 +1,6 @@
 
-import { EquipmentType, StorageLocation, EquipmentItem } from '@/types/inventory';
+import { EquipmentType, StorageLocation, EquipmentItem, IndividualEquipment } from '@/types/inventory';
+import { useCreateDefaultIndividualEquipment } from './useCreateDefaultIndividualEquipment';
 
 export const DEFAULT_EQUIPMENT_TYPES: EquipmentType[] = [
   // Communication Equipment
@@ -30,6 +31,7 @@ export const DEFAULT_STORAGE_LOCATIONS: StorageLocation[] = [
 ];
 
 export const useInventoryDefaults = () => {
+  const { createDefaultIndividualEquipment } = useCreateDefaultIndividualEquipment();
   const createDefaultInventory = (): EquipmentItem[] => [
     // ShearStream Boxes - consolidated to Midland Office
     { id: 'ss001', typeId: 'shearstream-box', locationId: 'midland-office', quantity: 5, status: 'available', lastUpdated: new Date() },
@@ -61,7 +63,7 @@ export const useInventoryDefaults = () => {
       equipmentTypes: DEFAULT_EQUIPMENT_TYPES,
       storageLocations: DEFAULT_STORAGE_LOCATIONS,
       equipmentItems: createDefaultInventory(),
-      individualEquipment: [],
+      individualEquipment: createDefaultIndividualEquipment(),
       lastSync: new Date(),
     };
     

@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, ReactNode, useEffect } from 'react';
 import { EquipmentConflict, EquipmentAllocation } from '@/hooks/useInventoryMapperSync';
+import { useEquipmentAllocationPersistence } from '@/hooks/useEquipmentAllocationPersistence';
 
 interface SharedEquipmentState {
   status: string;
@@ -51,11 +52,13 @@ interface InventoryMapperProviderProps {
 }
 
 export const InventoryMapperProvider: React.FC<InventoryMapperProviderProps> = ({ children }) => {
+  const { loadAllocations, saveAllocations, clearExpiredAllocations } = useEquipmentAllocationPersistence();
   const [sharedEquipmentState] = useState<Map<string, SharedEquipmentState>>(new Map());
   const [conflicts, setConflicts] = useState<EquipmentConflict[]>([]);
-  const [allocations] = useState<Map<string, EquipmentAllocation>>(new Map());
+  const [allocations, setAllocationsState] = useState<Map<string, EquipmentAllocation>>(new Map());
   const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'error'>('idle');
   const [lastSyncTime, setLastSyncTime] = useState<Date>();
+  const [isInitialized, setIsInitialized] = useState(false);
   
   // Equipment change subscribers
   const [subscribers] = useState<Map<string, Set<(state: SharedEquipmentState) => void>>>(new Map());
@@ -115,26 +118,60 @@ export const InventoryMapperProvider: React.FC<InventoryMapperProviderProps> = (
     setConflicts([]);
   }, []);
 
+  // Load allocations on mount
+  useEffect(() => {
+    if (!isInitialized) {
+      const loaded = loadAllocations();
+      const cleaned = clearExpiredAllocations(loaded);
+      setAllocationsState(cleaned);
+      
+      // Update shared state with loaded allocations
+      cleaned.forEach((allocation, equipmentId) => {
+        updateSharedEquipment(equipmentId, {
+          status: allocation.status,
+          jobId: allocation.jobId
+        });
+      });
+      
+      setIsInitialized(true);
+    }
+  }, [isInitialized, loadAllocations, clearExpiredAllocations, updateSharedEquipment]);
+
+  // Save allocations whenever they change
+  useEffect(() => {
+    if (isInitialized) {
+      saveAllocations(allocations);
+    }
+  }, [allocations, saveAllocations, isInitialized]);
+
   // Allocation management
   const setAllocation = useCallback((equipmentId: string, allocation: EquipmentAllocation) => {
-    allocations.set(equipmentId, allocation);
+    setAllocationsState(prev => {
+      const newAllocations = new Map(prev);
+      newAllocations.set(equipmentId, allocation);
+      return newAllocations;
+    });
     
     // Update shared state
     updateSharedEquipment(equipmentId, {
       status: allocation.status,
       jobId: allocation.jobId
     });
-  }, [allocations, updateSharedEquipment]);
+  }, [updateSharedEquipment]);
 
   const removeAllocation = useCallback((equipmentId: string) => {
-    allocations.delete(equipmentId);
+    setAllocationsState(prev => {
+      const newAllocations = new Map(prev);
+      newAllocations.delete(equipmentId);
+      return newAllocations;
+    });
     
     // Update shared state
     updateSharedEquipment(equipmentId, {
       status: 'available',
       jobId: undefined
     });
-  }, [allocations, updateSharedEquipment]);
+  }, [updateSharedEquipment]);
 
   // Subscribe to equipment changes
   const subscribeToEquipmentChanges = useCallback((

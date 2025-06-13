@@ -22,6 +22,7 @@ interface UseSaveDataPreparationProps {
   selectedShearstreamBoxes: string[];
   selectedStarlink: string;
   selectedCustomerComputers: string[];
+  extrasOnLocation?: any[];
 }
 
 export const useSaveDataPreparation = ({
@@ -36,6 +37,7 @@ export const useSaveDataPreparation = ({
   selectedShearstreamBoxes,
   selectedStarlink,
   selectedCustomerComputers,
+  extrasOnLocation = [],
 }: UseSaveDataPreparationProps) => {
   const saveDataMemo = useMemo(() => {
     // Preserve ALL edge data with enhanced data structure
@@ -145,6 +147,7 @@ export const useSaveDataPreparation = ({
         customerComputerIds: selectedCustomerComputers.filter(Boolean),
       } as JobEquipmentAssignment,
       equipmentAllocated: true,
+      extrasOnLocation: extrasOnLocation,
       lastSaved: new Date().toISOString(),
     };
   }, [
@@ -158,7 +161,8 @@ export const useSaveDataPreparation = ({
     selectedCableType,
     selectedShearstreamBoxes,
     selectedStarlink,
-    selectedCustomerComputers
+    selectedCustomerComputers,
+    extrasOnLocation
   ]);
 
   return { saveDataMemo };

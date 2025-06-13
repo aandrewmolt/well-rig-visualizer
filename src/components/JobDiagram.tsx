@@ -81,6 +81,12 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
     updateWellsideGaugeName,
   } = useJobDiagramCore(job);
 
+  const {
+    extrasOnLocation,
+    handleAddExtra,
+    handleRemoveExtra,
+  } = useExtrasOnLocation();
+
   const { manualSave, immediateSave } = useJobDiagramSave({
     job,
     nodes,
@@ -94,6 +100,7 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
     selectedShearstreamBoxes,
     selectedStarlink,
     selectedCustomerComputers,
+    extrasOnLocation,
   });
 
   // Equipment tracking and validation
@@ -145,12 +152,6 @@ const JobDiagram: React.FC<JobDiagramProps> = ({ job }) => {
     validationResults,
     isValidating,
   } = useEquipmentAllocationValidator();
-
-  const {
-    extrasOnLocation,
-    handleAddExtra,
-    handleRemoveExtra,
-  } = useExtrasOnLocation();
 
   const {
     updateWellName,

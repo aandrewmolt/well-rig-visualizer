@@ -1,6 +1,8 @@
 
 import React, { useCallback } from 'react';
 import { useSupabaseJobs } from '@/hooks/useSupabaseJobs';
+import { useEquipmentNameSync } from '@/hooks/useEquipmentNameSync';
+import { useExtrasEquipmentSync } from '@/hooks/useExtrasEquipmentSync';
 
 interface UseSaveOperationsProps {
   saveDataMemo: any;
@@ -26,6 +28,8 @@ export const useSaveOperations = ({
   currentDataString,
 }: UseSaveOperationsProps) => {
   const { saveJob } = useSupabaseJobs();
+  const { syncJobEquipmentNames } = useEquipmentNameSync();
+  const { syncAllExtras } = useExtrasEquipmentSync(saveDataMemo.id);
 
   const performSave = useCallback(() => {
     // Prevent multiple saves running simultaneously
@@ -53,6 +57,28 @@ export const useSaveOperations = ({
       
       // Immediate save with enhanced debugging
       saveJob(saveDataMemo);
+      
+      // Sync equipment names to inventory
+      if (saveDataMemo.equipmentAssignment) {
+        syncJobEquipmentNames(
+          {
+            shearstreamBoxIds: saveDataMemo.equipmentAssignment.shearstreamBoxIds || [],
+            starlinkId: saveDataMemo.equipmentAssignment.starlinkId,
+            customerComputerIds: saveDataMemo.equipmentAssignment.customerComputerIds || []
+          },
+          {
+            mainBoxName: saveDataMemo.mainBoxName,
+            satelliteName: saveDataMemo.satelliteName,
+            customerComputerNames: saveDataMemo.companyComputerNames
+          }
+        );
+      }
+      
+      // Sync extras equipment
+      if (saveDataMemo.extrasOnLocation && saveDataMemo.extrasOnLocation.length > 0) {
+        syncAllExtras(saveDataMemo.extrasOnLocation);
+      }
+      
       setSaveInProgress(false);
     } else if (!isInitialLoadComplete()) {
       console.log('Skipping save - initial load not complete');
@@ -61,7 +87,7 @@ export const useSaveOperations = ({
     } else if (!isInitialized) {
       console.log('Skipping save - not initialized yet');
     }
-  }, [isInitialized, hasDataChanged, saveJob, saveDataMemo, setSaveInProgress, markAsSaved, isSaveInProgress, isInitialLoadComplete]);
+  }, [isInitialized, hasDataChanged, saveJob, saveDataMemo, setSaveInProgress, markAsSaved, isSaveInProgress, isInitialLoadComplete, syncJobEquipmentNames, syncAllExtras]);
 
   // Enhanced manual save function for user-triggered saves
   const manualSave = useCallback(() => {
@@ -77,10 +103,32 @@ export const useSaveOperations = ({
       forceSave(); // Force save
       setSaveInProgress(true);
       saveJob(saveDataMemo);
+      
+      // Sync equipment names to inventory
+      if (saveDataMemo.equipmentAssignment) {
+        syncJobEquipmentNames(
+          {
+            shearstreamBoxIds: saveDataMemo.equipmentAssignment.shearstreamBoxIds || [],
+            starlinkId: saveDataMemo.equipmentAssignment.starlinkId,
+            customerComputerIds: saveDataMemo.equipmentAssignment.customerComputerIds || []
+          },
+          {
+            mainBoxName: saveDataMemo.mainBoxName,
+            satelliteName: saveDataMemo.satelliteName,
+            customerComputerNames: saveDataMemo.companyComputerNames
+          }
+        );
+      }
+      
+      // Sync extras equipment
+      if (saveDataMemo.extrasOnLocation && saveDataMemo.extrasOnLocation.length > 0) {
+        syncAllExtras(saveDataMemo.extrasOnLocation);
+      }
+      
       markAsSaved();
       setSaveInProgress(false);
     }
-  }, [isInitialized, saveJob, saveDataMemo, forceSave, setSaveInProgress, markAsSaved]);
+  }, [isInitialized, saveJob, saveDataMemo, forceSave, setSaveInProgress, markAsSaved, syncJobEquipmentNames, syncAllExtras]);
 
   return {
     performSave,

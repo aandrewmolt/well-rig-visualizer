@@ -4,6 +4,7 @@ import { Node } from '@xyflow/react';
 import { useEquipmentDeployment } from './useEquipmentDeployment';
 import { useEquipmentNodeUpdater } from './useEquipmentNodeUpdater';
 import { useInventory } from '@/contexts/InventoryContext';
+import { toast } from 'sonner';
 
 interface Job {
   id: string;
@@ -54,12 +55,18 @@ export const useEquipmentSelection = ({
     equipmentId: string, 
     index?: number
   ) => {
-    const equipment = data.individualEquipment.find(eq => eq.id === equipmentId);
+    const equipment = data.individualEquipment.find(eq => eq.equipmentId === equipmentId);
     if (!equipment) return;
+
+    // Check if equipment is red-tagged or in maintenance
+    if (equipment.status === 'red-tagged' || equipment.status === 'maintenance') {
+      toast.error(`Equipment ${equipment.name} is not available (Status: ${equipment.status})`);
+      return;
+    }
 
     // Use sync validation if available
     if (validateEquipmentAvailability) {
-      const isAvailable = await validateEquipmentAvailability(equipmentId, job.id);
+      const isAvailable = await validateEquipmentAvailability(equipment.equipmentId, job.id);
       if (!isAvailable) {
         // Validation failed, equipment is not available
         return;

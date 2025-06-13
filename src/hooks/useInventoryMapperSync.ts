@@ -1,6 +1,7 @@
 import { useEffect, useCallback, useRef } from 'react';
 import { useInventoryMapperContext } from '@/contexts/InventoryMapperContext';
 import { useInventory } from '@/contexts/InventoryContext';
+import { useInventoryMapperRealtime } from './useInventoryMapperRealtime';
 import { toast } from 'sonner';
 import { EquipmentItem, IndividualEquipment } from '@/types/inventory';
 import { JobDiagram } from './useSupabaseJobs';
@@ -46,7 +47,11 @@ export const useInventoryMapperSync = (): UseInventoryMapperSyncResult => {
     addConflict, 
     removeConflict,
     conflicts,
-    allocations 
+    allocations,
+    setAllocation,
+    removeAllocation,
+    setSyncStatus,
+    setLastSyncTime
   } = useInventoryMapperContext();
   
   const { 
@@ -56,6 +61,8 @@ export const useInventoryMapperSync = (): UseInventoryMapperSyncResult => {
     getAvailableQuantityByType,
     syncData
   } = useInventory();
+  
+  const { batchSyncInventoryStatus } = useBatchEquipmentSync();
 
   const isValidatingRef = useRef(false);
   const syncTimeoutRef = useRef<NodeJS.Timeout>();
@@ -70,7 +77,7 @@ export const useInventoryMapperSync = (): UseInventoryMapperSyncResult => {
 
       // Check individual equipment
       const individualEquipment = inventoryData.individualEquipment.find(
-        item => item.equipmentId === equipmentId || item.id === equipmentId
+        item => item.equipmentId === equipmentId
       );
 
       if (individualEquipment) {
@@ -172,7 +179,7 @@ export const useInventoryMapperSync = (): UseInventoryMapperSyncResult => {
 
       // Update inventory status
       const individualEquipment = inventoryData.individualEquipment.find(
-        item => item.equipmentId === equipmentId || item.id === equipmentId
+        item => item.equipmentId === equipmentId
       );
 
       if (individualEquipment) {
@@ -224,7 +231,7 @@ export const useInventoryMapperSync = (): UseInventoryMapperSyncResult => {
 
       // Update inventory status
       const individualEquipment = inventoryData.individualEquipment.find(
-        item => item.equipmentId === equipmentId || item.id === equipmentId
+        item => item.equipmentId === equipmentId
       );
 
       if (individualEquipment) {
@@ -288,40 +295,30 @@ export const useInventoryMapperSync = (): UseInventoryMapperSyncResult => {
     }
   }, [releaseEquipment, allocateEquipment, removeConflict]);
 
-  // Sync inventory status with current allocations
+  // Sync inventory status with current allocations (with batch operations)
   const syncInventoryStatus = useCallback(async (): Promise<void> => {
     try {
-      const updates: Promise<void>[] = [];
-
-      // Sync individual equipment
-      for (const equipment of inventoryData.individualEquipment) {
-        const allocation = allocations.get(equipment.equipmentId);
-        
-        if (allocation && equipment.status !== 'deployed') {
-          updates.push(
-            updateIndividualEquipment(equipment.id, {
-              status: 'deployed',
-              jobId: allocation.jobId,
-              lastUpdated: new Date()
-            })
-          );
-        } else if (!allocation && equipment.status === 'deployed') {
-          updates.push(
-            updateIndividualEquipment(equipment.id, {
-              status: 'available',
-              jobId: undefined,
-              lastUpdated: new Date()
-            })
-          );
+      setSyncStatus('syncing');
+      const startTime = performance.now();
+      
+      // Collect all deployed equipment IDs from allocations
+      const deployedEquipmentIds: string[] = [];
+      allocations.forEach((allocation, equipmentId) => {
+        if (allocation.status === 'allocated') {
+          deployedEquipmentIds.push(equipmentId);
         }
-      }
+      });
 
-      // Sync regular equipment items
+      // Use batch sync for individual equipment
+      const result = await batchSyncInventoryStatus('current', deployedEquipmentIds);
+      
+      // Handle bulk equipment items separately
+      const bulkUpdates: Promise<void>[] = [];
       for (const item of inventoryData.equipmentItems) {
         const allocation = allocations.get(item.id);
         
         if (allocation && item.status !== 'deployed') {
-          updates.push(
+          bulkUpdates.push(
             updateSingleEquipmentItem(item.id, {
               status: 'deployed',
               jobId: allocation.jobId,
@@ -329,7 +326,7 @@ export const useInventoryMapperSync = (): UseInventoryMapperSyncResult => {
             })
           );
         } else if (!allocation && item.status === 'deployed') {
-          updates.push(
+          bulkUpdates.push(
             updateSingleEquipmentItem(item.id, {
               status: 'available',
               jobId: undefined,
@@ -339,16 +336,27 @@ export const useInventoryMapperSync = (): UseInventoryMapperSyncResult => {
         }
       }
 
-      await Promise.all(updates);
+      await Promise.all(bulkUpdates);
       await syncData();
       
-      toast.success('Inventory status synchronized');
+      const endTime = performance.now();
+      const duration = Math.round(endTime - startTime);
+      
+      setSyncStatus('idle');
+      setLastSyncTime(new Date());
+      
+      if (result.successCount > 0 || bulkUpdates.length > 0) {
+        toast.success(`Inventory synced: ${result.successCount} individual, ${bulkUpdates.length} bulk items (${duration}ms)`);
+      } else {
+        toast.info('Inventory already in sync');
+      }
     } catch (error) {
       console.error('Error syncing inventory status:', error);
+      setSyncStatus('error');
       toast.error('Failed to sync inventory status');
     }
-  }, [inventoryData, allocations, updateIndividualEquipment, 
-      updateSingleEquipmentItem, syncData]);
+  }, [inventoryData, allocations, updateSingleEquipmentItem, syncData, 
+      batchSyncInventoryStatus, setSyncStatus, setLastSyncTime]);
 
   // Get equipment status
   const getEquipmentStatus = useCallback((equipmentId: string): 
@@ -361,7 +369,7 @@ export const useInventoryMapperSync = (): UseInventoryMapperSyncResult => {
 
     // Check inventory
     const individualEquipment = inventoryData.individualEquipment.find(
-      item => item.equipmentId === equipmentId || item.id === equipmentId
+      item => item.equipmentId === equipmentId
     );
 
     if (individualEquipment) {
@@ -382,6 +390,59 @@ export const useInventoryMapperSync = (): UseInventoryMapperSyncResult => {
 
     return 'unavailable';
   }, [sharedEquipmentState, inventoryData]);
+
+  // Sync job equipment with batch operations
+  const syncJobEquipment = useCallback(async (job: any): Promise<void> => {
+    try {
+      setSyncStatus('syncing');
+      const deployedEquipmentIds: string[] = [];
+      
+      // Collect all equipment that should be deployed to this job
+      if (job.equipmentAssignment) {
+        const assignment = job.equipmentAssignment;
+        
+        // Add ShearStream boxes
+        assignment.shearstreamBoxIds?.forEach((id: string) => {
+          if (id) deployedEquipmentIds.push(id);
+        });
+        
+        // Add Starlink
+        if (assignment.starlinkId) {
+          deployedEquipmentIds.push(assignment.starlinkId);
+        }
+        
+        // Add Customer Computers
+        assignment.customerComputerIds?.forEach((id: string) => {
+          if (id) deployedEquipmentIds.push(id);
+        });
+      }
+      
+      // Use batch sync for better performance
+      const result = await batchSyncInventoryStatus(job.id, deployedEquipmentIds);
+      
+      // Update allocations
+      deployedEquipmentIds.forEach(equipmentId => {
+        setAllocation(equipmentId, {
+          equipmentId: equipmentId,
+          jobId: job.id,
+          jobName: job.name,
+          status: 'allocated',
+          timestamp: new Date()
+        });
+      });
+      
+      setSyncStatus('idle');
+      setLastSyncTime(new Date());
+      
+      if (result.successCount > 0) {
+        toast.success(`Job equipment synced: ${result.successCount} items in ${result.duration}ms`);
+      }
+    } catch (error) {
+      console.error('Failed to sync job equipment:', error);
+      setSyncStatus('error');
+      toast.error('Failed to sync job equipment');
+    }
+  }, [batchSyncInventoryStatus, setAllocation, setSyncStatus, setLastSyncTime]);
 
   // Get all equipment assigned to a job
   const getJobEquipment = useCallback((jobId: string): string[] => {
@@ -411,22 +472,19 @@ export const useInventoryMapperSync = (): UseInventoryMapperSyncResult => {
   }, [allocations, inventoryData]);
 
   // Set up real-time monitoring
+  const { isConnected: isRealtimeConnected } = useInventoryMapperRealtime();
+
   useEffect(() => {
-    // Monitor for changes in inventory data
-    const checkForChanges = () => {
-      // This would be enhanced with WebSocket or Supabase real-time subscriptions
-      // For now, it's a placeholder for the monitoring logic
-    };
-
-    const interval = setInterval(checkForChanges, 30000); // Check every 30 seconds
-
+    if (isRealtimeConnected) {
+      console.log('Real-time sync is active');
+    }
+    
     return () => {
-      clearInterval(interval);
       if (syncTimeoutRef.current) {
         clearTimeout(syncTimeoutRef.current);
       }
     };
-  }, []);
+  }, [isRealtimeConnected]);
 
   return {
     isValidating: isValidatingRef.current,
@@ -437,6 +495,7 @@ export const useInventoryMapperSync = (): UseInventoryMapperSyncResult => {
     releaseEquipment,
     resolveConflict,
     syncInventoryStatus,
+    syncJobEquipment,
     getEquipmentStatus,
     getJobEquipment
   };

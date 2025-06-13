@@ -11,7 +11,6 @@ import EquipmentListFilters from './EquipmentListFilters';
 import EquipmentFormDialog from './EquipmentFormDialog';
 import EquipmentTable from './EquipmentTable';
 import IndividualEquipmentTable from './IndividualEquipmentTable';
-import EquipmentMigrationButton from './EquipmentMigrationButton';
 import ConflictIndicator from './ConflictIndicator';
 import { SyncStatusIndicator } from '@/components/InventoryMapperSync';
 
@@ -238,7 +237,6 @@ const EquipmentListView = () => {
                 </>
               )}
             </Button>
-            <EquipmentMigrationButton />
             <div className="flex rounded-lg border">
               <button
                 onClick={() => setViewMode('all')}

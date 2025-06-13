@@ -8,7 +8,6 @@ import JobCreationDialog from '@/components/jobs/JobCreationDialog';
 import { useSupabaseJobs } from '@/hooks/useSupabaseJobs';
 import { useSupabaseInventory } from '@/hooks/useSupabaseInventory';
 import JobDiagram from '@/components/JobDiagram';
-import { DateFixButton } from '@/components/admin/DateFixButton';
 
 const CableJobs = () => {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -75,7 +74,6 @@ const CableJobs = () => {
               </p>
             </div>
             <div className="flex gap-2">
-              <DateFixButton />
               <Button 
                 onClick={() => setShowCreateDialog(true)}
                 className="bg-blue-600 hover:bg-blue-700"

@@ -26,6 +26,7 @@ interface UseJobDiagramSaveProps {
   selectedShearstreamBoxes: string[];
   selectedStarlink: string;
   selectedCustomerComputers: string[];
+  extrasOnLocation?: any[];
 }
 
 export const useJobDiagramSave = ({
@@ -41,6 +42,7 @@ export const useJobDiagramSave = ({
   selectedShearstreamBoxes,
   selectedStarlink,
   selectedCustomerComputers,
+  extrasOnLocation = [],
 }: UseJobDiagramSaveProps) => {
   // Prepare save data
   const { saveDataMemo } = useSaveDataPreparation({
@@ -55,6 +57,7 @@ export const useJobDiagramSave = ({
     selectedShearstreamBoxes,
     selectedStarlink,
     selectedCustomerComputers,
+    extrasOnLocation,
   });
 
   // Manage save state

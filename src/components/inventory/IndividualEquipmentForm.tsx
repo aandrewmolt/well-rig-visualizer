@@ -39,19 +39,6 @@ const IndividualEquipmentForm: React.FC<IndividualEquipmentFormProps> = ({
   onReset,
   onPrefixChange,
 }) => {
-  const generateSuggestedId = () => {
-    const prefix = formData.selectedPrefix || equipmentType.defaultIdPrefix || 'EQ-';
-    const existingIds = allEquipment
-      .map(eq => eq.equipmentId)
-      .filter(id => id.startsWith(prefix))
-      .map(id => {
-        const num = id.replace(prefix, '').replace('-', '');
-        return parseInt(num) || 0;
-      });
-    
-    const nextNum = Math.max(0, ...existingIds) + 1;
-    return `${prefix}${nextNum.toString().padStart(3, '0')}`;
-  };
 
   const handleSubmit = () => {
     onSubmit(true);
@@ -75,13 +62,13 @@ const IndividualEquipmentForm: React.FC<IndividualEquipmentFormProps> = ({
                 id="equipmentId"
                 value={formData.equipmentId}
                 onChange={(e) => setFormData(prev => ({ ...prev, equipmentId: e.target.value }))}
-                placeholder={generateSuggestedId()}
+                placeholder={formData.equipmentId || 'Enter equipment ID'}
               />
               <Button 
                 type="button" 
                 variant="outline" 
                 size="sm"
-                onClick={() => setFormData(prev => ({ ...prev, equipmentId: generateSuggestedId() }))}
+                onClick={() => onPrefixChange(formData.selectedPrefix || equipmentType.defaultIdPrefix || '')}
               >
                 Suggest
               </Button>
@@ -95,7 +82,7 @@ const IndividualEquipmentForm: React.FC<IndividualEquipmentFormProps> = ({
               id="name"
               value={formData.name}
               onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-              placeholder={`${equipmentType.name} ${formData.equipmentId || generateSuggestedId()}`}
+              placeholder={formData.name || `${equipmentType.name}`}
             />
           </div>
 

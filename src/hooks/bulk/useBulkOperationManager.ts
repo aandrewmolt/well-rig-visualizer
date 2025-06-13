@@ -42,7 +42,11 @@ export const useBulkOperationManager = () => {
   }, []);
 
   const getOperationHistory = useCallback(() => {
-    return operations.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    return operations.sort((a, b) => {
+      const aTime = a.createdAt?.getTime() || 0;
+      const bTime = b.createdAt?.getTime() || 0;
+      return bTime - aTime;
+    });
   }, [operations]);
 
   const clearCompletedOperations = useCallback(() => {

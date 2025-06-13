@@ -59,8 +59,8 @@ export const useSupabaseJobs = () => {
         fracComPort: (job as any).frac_com_port || '',
         gaugeComPort: (job as any).gauge_com_port || '',
         enhancedConfig: (job as any).enhanced_config || {},
-        createdAt: new Date(job.created_at),
-        updatedAt: new Date(job.updated_at),
+        createdAt: job.created_at ? new Date(job.created_at) : new Date(),
+        updatedAt: job.updated_at ? new Date(job.updated_at) : new Date(),
       })) as JobDiagram[];
     }
   });

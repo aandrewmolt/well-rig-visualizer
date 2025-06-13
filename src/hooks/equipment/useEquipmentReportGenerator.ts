@@ -54,7 +54,7 @@ export const useEquipmentReportGenerator = () => {
 
     // Calculate equipment breakdown
     if (usage.gauges > 0) {
-      report.breakdown.equipment['Pressure Gauges'] = usage.gauges;
+      report.breakdown.equipment['1502 Pressure Gauge'] = usage.gauges;
       report.summary.totalItems += usage.gauges;
     }
     if (usage.adapters > 0) {
@@ -62,11 +62,11 @@ export const useEquipmentReportGenerator = () => {
       report.summary.totalItems += usage.adapters;
     }
     if (usage.computers > 0) {
-      report.breakdown.equipment['Company Computers'] = usage.computers;
+      report.breakdown.equipment['Customer Computer'] = usage.computers;
       report.summary.totalItems += usage.computers;
     }
     if (usage.satellite > 0) {
-      report.breakdown.equipment['Satellite Equipment'] = usage.satellite;
+      report.breakdown.equipment['Starlink'] = usage.satellite;
       report.summary.totalItems += usage.satellite;
     }
 

@@ -42,10 +42,10 @@ export const useEquipmentValidation = (jobId?: string, nodes?: any[], edges?: an
 
     // Check other equipment types
     const equipmentChecks = [
-      { typeId: '7', usage: usage.gauges, name: 'Pressure Gauges' },
+      { typeId: '7', usage: usage.gauges, name: '1502 Pressure Gauge' },
       { typeId: '9', usage: usage.adapters, name: 'Y Adapters' },
-      { typeId: '11', usage: usage.computers, name: 'Company Computers' },
-      { typeId: '10', usage: usage.satellite, name: 'Satellite Equipment' },
+      { typeId: '11', usage: usage.computers, name: 'Customer Computer' },
+      { typeId: '10', usage: usage.satellite, name: 'Starlink' },
     ];
 
     equipmentChecks.forEach(({ typeId, usage: requiredQuantity, name }) => {

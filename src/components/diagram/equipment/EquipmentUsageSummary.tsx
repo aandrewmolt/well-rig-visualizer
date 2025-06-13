@@ -50,7 +50,7 @@ const EquipmentUsageSummary: React.FC<EquipmentUsageSummaryProps> = ({
         ))}
         {equipmentUsage.gauges > 0 && (
           <div className="flex justify-between text-sm">
-            <span>Pressure Gauges:</span>
+            <span>1502 Pressure Gauge:</span>
             <Badge variant="secondary">{equipmentUsage.gauges}</Badge>
           </div>
         )}
@@ -62,13 +62,13 @@ const EquipmentUsageSummary: React.FC<EquipmentUsageSummaryProps> = ({
         )}
         {equipmentUsage.computers > 0 && (
           <div className="flex justify-between text-sm">
-            <span>Company Computers:</span>
+            <span>Customer Computer:</span>
             <Badge variant="secondary">{equipmentUsage.computers}</Badge>
           </div>
         )}
         {equipmentUsage.satellite > 0 && (
           <div className="flex justify-between text-sm">
-            <span>Satellite:</span>
+            <span>Starlink:</span>
             <Badge variant="secondary">{equipmentUsage.satellite}</Badge>
           </div>
         )}

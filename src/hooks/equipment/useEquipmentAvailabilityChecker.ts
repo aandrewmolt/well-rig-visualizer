@@ -48,22 +48,34 @@ export const useEquipmentAvailabilityChecker = () => {
 
     // Check other equipment availability
     const equipmentChecks = [
-      { typeId: '7', quantity: usage.gauges, name: 'Pressure Gauges' },
+      { typeId: '7', quantity: usage.gauges, name: '1502 Pressure Gauge' },
       { typeId: '9', quantity: usage.adapters, name: 'Y Adapters' },
-      { typeId: '11', quantity: usage.computers, name: 'Company Computers' },
-      { typeId: '10', quantity: usage.satellite, name: 'Satellite Equipment' },
+      { typeId: '11', quantity: usage.computers, name: 'Customer Computer' },
+      { typeId: '10', quantity: usage.satellite, name: 'Starlink' },
     ];
 
     equipmentChecks.forEach(({ typeId, quantity, name }) => {
       if (quantity > 0) {
+        // Check bulk equipment
         const availableItems = data.equipmentItems.filter(
           item => 
             item.typeId === typeId && 
             item.locationId === locationId && 
             item.status === 'available'
         );
+        const bulkQuantity = availableItems.reduce((sum, item) => sum + item.quantity, 0);
 
-        const availableQuantity = availableItems.reduce((sum, item) => sum + item.quantity, 0);
+        // Check individual equipment
+        const availableIndividualItems = data.individualEquipment.filter(
+          item => 
+            item.typeId === typeId && 
+            item.locationId === locationId && 
+            item.status === 'available'
+        );
+        const individualQuantity = availableIndividualItems.length;
+
+        // Total available is bulk + individual
+        const availableQuantity = bulkQuantity + individualQuantity;
 
         validation.availability[typeId] = {
           required: quantity,

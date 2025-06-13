@@ -58,10 +58,10 @@ export const useEquipmentValidatorV2 = (jobId: string) => {
 
     // Check other equipment availability
     const equipmentChecks = [
-      { typeId: '7', quantity: usage.gauges, name: 'Pressure Gauges' },
+      { typeId: '7', quantity: usage.gauges, name: '1502 Pressure Gauge' },
       { typeId: '9', quantity: usage.adapters, name: 'Y Adapters' },
-      { typeId: '11', quantity: usage.computers, name: 'Company Computers' },
-      { typeId: '10', quantity: usage.satellite, name: 'Satellite Equipment' },
+      { typeId: '11', quantity: usage.computers, name: 'Customer Computer' },
+      { typeId: '10', quantity: usage.satellite, name: 'Starlink' },
     ];
 
     equipmentChecks.forEach(({ typeId, quantity, name }) => {

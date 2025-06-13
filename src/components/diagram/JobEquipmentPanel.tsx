@@ -69,31 +69,47 @@ const JobEquipmentPanel: React.FC<JobEquipmentPanelProps> = ({
     const issues: string[] = [];
     
     Object.entries(usage.cables).forEach(([typeId, details]) => {
-      const available = data.equipmentItems
+      // Check bulk equipment
+      const availableBulk = data.equipmentItems
         .filter(item => item.typeId === typeId && item.locationId === selectedLocation && item.status === 'available')
         .reduce((sum, item) => sum + item.quantity, 0);
       
-      if (available < details.quantity) {
-        issues.push(`${details.typeName}: need ${details.quantity}, have ${available}`);
+      // Check individual equipment
+      const availableIndividual = data.individualEquipment
+        .filter(item => item.typeId === typeId && item.locationId === selectedLocation && item.status === 'available')
+        .length;
+      
+      const totalAvailable = availableBulk + availableIndividual;
+      
+      if (totalAvailable < details.quantity) {
+        issues.push(`${details.typeName}: need ${details.quantity}, have ${totalAvailable} (${availableBulk} bulk + ${availableIndividual} individual)`);
       }
     });
 
     // Check other equipment
     const equipmentChecks = [
-      { typeId: '7', quantity: usage.gauges, name: 'Pressure Gauges' },
+      { typeId: '7', quantity: usage.gauges, name: '1502 Pressure Gauge' },
       { typeId: '9', quantity: usage.adapters, name: 'Y Adapters' },
-      { typeId: '11', quantity: usage.computers, name: 'Company Computers' },
-      { typeId: '10', quantity: usage.satellite, name: 'Satellite Equipment' },
+      { typeId: '11', quantity: usage.computers, name: 'Customer Computer' },
+      { typeId: '10', quantity: usage.satellite, name: 'Starlink' },
     ];
 
     equipmentChecks.forEach(({ typeId, quantity, name }) => {
       if (quantity > 0) {
-        const available = data.equipmentItems
+        // Check bulk equipment
+        const availableBulk = data.equipmentItems
           .filter(item => item.typeId === typeId && item.locationId === selectedLocation && item.status === 'available')
           .reduce((sum, item) => sum + item.quantity, 0);
         
-        if (available < quantity) {
-          issues.push(`${name}: need ${quantity}, have ${available}`);
+        // Check individual equipment
+        const availableIndividual = data.individualEquipment
+          .filter(item => item.typeId === typeId && item.locationId === selectedLocation && item.status === 'available')
+          .length;
+        
+        const totalAvailable = availableBulk + availableIndividual;
+        
+        if (totalAvailable < quantity) {
+          issues.push(`${name}: need ${quantity}, have ${totalAvailable} (${availableBulk} bulk + ${availableIndividual} individual)`);
         }
       }
     });
@@ -152,7 +168,7 @@ const JobEquipmentPanel: React.FC<JobEquipmentPanelProps> = ({
               ))}
               {usage.gauges > 0 && (
                 <div className="flex justify-between">
-                  <span>Gauges:</span>
+                  <span>1502 Pressure Gauge:</span>
                   <span className="font-bold">{usage.gauges}</span>
                 </div>
               )}
@@ -164,13 +180,13 @@ const JobEquipmentPanel: React.FC<JobEquipmentPanelProps> = ({
               )}
               {usage.computers > 0 && (
                 <div className="flex justify-between">
-                  <span>Company Computers:</span>
+                  <span>Customer Computer:</span>
                   <span className="font-bold">{usage.computers}</span>
                 </div>
               )}
               {usage.satellite > 0 && (
                 <div className="flex justify-between">
-                  <span>Satellite:</span>
+                  <span>Starlink:</span>
                   <span className="font-bold">{usage.satellite}</span>
                 </div>
               )}

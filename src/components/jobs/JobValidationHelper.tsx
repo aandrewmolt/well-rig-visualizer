@@ -89,9 +89,17 @@ const JobValidationHelper: React.FC<JobValidationHelperProps> = ({
     Object.entries(equipmentUsage.cables).forEach(([cableType, needed]) => {
       const typeId = typeMapping[cableType];
       if (typeId) {
-        const available = data.equipmentItems
+        // Check bulk equipment
+        const availableBulk = data.equipmentItems
           .filter(item => item.typeId === typeId && item.locationId === selectedLocationId && item.status === 'available')
           .reduce((sum, item) => sum + item.quantity, 0);
+        
+        // Check individual equipment
+        const availableIndividual = data.individualEquipment
+          .filter(item => item.typeId === typeId && item.locationId === selectedLocationId && item.status === 'available')
+          .length;
+        
+        const available = availableBulk + availableIndividual;
         
         const deployed = data.equipmentItems
           .filter(item => item.typeId === typeId && item.jobId === jobId && item.status === 'deployed')
@@ -121,17 +129,25 @@ const JobValidationHelper: React.FC<JobValidationHelperProps> = ({
 
     // Check other equipment with enhanced validation
     const otherEquipment = [
-      { typeId: '7', needed: equipmentUsage.gauges, name: 'Pressure Gauges' },
+      { typeId: '7', needed: equipmentUsage.gauges, name: '1502 Pressure Gauge' },
       { typeId: '9', needed: equipmentUsage.adapters, name: 'Y Adapters' },
-      { typeId: '11', needed: equipmentUsage.computers, name: 'Company Computers' },
-      { typeId: '10', needed: equipmentUsage.satellite, name: 'Satellite' },
+      { typeId: '11', needed: equipmentUsage.computers, name: 'Customer Computer' },
+      { typeId: '10', needed: equipmentUsage.satellite, name: 'Starlink' },
     ];
 
     otherEquipment.forEach(({ typeId, needed, name }) => {
       if (needed > 0) {
-        const available = data.equipmentItems
+        // Check bulk equipment
+        const availableBulk = data.equipmentItems
           .filter(item => item.typeId === typeId && item.locationId === selectedLocationId && item.status === 'available')
           .reduce((sum, item) => sum + item.quantity, 0);
+        
+        // Check individual equipment
+        const availableIndividual = data.individualEquipment
+          .filter(item => item.typeId === typeId && item.locationId === selectedLocationId && item.status === 'available')
+          .length;
+        
+        const available = availableBulk + availableIndividual;
         
         const deployed = data.equipmentItems
           .filter(item => item.typeId === typeId && item.jobId === jobId && item.status === 'deployed')

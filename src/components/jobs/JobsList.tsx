@@ -6,6 +6,7 @@ import { useSupabaseInventory } from '@/hooks/useSupabaseInventory';
 import { useOfflineFirst } from '@/hooks/offline/useOfflineFirst';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { ClearOfflineDataButton } from '@/components/admin/ClearOfflineDataButton';
 import JobCard from './JobCard';
 import EmptyJobsState from './EmptyJobsState';
 
@@ -122,24 +123,28 @@ const JobsList: React.FC<JobsListProps> = ({ jobs, isLoading, onSelectJob, onDel
           )}
         </div>
         
-        {isOnline && !isSyncing && (pendingJobs.length > 0 || conflictJobs.length > 0) && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={manualSync}
-            className="gap-2"
-          >
-            <RefreshCw className="h-4 w-4" />
-            Sync Now
-          </Button>
-        )}
-        
-        {isSyncing && (
-          <div className="flex items-center gap-2 text-blue-600">
-            <RefreshCw className="h-4 w-4 animate-spin" />
-            <span className="text-sm">Syncing...</span>
-          </div>
-        )}
+        <div className="flex items-center gap-2">
+          {isOnline && !isSyncing && (pendingJobs.length > 0 || conflictJobs.length > 0) && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={manualSync}
+              className="gap-2"
+            >
+              <RefreshCw className="h-4 w-4" />
+              Sync Now
+            </Button>
+          )}
+          
+          {isSyncing && (
+            <div className="flex items-center gap-2 text-blue-600">
+              <RefreshCw className="h-4 w-4 animate-spin" />
+              <span className="text-sm">Syncing...</span>
+            </div>
+          )}
+          
+          <ClearOfflineDataButton />
+        </div>
       </div>
 
       {/* Jobs Grid */}

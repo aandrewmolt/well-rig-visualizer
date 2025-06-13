@@ -55,7 +55,11 @@ const JobCard: React.FC<JobCardProps> = ({
           {job.hasWellsideGauge && <p>Wellside Gauge: Yes</p>}
           <div className="flex items-center gap-2">
             <Calendar className="h-3 w-3" />
-            <span>Created: {job.createdAt ? job.createdAt.toLocaleDateString() : 'N/A'}</span>
+            <span>Created: {job.createdAt ? 
+              (job.createdAt instanceof Date ? 
+                job.createdAt.toLocaleDateString() : 
+                new Date(job.createdAt).toLocaleDateString()
+              ) : 'N/A'}</span>
           </div>
           <div className="flex items-center gap-2">
             <Badge variant={job.equipmentAllocated ? 'default' : 'secondary'}>

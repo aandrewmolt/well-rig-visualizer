@@ -8,6 +8,20 @@ export interface LocalJob {
   nodes: any;
   edges: any;
   equipmentAllocations: any;
+  hasWellsideGauge?: boolean;
+  companyComputerNames?: Record<string, string>;
+  equipmentAssignment?: any;
+  equipmentAllocated?: boolean;
+  mainBoxName?: string;
+  satelliteName?: string;
+  wellsideGaugeName?: string;
+  selectedCableType?: string;
+  fracBaudRate?: string;
+  gaugeBaudRate?: string;
+  fracComPort?: string;
+  gaugeComPort?: string;
+  enhancedConfig?: any;
+  createdAt?: string | Date;
   updatedAt: number;
   syncStatus: 'synced' | 'pending' | 'conflict';
 }
@@ -47,6 +61,14 @@ export class RigUpOfflineDatabase extends Dexie {
     
     this.version(1).stores({
       jobs: '++id, cloudId, name, updatedAt, syncStatus',
+      equipment: '++id, cloudId, name, type, status, locationId, serialNumber, syncStatus',
+      equipment_types: '++id, cloudId, name, category',
+      storage_locations: '++id, cloudId, name',
+      syncQueue: '++id, operation, tableName, timestamp'
+    });
+    
+    this.version(2).stores({
+      jobs: '++id, cloudId, name, updatedAt, syncStatus, createdAt',
       equipment: '++id, cloudId, name, type, status, locationId, serialNumber, syncStatus',
       equipment_types: '++id, cloudId, name, category',
       storage_locations: '++id, cloudId, name',

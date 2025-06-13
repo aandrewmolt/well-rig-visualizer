@@ -56,18 +56,75 @@ export function useOfflineFirst<T>({ tableName, enableAutoSync = true }: UseOffl
           .select('*');
           
         if (!error && remoteData) {
-          setData(remoteData as T[]);
+          // Transform the data to match the expected format
+          if (tableName === 'jobs') {
+            const transformedJobs = remoteData.map((job: any) => ({
+              id: job.id,
+              name: job.name,
+              wellCount: job.well_count,
+              hasWellsideGauge: job.has_wellside_gauge,
+              nodes: job.nodes,
+              edges: job.edges,
+              companyComputerNames: job.company_computer_names || {},
+              equipmentAssignment: job.equipment_assignment,
+              equipmentAllocated: job.equipment_allocated,
+              mainBoxName: job.main_box_name,
+              satelliteName: job.satellite_name,
+              wellsideGaugeName: job.wellside_gauge_name,
+              selectedCableType: job.selected_cable_type,
+              fracBaudRate: job.frac_baud_rate,
+              gaugeBaudRate: job.gauge_baud_rate,
+              fracComPort: job.frac_com_port,
+              gaugeComPort: job.gauge_com_port,
+              enhancedConfig: job.enhanced_config,
+              createdAt: job.created_at ? new Date(job.created_at) : null,
+              updatedAt: job.updated_at ? new Date(job.updated_at) : null,
+              syncStatus: 'synced'
+            }));
+            setData(transformedJobs as T[]);
+          } else {
+            setData(remoteData as T[]);
+          }
           
           // Update local cache
           const table = offlineDb[tableName];
           await table.clear();
           for (const item of remoteData) {
-            await table.add({
-              ...item,
-              cloudId: item.id,
-              syncStatus: 'synced',
-              updatedAt: Date.now()
-            });
+            // For jobs table, we need to map the snake_case fields to camelCase
+            if (tableName === 'jobs') {
+              const job = item as any;
+              await table.add({
+                cloudId: job.id,
+                name: job.name,
+                wellCount: job.well_count,
+                hasWellsideGauge: job.has_wellside_gauge,
+                nodes: job.nodes,
+                edges: job.edges,
+                companyComputerNames: job.company_computer_names || {},
+                equipmentAssignment: job.equipment_assignment,
+                equipmentAllocations: job.equipment_allocations,
+                equipmentAllocated: job.equipment_allocated,
+                mainBoxName: job.main_box_name,
+                satelliteName: job.satellite_name,
+                wellsideGaugeName: job.wellside_gauge_name,
+                selectedCableType: job.selected_cable_type,
+                fracBaudRate: job.frac_baud_rate,
+                gaugeBaudRate: job.gauge_baud_rate,
+                fracComPort: job.frac_com_port,
+                gaugeComPort: job.gauge_com_port,
+                enhancedConfig: job.enhanced_config,
+                createdAt: job.created_at,
+                syncStatus: 'synced',
+                updatedAt: Date.now()
+              });
+            } else {
+              await table.add({
+                ...item,
+                cloudId: item.id,
+                syncStatus: 'synced',
+                updatedAt: Date.now()
+              });
+            }
           }
         } else {
           // Fallback to local data
@@ -85,7 +142,37 @@ export function useOfflineFirst<T>({ tableName, enableAutoSync = true }: UseOffl
   const loadLocalData = async () => {
     const table = offlineDb[tableName];
     const localData = await table.toArray();
-    setData(localData as any as T[]);
+    
+    // For jobs, we need to include the id field from cloudId or local id
+    if (tableName === 'jobs') {
+      const transformedData = localData.map((job: any) => ({
+        id: job.cloudId || `local-${job.id}`,
+        name: job.name,
+        wellCount: job.wellCount,
+        hasWellsideGauge: job.hasWellsideGauge,
+        nodes: job.nodes,
+        edges: job.edges,
+        companyComputerNames: job.companyComputerNames || {},
+        equipmentAssignment: job.equipmentAssignment,
+        equipmentAllocated: job.equipmentAllocated,
+        mainBoxName: job.mainBoxName,
+        satelliteName: job.satelliteName,
+        wellsideGaugeName: job.wellsideGaugeName,
+        selectedCableType: job.selectedCableType,
+        fracBaudRate: job.fracBaudRate,
+        gaugeBaudRate: job.gaugeBaudRate,
+        fracComPort: job.fracComPort,
+        gaugeComPort: job.gaugeComPort,
+        enhancedConfig: job.enhancedConfig,
+        // Ensure createdAt is included and properly handled
+        createdAt: job.createdAt ? new Date(job.createdAt) : null,
+        updatedAt: job.updatedAt ? new Date(job.updatedAt) : null,
+        syncStatus: job.syncStatus
+      }));
+      setData(transformedData as any as T[]);
+    } else {
+      setData(localData as any as T[]);
+    }
   };
   
   // CRUD Operations
